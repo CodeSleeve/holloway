@@ -1,0 +1,35 @@
+{
+    "name": "holloway",
+    "description": "Holloway DataMapper.",
+    "keywords": ["datamapper"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Travis Bennett",
+            "email": "tandrewbennett@hotmail.com"
+        }
+    ],
+    "require": {
+        "illuminate/database": "^5.5",
+        "illuminate/pagination": "^5.5",
+        "php": "^7.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Holloway\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {"type": "path", "url": "./psr"}
+    ],
+    "require-dev": {
+        "mockery/mockery": "~1.0",
+        "illuminate/events": "^5.5"
+    },
+    "minium-stability": "stable"
+}
