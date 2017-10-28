@@ -92,7 +92,7 @@ class RepositoryTest extends TestCase
         $repository = new PupRepository;
 
         // when
-        $tobias = new Pup(1, 1, 'Tobias', 'Bennett');
+        $tobias = new Pup(1, 1, 'Tobias', 'Bennett', 'black');
         $repository->remove($tobias);
         $pups = $repository->all();
 

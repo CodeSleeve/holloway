@@ -49,12 +49,12 @@ trait CanBuildTestFixtures
         ]);
 
         Capsule::table('pups')->insert([
-            ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name'  => 'Bennett', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 2, 'pack_id' => 1, 'first_name' => 'Tyler', 'last_name'   => 'Bennett', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 3, 'pack_id' => 1, 'first_name' => 'Tucker', 'last_name'  => 'Bennett', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 4, 'pack_id' => 1, 'first_name' => 'Trinka', 'last_name'  => 'Bennett', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 5, 'pack_id' => 2, 'first_name' => 'Lucky', 'last_name'   => 'Adams', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 6, 'pack_id' => 2, 'first_name' => 'Duchess', 'last_name' => 'Adams', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]
+            ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name'  => 'Bennett', 'coat' => 'black', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 2, 'pack_id' => 1, 'first_name' => 'Tyler', 'last_name'   => 'Bennett', 'coat' => 'black', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 3, 'pack_id' => 1, 'first_name' => 'Tucker', 'last_name'  => 'Bennett', 'coat' => 'black', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 4, 'pack_id' => 1, 'first_name' => 'Trinka', 'last_name'  => 'Bennett', 'coat' => 'brown', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 5, 'pack_id' => 2, 'first_name' => 'Lucky', 'last_name'   => 'Adams', 'coat' => 'white', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 6, 'pack_id' => 2, 'first_name' => 'Duchess', 'last_name' => 'Adams', 'coat' => 'mixed', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]
         ]);
 
         Capsule::table('collars')->insert([

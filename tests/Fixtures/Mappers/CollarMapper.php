@@ -64,4 +64,15 @@ class CollarMapper extends Mapper
     {
         return $this->entityClassName;
     }
+
+    /**
+     * Scope a query to only include orange collars.
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeThatAreOrange($query)
+    {
+        return $query->where('color', 'orange');
+    }
 }

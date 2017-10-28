@@ -134,14 +134,6 @@ class MapperTest extends TestCase
         $this->assertInstanceOf(HasMany::class, $hasManyRelationship);
     }
 
-
-
-
-
-
-
-
-
     /** @test */
     public function if_no_results_are_returned_from_a_query_then_it_wont_attempt_to_map_an_entity()
     {
@@ -415,7 +407,7 @@ class MapperTest extends TestCase
         $mapper = Holloway::instance()->getMapper(Pup::class);
 
         // when
-        $pup = new Pup(7, 2, 'Snowball', 'Adams');
+        $pup = new Pup(7, 2, 'Snowball', 'Adams', 'white');
         $mapper->store($pup);
         $snowball = $mapper->find(7);
 
@@ -433,8 +425,8 @@ class MapperTest extends TestCase
         $mapper = Holloway::instance()->getMapper(Pup::class);
 
         // when
-        $pup1 = new Pup(7, 2, 'Snowball', 'Adams');
-        $pup2 = new Pup(8, 1, 'Moses', 'Bennett');
+        $pup1 = new Pup(7, 2, 'Snowball', 'Adams', 'white');
+        $pup2 = new Pup(8, 1, 'Moses', 'Bennett', 'white');
 
         $mapper->store([$pup1, $pup2]);
 
@@ -516,5 +508,35 @@ class MapperTest extends TestCase
         // then
         $this->assertCount(1, $mapper->all());
         $this->assertCount(2, $mapper->withTrashed()->get());
+    }
+
+    /** @test */
+    public function it_allows_end_users_to_creat_query_scopes()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Collar::class);    // The collar mapper fixture has a query scope on it for orange colored collars.
+
+        // when
+        $orangeCollars = $mapper->thatAreOrange()->get();
+
+        // then
+        $this->assertCount(2, $orangeCollars);
+    }
+
+    /** @test */
+    public function it_allows_end_users_to_creat_dynamic_query_scopes()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture has a query scope on it for coat color.
+
+        // when
+        $blackPups = $mapper->ofCoat('black')->get();
+        $whitePups = $mapper->ofCoat('white')->get();
+
+        // then
+        $this->assertCount(3, $blackPups);
+        $this->assertCount(1, $whitePups);
     }
 }

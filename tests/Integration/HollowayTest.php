@@ -28,7 +28,7 @@ class HollowayTest extends TestCase
     public function the_mapper_method_should_return_a_new_mapper_instance_when_provided_an_entity_instance()
     {
         // given
-        $entity = new Pup(1, 1, 'Tobias', 'Bennett');
+        $entity = new Pup(1, 1, 'Tobias', 'Bennett', 'black');
         $holloway = Holloway::instance();
 
         // when

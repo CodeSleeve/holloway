@@ -54,6 +54,7 @@ class PupMapper extends Mapper
             'pack_id'    => $entity->packId(),
             'first_name' => $entity->firstName(),
             'last_name'  => $entity->lastName(),
+            'coat'       => $entity->coat(),
             'created_at' => $entity->createdAt(),
             'updated_at' => $entity->updatedAt()
         ];
@@ -95,5 +96,17 @@ class PupMapper extends Mapper
     public function getEntityClassName() : string
     {
         return $this->entityClassName;
+    }
+
+    /**
+     * Scope a query to only include pups of a given coat color.
+     *
+     * @param Builder $query
+     * @param string  $coat
+     * @return Builder
+     */
+    public function scopeOfCoat($query, string $coat)
+    {
+        return $query->where('coat', $coat);
     }
 }

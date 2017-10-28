@@ -28,6 +28,11 @@ class Pup extends Entity
     protected $lastName;
 
     /**
+     * @var string
+     */
+    protected $coat;
+
+    /**
      * @var Collar
      */
     protected $collar;
@@ -42,15 +47,17 @@ class Pup extends Entity
      * @param int         $packId
      * @param string      $firstName
      * @param string      $lastName
+     * @param string      $coat
      * @param Collar|null $collar
      * @param Pack|null   $pack
      */
-    public function __construct(int $id, int $packId, string $firstName, string $lastName, ?Collar $collar = null, ?Pack $pack = null)
+    public function __construct(int $id, int $packId, string $firstName, string $lastName, string $coat, ?Collar $collar = null, ?Pack $pack = null)
     {
         $this->id = $id;
         $this->packId = $packId;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->coat = $coat;
         $this->createdAt = Carbon::now();
         $this->updatedAt = Carbon::now();
 
@@ -108,6 +115,19 @@ class Pup extends Entity
         }
 
         return $this->lastName;
+    }
+
+    /**
+     * @param  string|null $lastName
+     * @return string
+     */
+    public function coat(?string $coat = null) : string
+    {
+        if ($coat) {
+            $this->coat = $coat;
+        }
+
+        return $this->coat;
     }
 
     /**
