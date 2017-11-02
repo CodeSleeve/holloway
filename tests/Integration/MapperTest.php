@@ -9,6 +9,7 @@ use Illuminate\Contracts\Pagination;
 use Tests\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
 use Tests\Fixtures\Mappers\{UserMapper, PupMapper, PupFoodMapper, CollarMapper, PackMapper, CompanyMapper};
 use Tests\Helpers\CanBuildTestFixtures;
+use Mockery as m;
 
 class MapperTest extends TestCase
 {
@@ -29,17 +30,6 @@ class MapperTest extends TestCase
             'Tests\Fixtures\Mappers\UserMapper',
         ]);
     }
-
-    /**
-     * @return void
-     */
-    public function tearDown()
-    {
-        parent::tearDown();
-
-        Holloway::instance()->flushEntityCache();
-    }
-
 
     /** @test **/
     public function it_should_be_able_to_return_the_name_of_the_table_that_it_uses()
@@ -444,31 +434,44 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_an_existing_entity()
+    public function it_can_update_an_existing_entity_and_fire_storing_updating_updated_and_stored_persistence_events_when_doing_so()
     {
         // given
         $this->buildFixtures();
         $mapper = Holloway::instance()->getMapper(Pup::class);
 
-        // when
-        $pup = $mapper->find(1);
-        $pup->firstName('Toby');
+        $tobi = $mapper->find(1);
+        $tobi->firstName('Toby');
 
-        $mapper->store($pup);
+        $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
+        $mockDispatcher->shouldReceive('fire')->once()->with('storing: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('fire')->once()->with('updating: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('fire')->once()->with('updated: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('fire')->once()->with('stored: Tests\Fixtures\Entities\Pup', $tobi);
+        $mapper->setEventManager($mockDispatcher);
+
+        // when
+        $mapper->store($tobi);
         $tobias = $mapper->find(1);
 
         // then
         $this->assertInstanceOf(Pup::class, $tobias);
-        $this->assertEquals('Toby', $pup->firstName());
+        $this->assertEquals('Toby', $tobi->firstName());
     }
 
     /** @test */
-    public function it_can_remove_an_existing_entity()
+    public function it_can_remove_an_existing_entity_and_fire_removing_and_removed_persistence_events_when_doing_so()
     {
         // given
         $this->buildFixtures();
         $mapper = Holloway::instance()->getMapper(Pup::class);
         $tobi = $mapper->find(1);
+
+        $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
+        $mockDispatcher->shouldReceive('fire')->once()->with('removing: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('fire')->once()->with('removed: Tests\Fixtures\Entities\Pup', $tobi);
+
+        $mapper->setEventManager($mockDispatcher);
 
         // when
         $mapper->remove($tobi);

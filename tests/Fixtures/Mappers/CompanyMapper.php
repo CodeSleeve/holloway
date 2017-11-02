@@ -3,7 +3,6 @@
 namespace Tests\Fixtures\Mappers;
 
 use Illuminate\Support\Collection;
-use Holloway\Mapper;
 use Tests\Fixtures\Entities\{Company, PupFood};
 use stdClass;
 
@@ -73,7 +72,7 @@ class CompanyMapper extends Mapper
     /**
      * @return  void
      */
-    public function setRelations()
+    public function defineRelations()
     {
         $this->hasMany('pupFoods', PupFood::class);    // A company has many pup foods (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
     }

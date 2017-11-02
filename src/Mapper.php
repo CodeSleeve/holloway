@@ -110,6 +110,13 @@ abstract class Mapper
     abstract public function setIdentifier($entity, $value) : void;
 
     /**
+     * @param  stdClass   $record
+     * @param  Collection $relationships
+     * @return mixed
+     */
+    abstract public function hydrate(stdClass $record, Collection $relationships);
+
+    /**
      * @param  mixed $entity
      * @return array
      */
@@ -139,22 +146,6 @@ abstract class Mapper
     public function getUpdatedAtColumnName() : string
     {
         return 'updated_at';
-    }
-
-    /**
-     * @param  stdClass   $record
-     * @param  Collection $relationships
-     * @return mixed
-     */
-    public function hydrate(stdClass $record, Collection $relationships)
-    {
-        // By default, this method will simply new up an instance of the entity class,
-        // passing each value stdClass objct as a constructor property. If you wish to
-        // do anything more complex than this (hydrating value objects, etc) you should
-        // override the make method on the child entity map class.
-        $className = $this->getEntityClassName();
-
-        return new $className(...array_values((array) $record));
     }
 
     /**
@@ -444,12 +435,12 @@ abstract class Mapper
      */
     protected function storeEntity($entity) : bool
     {
-        if (static::$eventManager->fire('storing', $entity) === false) {
+        if ($this->firePersistanceEvent('storing', $entity) === false) {
             return false;
         }
 
         if ($this->entityCache->has($this->getIdentifier($entity))) {
-            if (static::$eventManager->fire('updating', $entity) !== false) {
+            if ($this->firePersistanceEvent('updating', $entity) !== false) {
                 $keyName = $this->getPrimaryKeyName();
                 $key = $this->getIdentifier($entity);
 
@@ -458,23 +449,23 @@ abstract class Mapper
                     ->where($keyName, $key)
                     ->update($this->dehydrate($entity));
 
-                static::$eventManager->fire('updated', $entity);
+                $this->firePersistanceEvent('updated', $entity);
             } else {
                 return false;
             }
         } else {
-            if (static::$eventManager->fire('creating', $entity) !== false) {
+            if ($this->firePersistanceEvent('creating', $entity) !== false) {
                 $this->getConnection()
                     ->table($this->getTableName())
                     ->insert($this->dehydrate($entity));
 
-                static::$eventManager->fire('created', $entity);
+                $this->firePersistanceEvent('created', $entity);
             } else {
                 return false;
             }
         }
 
-        static::$eventManager->fire('stored', $entity);
+        $this->firePersistanceEvent('stored', $entity);
 
         return true;
     }
@@ -485,7 +476,7 @@ abstract class Mapper
      */
     protected function removeEntity($entity) : bool
     {
-        if (static::$eventManager->fire('removing', $entity) === false) {
+        if ($this->firePersistanceEvent('removing', $entity) === false) {
             return false;
         }
 
@@ -501,7 +492,7 @@ abstract class Mapper
         }
 
 
-        static::$eventManager->fire('removed', $entity);
+        $this->firePersistanceEvent('removed', $entity);
 
         return true;
     }
@@ -584,6 +575,16 @@ abstract class Mapper
     public function getGlobalScopes()
     {
         return \Illuminate\Support\Arr::get(static::$globalScopes, static::class, []);
+    }
+
+    /**
+     * @param  string  $eventName
+     * @param  mixed   $entity
+     * @return void
+     */
+    protected function firePersistanceEvent(string $eventName, $entity)
+    {
+        return static::$eventManager->fire("$eventName: " . get_class($entity), $entity);
     }
 
 

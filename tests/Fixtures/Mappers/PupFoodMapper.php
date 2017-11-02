@@ -4,7 +4,6 @@ namespace Tests\Fixtures\Mappers;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Holloway\Mapper;
 use Tests\Fixtures\Entities\{Company, Pup, PupFood};
 use stdClass;
 
@@ -71,7 +70,7 @@ class PupFoodMapper extends Mapper
     /**
      * @return  void
      */
-    public function setRelations()
+    public function defineRelations()
     {
         $this->belongsTo('company', Company::class);    // A pup food belongs to a company (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
         $this->belongsToMany('pups', Pup::class);       // A pup food belongs to many pups (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).

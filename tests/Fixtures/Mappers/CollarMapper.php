@@ -2,8 +2,9 @@
 
 namespace Tests\Fixtures\Mappers;
 
-use Holloway\Mapper;
+use Illuminate\Support\Collection;
 use Tests\Fixtures\Entities\{Collar, Pup};
+use stdClass;
 
 class CollarMapper extends Mapper
 {
@@ -52,7 +53,7 @@ class CollarMapper extends Mapper
     /**
      * @return  void
      */
-    public function setRelations()
+    public function defineRelations()
     {
         $this->belongsTo('pup', Pup::class, 'pup_id', 'id');    // A collar belongs to a pup.
     }

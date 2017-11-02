@@ -2,6 +2,8 @@
 
 namespace Tests\Helpers;
 
+use Holloway\Holloway;
+use Holloway\Mapper;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 trait CanBuildTestFixtures
@@ -11,6 +13,13 @@ trait CanBuildTestFixtures
      */
     public function setUp()
     {
+        static $eventManager;
+
+        if (!$eventManager) {
+            $eventManager = new \Illuminate\Events\Dispatcher;
+        }
+
+        Mapper::setEventManager($eventManager);
         Capsule::beginTransaction();
     }
 
@@ -20,6 +29,8 @@ trait CanBuildTestFixtures
     public function tearDown()
     {
         Capsule::rollBack();
+        Holloway::instance()->flushEntityCache();
+        Mapper::unsetEventManager();
     }
 
     /**

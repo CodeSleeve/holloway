@@ -60,7 +60,7 @@ final class Holloway
         $this->mappers = array_combine($entityNames, $mappers);
 
         foreach($this->mappers as $mapper) {
-            $mapper->setRelations();
+            $mapper->defineRelations();
         }
     }
 

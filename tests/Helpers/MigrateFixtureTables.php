@@ -50,7 +50,7 @@ class MigrateFixtureTables extends Migration
             Schema::create('packs', function (Blueprint $table) {
                 $table->increments('id');
                 $table->string('name');
-                $table->dateTime('deleted_at');
+                $table->dateTime('deleted_at')->nullable();
                 $table->timestamps();
             });
         }
@@ -64,7 +64,7 @@ class MigrateFixtureTables extends Migration
 
                 $table->string('first_name');
                 $table->string('last_name');
-                $table->string('color');
+                $table->string('coat');
                 $table->timestamps();
             });
         }

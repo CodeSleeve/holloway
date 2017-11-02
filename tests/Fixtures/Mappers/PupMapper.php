@@ -4,7 +4,6 @@ namespace Tests\Fixtures\Mappers;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Holloway\Mapper;
 use Tests\Fixtures\Entities\{Pup, Collar, Pack, PupFood};
 use stdClass;
 
@@ -83,7 +82,7 @@ class PupMapper extends Mapper
     /**
      * @return  void
      */
-    public function setRelations()
+    public function defineRelations()
     {
         $this->hasOne('collar', Collar::class, 'pup_id', 'id');    // A pup has one collar.
         $this->belongsTo('pack', Pack::class, 'pack_id', 'id');    // A pup belongs to a pack.

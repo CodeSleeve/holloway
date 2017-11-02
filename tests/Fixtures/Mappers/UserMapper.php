@@ -4,7 +4,6 @@ namespace Tests\Fixtures\Mappers;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Holloway\Mapper;
 use Tests\Fixtures\Entities\{Pup, User};
 use stdClass;
 
@@ -74,7 +73,7 @@ class UserMapper extends Mapper
     /**
      * @return  void
      */
-    public function setRelations()
+    public function defineRelations()
     {
         $this->belongsToMany('pups', Pup::class, 'pups_users', 'user_id', 'pup_id');    // A user belongs to many pups.
     }

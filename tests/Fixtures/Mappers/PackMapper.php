@@ -3,7 +3,7 @@
 namespace Tests\Fixtures\Mappers;
 
 use Carbon\Carbon;
-use Holloway\{Mapper, SoftDeletes};
+use Holloway\SoftDeletes;
 use Illuminate\Support\Collection;
 use Tests\Fixtures\Entities\{Pack, Pup};
 use stdClass;
@@ -76,7 +76,7 @@ class PackMapper extends Mapper
     /**
      * @return  void
      */
-    public function setRelations()
+    public function defineRelations()
     {
         $this->hasMany('pups', Pup::class, 'pack_id', 'id');    // A pack has many pups.
     }
