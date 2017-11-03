@@ -38,7 +38,8 @@ class TreeTest extends TestCase
         $tree->addLoads(['pups' => function(){}]);
 
         // when
-        $actual = $tree->render();
+        $tree->initialize();
+        $actual = $tree->getData();
 
         $expected = [
             'pups' => [
@@ -87,7 +88,8 @@ class TreeTest extends TestCase
         $tree->addLoads(['pups.collar' => function(){}]);
 
         // when
-        $actual = $tree->render();
+        $tree->initialize();
+        $actual = $tree->getData();
 
         $expected = [
             'pups' => [
@@ -155,7 +157,8 @@ class TreeTest extends TestCase
         ]);
 
         // when
-        $actual = $tree->render();
+        $tree->initialize();
+        $actual = $tree->getData();
 
         $expected = [
             'pups' => [

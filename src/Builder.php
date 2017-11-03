@@ -14,6 +14,15 @@ use Closure;
 class Builder
 {
     /**
+     * The base query builder instance.
+     *
+     * @var QueryBuilder
+     */
+    protected $query;
+
+    /**
+     * The mapper for this builder.
+     *
      * @var Mapper
      */
     protected $mapper;
@@ -122,9 +131,8 @@ class Builder
      *
      * @param  string  $method
      * @param  array   $parameters
-     * @return mixed
-     *
      * @throws \BadMethodCallException
+     * @return mixed
      */
     public static function __callStatic($method, $parameters)
     {
@@ -183,7 +191,7 @@ class Builder
      * @param  array  $ids
      * @return \Illuminate\Support\Collection
      */
-    public function findMany($ids)
+    public function findMany($ids) : Collection
     {
         if (empty($ids)) {
             return collect();
@@ -693,7 +701,7 @@ class Builder
      *
      * @return \Illuminate\Database\Query\Builder
      */
-    public function toBase()
+    public function toBase() : QueryBuilder
     {
         return $this->applyScopes()->getQuery();
     }
@@ -705,7 +713,7 @@ class Builder
      * @param  \Illuminate\Database\Eloquent\Scope|\Closure  $scope
      * @return $this
      */
-    public function withGlobalScope($identifier, $scope)
+    public function withGlobalScope($identifier, $scope) : Builder
     {
         $this->scopes[$identifier] = $scope;
 
@@ -722,7 +730,7 @@ class Builder
      * @param  \Illuminate\Database\Eloquent\Scope|string  $scope
      * @return $this
      */
-    public function withoutGlobalScope($scope)
+    public function withoutGlobalScope($scope) : Builder
     {
         if (! is_string($scope)) {
             $scope = get_class($scope);
@@ -741,7 +749,7 @@ class Builder
      * @param  array|null  $scopes
      * @return $this
      */
-    public function withoutGlobalScopes(array $scopes = null)
+    public function withoutGlobalScopes(array $scopes = null) : Builder
     {
         if (is_array($scopes)) {
             foreach ($scopes as $scope) {
@@ -759,7 +767,7 @@ class Builder
      *
      * @return array
      */
-    public function removedScopes()
+    public function removedScopes() : array
     {
         return $this->removedScopes;
     }

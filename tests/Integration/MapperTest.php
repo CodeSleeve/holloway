@@ -3,7 +3,7 @@
 namespace Tests\Integration;
 
 use Carbon\Carbon;
-use Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany};
+use Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany, Custom};
 use Holloway\{Holloway, Entity, Mapper};
 use Illuminate\Contracts\Pagination;
 use Tests\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
@@ -45,6 +45,22 @@ class MapperTest extends TestCase
     }
 
     /** @test */
+    public function it_should_be_able_to_retrieve_a_custom_relationship_that_has_been_defined_on_it()
+    {
+        // given
+        $this->buildFixtures();
+        $holloway = Holloway::instance();
+
+        $packMapper = $holloway->getMapper(Pack::class);
+
+        // when
+        $customRelationship = $packMapper->getRelationship('collars');
+
+        // then
+        $this->assertInstanceOf(Custom::class, $customRelationship);
+    }
+
+    /** @test */
     public function it_should_be_able_to_retrieve_a_has_one_relationship_that_has_been_defined_on_it()
     {
         // given
@@ -61,7 +77,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function i_should_be_able_to_retrieve_a_belongs_to_relationship_that_has_been_defined_on_it()
+    public function ii_should_be_able_to_retrieve_a_belongs_to_relationship_that_has_been_defined_on_it()
     {
         // given
         $this->buildFixtures();
@@ -77,7 +93,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function i_should_be_able_to_retreive_a_has_many_relationship_that_has_been_defined_on_it()
+    public function ii_should_be_able_to_retreive_a_has_many_relationship_that_has_been_defined_on_it()
     {
         // given
         $this->buildFixtures();
@@ -193,7 +209,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_nested_relationships()
+    public function it_can_load_a_nested_relationship()
     {
         // given
         $this->buildFixtures();
@@ -209,7 +225,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_nested_relationships_onto_many_entities()
+    public function it_can_load_a_nested_relationship_onto_many_entities()
     {
         // given
         $this->buildFixtures();
@@ -260,7 +276,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_has_many_relationships_onto_an_entity()
+    public function it_can_load_a_has_many_relationship_onto_an_entity()
     {
         // given
         $this->buildFixtures();
@@ -270,14 +286,14 @@ class MapperTest extends TestCase
         $pack = $mapper->with('pups')->find(1);
 
         // then
-        $pack->pups->each(function($pup) use ($pack) {
+        $pack->pups()->each(function($pup) use ($pack) {
             $this->assertInstanceOf(Pup::class, $pup);
             $this->assertEquals($pup->packId(), $pack->id());
         });
     }
 
     /** @test */
-    public function it_can_load_has_many_relationships_onto_many_entities()
+    public function it_can_load_a_has_many_relationship_onto_many_entities()
     {
         // given
         $this->buildFixtures();
@@ -288,7 +304,7 @@ class MapperTest extends TestCase
 
         // then
         $packs->each(function($pack) {
-            $pack->pups->each(function($pup) use ($pack) {
+            $pack->pups()->each(function($pup) use ($pack) {
                 $this->assertInstanceOf(Pup::class, $pup);
                 $this->assertEquals($pup->packId(), $pack->id());
             });
@@ -296,7 +312,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_belongs_to_relationships_onto_an_entity()
+    public function it_can_load_a_belongs_to_relationship_onto_an_entity()
     {
         // given
         $this->buildFixtures();
@@ -310,7 +326,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_belongs_to_relationships_onto_many_entities()
+    public function it_can_load_a_belongs_to_relationship_onto_many_entities()
     {
         // given
         $this->buildFixtures();
@@ -326,7 +342,40 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_belongs_to_relationships_onto_an_entity_without_specifying_a_table_name_or_keys_within_the_relationship_definition()
+    public function it_can_load_a_custom_relationship_onto_an_entity()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $pack = $mapper->with('collars')->first();
+
+        // then
+        $this->assertInstanceOf(Collar::class, $pack->collars()->first());
+        $this->assertCount(4, $pack->collars());
+    }
+
+    /** @test */
+    public function it_can_load_a_custom_relationship_onto_many_entities()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $pack = $mapper->with('collars')->get();
+
+        // then
+        $pack->each(function($pack) {
+            $pack->collars()->each(function($collar) {
+                $this->assertInstanceOf(Collar::class, $collar);
+            });
+        });
+    }
+
+    /** @test */
+    public function it_can_load_a_belongs_to_relationship_onto_an_entity_without_specifying_a_table_name_or_keys_within_the_relationship_definition()
     {
         // given
         $this->buildFixtures();
@@ -340,7 +389,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_belongs_to_relationships_onto_many_entities_without_specifying_a_table_name_or_keys_within_the_relationship_definition()
+    public function it_can_load_a_belongs_to_relationship_onto_many_entities_without_specifying_a_table_name_or_keys_within_the_relationship_definition()
     {
         // given
         $this->buildFixtures();
@@ -356,7 +405,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_belongs_to_many_relationships_onto_an_entity()
+    public function it_can_load_a_belongs_to_many_relationship_onto_an_entity()
     {
         // given
         $this->buildFixtures();
@@ -372,7 +421,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_load_belongs_to_many_relationships_onto_many_entities()
+    public function it_can_load_a_belongs_to_many_relationship_onto_many_entities()
     {
         // given
         $this->buildFixtures();

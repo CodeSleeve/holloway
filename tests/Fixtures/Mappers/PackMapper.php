@@ -5,7 +5,7 @@ namespace Tests\Fixtures\Mappers;
 use Carbon\Carbon;
 use Holloway\SoftDeletes;
 use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\{Pack, Pup};
+use Tests\Fixtures\Entities\{Pack, Pup, Collar};
 use stdClass;
 
 class PackMapper extends Mapper
@@ -65,6 +65,12 @@ class PackMapper extends Mapper
 
         if ($relations->count()) {
             $record->pups = $relations['pups'] ?? null;
+
+            if (isset($relations['collars'])) {
+                $record->collars = $relations['collars']->map(function($record) {
+                    return new Collar($record->id, $record->pup_id, $record->color);
+                });
+            }
         }
 
         $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at', 'deleted_at'])));
@@ -79,6 +85,20 @@ class PackMapper extends Mapper
     public function defineRelations()
     {
         $this->hasMany('pups', Pup::class, 'pack_id', 'id');    // A pack has many pups.
+
+        $this->custom('collars', function($query, $records) {
+            return $query->from('packs')
+                ->join('pups', 'packs.id', '=', 'pups.pack_id')
+                ->join('collars', 'pups.id', '=', 'collars.pup_id')
+                ->select('collars.*', 'pups.pack_id')
+                ->distinct()
+                ->get();
+        }, function($record, $data){
+            return $data
+                ->filter(function(stdClass $relatedRecord) use ($record) {
+                    return $relatedRecord->pack_id == $record->id;
+                });
+        });
     }
 
     /**

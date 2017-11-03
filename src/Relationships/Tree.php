@@ -9,9 +9,16 @@ use Holloway\Holloway;
 
 final class Tree
 {
+    /** @var Holloway */
     protected $holloway;
+
+    /** @var array */
     protected $loads = [];
+
+    /** @var array */
     protected $data = [];
+
+    /** @var Mapper */
     protected $rootMapper;
 
     /**
@@ -55,11 +62,11 @@ final class Tree
     }
 
     /**
-     * @param array $tree
+     * @return array
      */
-    public function setTree(array $tree)
+    public function getData() : array
     {
-        $this->tree = $tree;
+        return $this->data;
     }
 
     /**
@@ -68,18 +75,6 @@ final class Tree
     public function setData(array $data)
     {
         $this->data = $data;
-    }
-
-    /**
-     * @return array
-     */
-    public function render() : array
-    {
-        if (!$this->data) {
-            $this->data = $this->buildTree($this->loads, $this->rootMapper);
-        }
-
-        return $this->data;
     }
 
     /**
@@ -93,13 +88,28 @@ final class Tree
      */
     public function loadInto(Collection $records) : Collection
     {
-       $this->loadData($this->render(), $records);     // 1
+       $this->initialize();
+       $this->loadData($this->data, $records);         // 1
 
        return $this->mapData($records, $this->data);   // 2
     }
 
     /**
-     * Traverse the tree and load related data for each node.
+     * If this tree doesn't currently contain any data then we'll call the buildTree()
+     * method in order to pre-populate the nodes of the tree with our nested relations.
+     *
+     * @return void
+     */
+    public function initialize()
+    {
+        if (!$this->data) {
+           $this->data = $this->buildTree($this->loads, $this->rootMapper);
+       }
+    }
+
+    /**
+     * Traverse each of the tree nodes (each node is a relationship)
+     * and load related data for it.
      *
      * @param  array      $nodes
      * @param  Collection $records
@@ -121,7 +131,8 @@ final class Tree
      * entities onto their parent data so that they may then be used in the hydrate
      * method of the parent entity's map.
      *
-     * @param  Collection $records
+     * @param  Collection $records  The records being mapped
+     * @param  array      $data     A nested array of relationship data.
      * @return Collection
      */
     protected function mapData(Collection $records, array $data) : Collection
@@ -135,20 +146,28 @@ final class Tree
                $relatedRecords = $relationship->for($record);
                $relatedRecords = $relatedRecords instanceof Collection ? $relatedRecords : collect([$relatedRecords]);
 
+               // If we still have child relations left to map then we'll recurse.
                if ($node['children']) {
                    $record->relations[$nodeName] = $this->mapData($relatedRecords, $node['children']);
                }
 
-               $mapper = Holloway::instance()->getMapper($relationship->getEntityName());
+               // Now that there are no child relations left to map, we'll need to get the mapper for the related records
+               // and map them into entities. However, if the relationship is a custom on, we'll skip the mapping step
+               // and just store the raw records on as the relaion since custom relationships don't have a mapper.
+               if (!$relationship instanceof Custom) {
+                   $mapper = Holloway::instance()->getMapper($relationship->getEntityName());
 
-               if ($relationship instanceof HasOne || $relationship instanceof BelongsTo) {
-                   $relatedRecords = $mapper->makeEntity($relatedRecords->first());
-               } else {
-                   $relatedRecords = $relatedRecords->map(function($record) use ($mapper) {
-                       return $mapper->makeEntity($record);
-                   });
+                   // Next, map them into entities.
+                   if ($relationship instanceof HasOne || $relationship instanceof BelongsTo) {
+                       $relatedRecords = $mapper->makeEntity($relatedRecords->first());
+                   } else {
+                       $relatedRecords = $relatedRecords->map(function($record) use ($mapper) {
+                           return $mapper->makeEntity($record);
+                       });
+                   }
                }
 
+               // Finally, store them into the relations array under the name (of the relationship) that were defined under.
                $record->relations[$nodeName] = $relatedRecords;
             }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Integration\HasOne;
 
+use Holloway\Holloway;
 use Holloway\Relationships\HasOne;
 use Tests\Fixtures\Entities\Collar;
 use Tests\Fixtures\Mappers\CollarMapper;
@@ -17,12 +18,13 @@ class HasOneTest extends TestCase
     {
         // given
         $this->buildFixtures();
-        $records = collect([(object) ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']]);
+
         $collarMapper = new CollarMapper;
-        $it = new HasOne('collar', 'collars', 'pup_id', 'id', Collar::class, $collarMapper->getConnection());
+        $records = collect([(object) ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']]);
+        $relationship = new HasOne('collar', 'collars', 'pup_id', 'id', Collar::class, $collarMapper->toBase());
 
         // when
-        $relationship = $it->load($records, function() {});
+        $relationship->load($records, function() {});
         $collar = $relationship->getData()->first();
 
         // then

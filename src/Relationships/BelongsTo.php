@@ -2,12 +2,11 @@
 
 namespace Holloway\Relationships;
 
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Closure;
 use stdClass;
 
-class BelongsTo extends Relationship
+class BelongsTo extends BaseRelationship
 {
     /**
      * Load the data for a belongs to relationship:
@@ -21,20 +20,20 @@ class BelongsTo extends Relationship
      * 3. Finally, we'll apply any contraints (if any) that were defined on the load and
      * return the fetched records.
      *
-     * @param  Collection $records
-     * @param  Closure    $constraints
-     * @return Relationship
+     * @param  Collection    $records
+     * @param  Closure|null  $constraints
+     * @return void
      */
-    public function load(Collection $records, Closure $constraints) : Relationship
+    public function load(Collection $records, ?Closure $constraints = null)
     {
-        $query = new QueryBuilder($this->connection, $this->connection->getQueryGrammar(), $this->connection->getPostProcessor());
+        $constraints = $constraints ?: function() {};
 
-        $this->data = $query->from($this->tableName)
+        $this->data = $this->query
+            ->newQuery()
+            ->from($this->tableName)
             ->whereIn($this->localKeyName, $records->pluck($this->foreignKeyName)->values()->all())
             ->where($constraints)
             ->get();
-
-        return $this;
     }
 
     /**

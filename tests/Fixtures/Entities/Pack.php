@@ -18,15 +18,26 @@ class Pack extends Entity
     protected $name;
 
     /**
+     * @var Collection|null
+     */
+    protected $pups;
+
+    /**
+     * @var Collection|null
+     */
+    protected $collars;
+
+    /**
      * @param int    $id
      * @param string $name
      * @param Collection|null
      */
-    public function __construct(int $id, string $name, ?Collection $pups = null)
+    public function __construct(int $id, string $name, ?Collection $pups = null, ?Collection $collars = null)
     {
         $this->id = $id;
         $this->name = $name;
         $this->pups = $pups;
+        $this->collars = $collars;
     }
 
     /**
@@ -66,5 +77,18 @@ class Pack extends Entity
         }
 
         return $this->pups;
+    }
+
+    /**
+     * @param  Collection|null $collars
+     * @return Collection
+     */
+    public function collars(?Collection $collars = null) : ?Collection
+    {
+        if ($collars) {
+            $this->collars = $collars;
+        }
+
+        return $this->collars;
     }
 }

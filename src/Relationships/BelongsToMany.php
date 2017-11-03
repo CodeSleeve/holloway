@@ -4,12 +4,11 @@ namespace Holloway\Relationships;
 
 use Closure;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Database\Connection;
 use Illuminate\Support\Collection;
 use Holloway\Mapper;
 use stdClass;
 
-class BelongsToMany extends Relationship
+class BelongsToMany extends BaseRelationship
 {
     /**
      * @var string
@@ -57,14 +56,15 @@ class BelongsToMany extends Relationship
     protected $pivotData;
 
     /**
-     * @param string $name
-     * @param string $tableName
-     * @param string $foreignKeyName
-     * @param string $localKeyName
-     * @param string $entityName
-     * @param string $pivotTableName
-     * @param string $pivotForeignKeyName
-     * @param string $pivotLocalKeyName
+     * @param string       $name
+     * @param string       $tableName
+     * @param string       $foreignKeyName
+     * @param string       $localKeyName
+     * @param string       $entityName
+     * @param string       $pivotTableName
+     * @param string       $pivotForeignKeyName
+     * @param string       $pivotLocalKeyName
+     * @param QueryBuilder $query
      */
     public function __construct(
         string $name,
@@ -75,9 +75,9 @@ class BelongsToMany extends Relationship
         string $pivotTableName,
         string $pivotForeignKeyName,
         string $pivotLocalKeyName,
-        Connection $connection)
+        QueryBuilder $query)
     {
-       parent::__construct($name, $tableName, $foreignKeyName, $localKeyName, $entityName, $connection);
+       parent::__construct($name, $tableName, $foreignKeyName, $localKeyName, $entityName, $query);
 
        $this->pivotTableName = $pivotTableName;
        $this->pivotLocalKeyName = $pivotLocalKeyName;
@@ -96,19 +96,23 @@ class BelongsToMany extends Relationship
      * 3. Finally, we'll apply any contraints (if any) that were defined on the load and
      * return the fetched records.
      *
-     * @param  Collection $records
-     * @param  Closure    $constraints
-     * @return Relationship
+     * @param  Collection    $records
+     * @param  Closure|null  $constraints
+     * @return void
      */
-    public function load(Collection $records, Closure $constraints) : Relationship
+    public function load(Collection $records, ?Closure $constraints = null)
     {
-        $pivotQuery = new QueryBuilder($this->connection, $this->connection->getQueryGrammar(), $this->connection->getPostProcessor());
-        $this->pivotData = $pivotQuery->from($this->pivotTableName)
+        $constraints = $constraints ?: function() {};
+
+        $this->pivotData = $this->query
+             ->newQuery()
+             ->from($this->pivotTableName)
              ->whereIn($this->pivotLocalKeyName, $records->pluck($this->localKeyName)->all())
              ->get();
 
-        $query = new QueryBuilder($this->connection, $this->connection->getQueryGrammar(), $this->connection->getPostProcessor());
-        $this->data = $query->from($this->tableName)
+        $this->data = $this->query
+            ->newQuery()
+            ->from($this->tableName)
             ->whereIn($this->foreignKeyName, $this->pivotData->pluck($this->pivotForeignKeyName)->all())
             ->where($constraints)
             ->get();

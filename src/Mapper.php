@@ -324,6 +324,20 @@ abstract class Mapper
     }
 
     /**
+     * Get a new query builder instance for the connection.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function newBaseQueryBuilder()
+    {
+        $connection = $this->getConnection();
+
+        return new QueryBuilder(
+            $connection, $connection->getQueryGrammar(), $connection->getPostProcessor()
+        );
+    }
+
+    /**
      * @param  mixed $entity
      * @return bool
      */
@@ -347,21 +361,6 @@ abstract class Mapper
         } else {
             return $this->removeEntity($entity);
         }
-    }
-
-
-    /**
-     * Get a new query builder instance for the connection.
-     *
-     * @return \Illuminate\Database\Query\Builder
-     */
-    protected function newBaseQueryBuilder()
-    {
-        $connection = $this->getConnection();
-
-        return new QueryBuilder(
-            $connection, $connection->getQueryGrammar(), $connection->getPostProcessor()
-        );
     }
 
     /**
@@ -597,7 +596,7 @@ abstract class Mapper
      * @param  string       $entityName
      * @param  string|null  $foreignKey
      * @param  string|null  $localKey
-     * @return Relationships\HasOne
+     * @return void
      */
     protected function hasOne(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null)
     {
@@ -606,7 +605,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? str_singular($this->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
-        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->getConnection());
+        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
     }
 
     /**
@@ -614,7 +613,7 @@ abstract class Mapper
      * @param  string       $entityName
      * @param  string|null  $foreignKey
      * @param  string|null  $localKey
-     * @return Relationships\HasMany
+     * @return void
      */
     protected function hasMany(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null)
     {
@@ -623,7 +622,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? str_singular($this->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
-        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->getConnection());
+        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
     }
 
     /**
@@ -631,7 +630,7 @@ abstract class Mapper
      * @param  string       $entityName
      * @param  string|null  $foreignKey
      * @param  string|null  $localKey
-     * @return Relationships\BelongsTo
+     * @return void
      */
     protected function belongsTo(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null)
     {
@@ -640,7 +639,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? str_singular($mapper->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
-        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->getConnection());
+        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
     }
 
     /**
@@ -649,7 +648,7 @@ abstract class Mapper
      * @param  string|null  $pivotTableName
      * @param  string|null  $foreignKey
      * @param  string|null  $localKey
-     * @return Relationships\BelongsToMany
+     * @return void
      */
     protected function belongsToMany(string $name, string $entityName, ?string $pivotTableName = null, ?string $pivotLocalKey = null, ?string $pivotForeignKey = null)
     {
@@ -665,7 +664,18 @@ abstract class Mapper
         $pivotLocalKey = $pivotLocalKey ?? str_singular($localTableName) . '_id';
         $pivotForeignKey = $pivotForeignKey ?? str_singular($foreignTableName) . '_id';
 
-        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, $mapper->getConnection());
+        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, $mapper->toBase());
+    }
+
+    /**
+     * @param  string   $name
+     * @param  callable $load
+     * @param  callable $for
+     * @return void
+     */
+    public function custom(string $name, callable $load, callable $for)
+    {
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $this->toBase());
     }
 
 
