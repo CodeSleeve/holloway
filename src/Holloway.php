@@ -94,7 +94,7 @@ final class Holloway
         try {
             return $this->mappers[$entityName];
         } catch (Throwable $e) {
-            throw new UnexpectedValueException("Unknown entity $entityName, are you sure you've registered a map for this entity?", 1);
+            throw new UnexpectedValueException("Unknown entity $entityName, are you sure you've registered a mapper for this entity?", 1);
         }
     }
 

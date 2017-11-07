@@ -86,6 +86,19 @@ abstract class Mapper
     }
 
     /**
+     * @param string $method
+     * @param array  $parameters
+     */
+    public function __call(string $method , array $parameters)
+    {
+        if (in_array($method, ['increment', 'decrement'])) {
+            return $this->$method(...$parameters);
+        }
+
+        return $this->newQuery()->$method(...$parameters);
+    }
+
+    /**
      * Return the name of the entity class for this map.
      *
      * @return string
@@ -121,16 +134,6 @@ abstract class Mapper
      * @return array
      */
     abstract public function dehydrate($entity) : array;
-
-    /**
-     * @param  string   $eventName
-     * @param  callable $callback
-     * @return void
-     */
-    public static function registerEntityEvent(string $eventName, callable $callback)
-    {
-
-    }
 
     /**
      * @return string
@@ -401,19 +404,6 @@ abstract class Mapper
     }
 
     /**
-     * @param string $method
-     * @param array  $parameters
-     */
-    public function __call(string $method , array $parameters)
-    {
-        if (in_array($method, ['increment', 'decrement'])) {
-            return $this->$method(...$parameters);
-        }
-
-        return $this->newQuery()->$method(...$parameters);
-    }
-
-    /**
      * @param  iterable $entities
      * @return bool
      */
@@ -434,12 +424,12 @@ abstract class Mapper
      */
     protected function storeEntity($entity) : bool
     {
-        if ($this->firePersistanceEvent('storing', $entity) === false) {
+        if ($this->firePersistenceEvent('storing', $entity) === false) {
             return false;
         }
 
         if ($this->entityCache->has($this->getIdentifier($entity))) {
-            if ($this->firePersistanceEvent('updating', $entity) !== false) {
+            if ($this->firePersistenceEvent('updating', $entity) !== false) {
                 $keyName = $this->getPrimaryKeyName();
                 $key = $this->getIdentifier($entity);
 
@@ -448,23 +438,23 @@ abstract class Mapper
                     ->where($keyName, $key)
                     ->update($this->dehydrate($entity));
 
-                $this->firePersistanceEvent('updated', $entity);
+                $this->firePersistenceEvent('updated', $entity);
             } else {
                 return false;
             }
         } else {
-            if ($this->firePersistanceEvent('creating', $entity) !== false) {
+            if ($this->firePersistenceEvent('creating', $entity) !== false) {
                 $this->getConnection()
                     ->table($this->getTableName())
                     ->insert($this->dehydrate($entity));
 
-                $this->firePersistanceEvent('created', $entity);
+                $this->firePersistenceEvent('created', $entity);
             } else {
                 return false;
             }
         }
 
-        $this->firePersistanceEvent('stored', $entity);
+        $this->firePersistenceEvent('stored', $entity);
 
         return true;
     }
@@ -475,7 +465,7 @@ abstract class Mapper
      */
     protected function removeEntity($entity) : bool
     {
-        if ($this->firePersistanceEvent('removing', $entity) === false) {
+        if ($this->firePersistenceEvent('removing', $entity) === false) {
             return false;
         }
 
@@ -491,7 +481,7 @@ abstract class Mapper
         }
 
 
-        $this->firePersistanceEvent('removed', $entity);
+        $this->firePersistenceEvent('removed', $entity);
 
         return true;
     }
@@ -581,9 +571,23 @@ abstract class Mapper
      * @param  mixed   $entity
      * @return void
      */
-    protected function firePersistanceEvent(string $eventName, $entity)
+    protected function firePersistenceEvent(string $eventName, $entity)
     {
         return static::$eventManager->fire("$eventName: " . get_class($entity), $entity);
+    }
+
+    /**
+     * @param  string   $eventName
+     * @param  callable $callback
+     * @return void
+     */
+    public function registerPersistenceEvent(string $eventName, callable $callback)
+    {
+        if (!$callback instanceof Closure) {
+            $callback = Closure::fromCallable($callaback);
+        }
+
+        static::$eventManager->listen("$eventName: " . $this->entityClassName, $callback);
     }
 
 
