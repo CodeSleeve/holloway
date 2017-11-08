@@ -679,6 +679,14 @@ abstract class Mapper
      */
     public function custom(string $name, callable $load, callable $for)
     {
+        if (!$load instanceof Closure) {
+            $load = Closure::fromCallable($load);
+        }
+
+        if (!$for instanceof Closure) {
+            $for = Closure::fromCallable($for);
+        }
+
         $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $this->toBase());
     }
 
