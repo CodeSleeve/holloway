@@ -3,13 +3,14 @@
 namespace Holloway;
 
 use BadMethodCallException;
+use Closure;
+use Holloway\Relationships\Tree;
 use Illuminate\Contracts\Pagination\{Paginator as PaginatorContract, LengthAwarePaginator as LengthAwarePaginatorContract};
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
 use Illuminate\Support\{Collection, Str};
-use Holloway\Relationships\Tree;
-use Closure;
 
 class Builder
 {
@@ -185,6 +186,22 @@ class Builder
         }
 
         return $this->whereKey($id)->first();
+    }
+
+    /**
+     * @param  mixed $id
+     * @throws ModelNotFoundException
+     * @return mixed
+     */
+    public function findOrFail($id)
+    {
+        $entity = $this->find($id);
+
+        if (!$entity) {
+            throw (new ModelNotFoundException)->setModel($this->mapper->getAbstractEntityClassName(), $id);
+        }
+
+        return $entity;
     }
 
     /**
