@@ -7,12 +7,18 @@
         {
             "name": "Travis Bennett",
             "email": "tandrewbennett@hotmail.com"
+        }, {
+            "name": "Kelt Dockins",
+            "email": "ktd_@hotmail.com"
         }
     ],
     "require": {
         "illuminate/database": "^5.5",
         "illuminate/pagination": "^5.5",
         "php": "^7.1"
+    },
+    "require-dev": {
+        "fzaninotto/faker": "~1.4"
     },
     "autoload": {
         "psr-4": {

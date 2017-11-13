@@ -17,6 +17,9 @@ use Closure;
 
 abstract class Mapper
 {
+    const CREATED_AT = 'created_at';
+    const UPDATED_AT = 'updated_at';
+
     /**
      * @var Resolver
      */
@@ -61,6 +64,11 @@ abstract class Mapper
      * @var integer
      */
     protected $perPage = 15;
+
+    /**
+     * @var boolean
+     */
+    protected $hasTimestamps = true;
 
     /**
      * @var array
@@ -120,7 +128,7 @@ abstract class Mapper
      * @param mixed $entity
      * @return void
      */
-    abstract public function setIdentifier($entity, $value) : void;
+    abstract public function setIdentifier($entity, $value);
 
     /**
      * @param  stdClass   $record
@@ -428,15 +436,21 @@ abstract class Mapper
             return false;
         }
 
-        if ($this->entityCache->has($this->getIdentifier($entity))) {
+        $identifier = $this->getIdentifier($entity);
+
+        if ($identifier && $this->entityCache->has($identifier)) {
             if ($this->firePersistenceEvent('updating', $entity) !== false) {
                 $keyName = $this->getPrimaryKeyName();
-                $key = $this->getIdentifier($entity);
+                $attributes = $this->dehydrate($entity);
+
+                if ($this->hasTimestamps === true) {
+                    $attributes[static::UPDATED_AT] = Carbon::now();
+                }
 
                 $this->getConnection()
                     ->table($this->getTableName())
-                    ->where($keyName, $key)
-                    ->update($this->dehydrate($entity));
+                    ->where($keyName, $identifier)
+                    ->update($attributes);
 
                 $this->firePersistenceEvent('updated', $entity);
             } else {
@@ -444,9 +458,19 @@ abstract class Mapper
             }
         } else {
             if ($this->firePersistenceEvent('creating', $entity) !== false) {
-                $this->getConnection()
+                $attributes = $this->dehydrate($entity);
+
+                if ($this->hasTimestamps === true) {
+                    $timestamp = Carbon::now();
+                    $attributes[static::CREATED_AT] = $timestamp;
+                    $attributes[static::UPDATED_AT] = $timestamp;
+                }
+
+                $identifier = $this->getConnection()
                     ->table($this->getTableName())
-                    ->insert($this->dehydrate($entity));
+                    ->insertGetId($attributes);
+
+                $this->setIdentifier($entity, $identifier);
 
                 $this->firePersistenceEvent('created', $entity);
             } else {
