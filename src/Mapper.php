@@ -169,6 +169,15 @@ abstract class Mapper
     }
 
     /**
+     * @param  string  $name
+     * @return boolean
+     */
+    public function hasRelationship(string $name) : bool
+    {
+        return isset($this->relationships[$name]) ?: false;
+    }
+
+    /**
      * Begin querying a mapper with eager loading.
      *
      * @param  array|string  $relations
@@ -438,19 +447,25 @@ abstract class Mapper
 
         $identifier = $this->getIdentifier($entity);
 
-        if ($identifier && $this->entityCache->has($identifier)) {
+        if ($identifier) {
             if ($this->firePersistenceEvent('updating', $entity) !== false) {
-                $keyName = $this->getPrimaryKeyName();
                 $attributes = $this->dehydrate($entity);
+                $cached = $this->entityCache->get($identifier);
 
-                if ($this->hasTimestamps === true) {
-                    $attributes[static::UPDATED_AT] = Carbon::now();
+                // TODO: We need a check in here to compare the entity cache attributes to the current attributes on the entity.
+                // If there are no dirty attributes then there should be no reason to update the entity in storage.
+                if (true) {
+                    $keyName = $this->getPrimaryKeyName();
+
+                    if ($this->hasTimestamps === true) {
+                        $attributes[static::UPDATED_AT] = Carbon::now();
+                    }
+
+                    $this->getConnection()
+                        ->table($this->getTableName())
+                        ->where($keyName, $identifier)
+                        ->update($attributes);
                 }
-
-                $this->getConnection()
-                    ->table($this->getTableName())
-                    ->where($keyName, $identifier)
-                    ->update($attributes);
 
                 $this->firePersistenceEvent('updated', $entity);
             } else {

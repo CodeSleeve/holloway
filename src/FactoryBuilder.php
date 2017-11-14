@@ -81,6 +81,33 @@ class FactoryBuilder extends EloquentFactoryBuilder
             throw new InvalidArgumentException("Unable to locate factory with name [{$this->name}] [{$this->class}].");
         }
 
-        return $this->mapper->hydrate((object) $this->getRawAttributes($attributes), collect());
+        $record = (object) $this->getRawAttributes($attributes);
+
+        $relations = array_filter((array) $record, function($attribute) {
+            return $this->mapper->hasRelationship($attribute);
+        }, ARRAY_FILTER_USE_KEY);
+
+        return $this->mapper->hydrate($record, collect($relations));
+    }
+
+    /**
+     * Expand all attributes to their underlying values.
+     *
+     * @param  array  $attributes
+     * @return array
+     */
+    protected function expandAttributes(array $attributes)
+    {
+        foreach ($attributes as &$attribute) {
+            if (is_callable($attribute) && ! is_string($attribute)) {
+                $attribute = $attribute($attributes);
+            }
+
+            if ($attribute instanceof static) {
+                $attribute = $attribute->create()->getKey();
+            }
+        }
+
+        return $attributes;
     }
 }
