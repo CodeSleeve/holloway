@@ -508,7 +508,7 @@ abstract class Mapper
             return false;
         }
 
-        if (property_exists($this, 'isSoftDeleting') && $this->isSoftDeleting === true) {
+        if (property_exists($this, 'isSoftDeleting') && $this->isSoftDeleting === true && $this->isForceDeleting === false) {
             $this->getConnection()
                 ->table($this->getTableName())
                 ->where($this->getPrimaryKeyName(), $this->getIdentifier($entity))

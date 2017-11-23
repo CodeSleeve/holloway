@@ -14,6 +14,30 @@ trait SoftDeletes
     protected $isSoftDeleting = true;
 
     /**
+     * Indicates if the mapper is currently force deleting.
+     *
+     * @var bool
+     */
+    protected $isForceDeleting = false;
+
+    /**
+     * Force a hard delete on a soft deleted model.
+     *
+     * @param  mixed $entity
+     * @return bool|null
+     */
+    public function forceRemove($entity)
+    {
+        $this->isForceDeleting = true;
+
+        $deleted = $this->remove($entity);
+
+        $this->isForceDeleting = false;
+
+        return $deleted;
+    }
+
+    /**
      * Restore a soft-deleted mapper instance.
      *
      * @param  mixed $entity
@@ -22,9 +46,9 @@ trait SoftDeletes
     public function restore($entity)
     {
         if (is_iterable($entity)) {
-            return $this->restoreEntities($entity, $force);
+            return $this->restoreEntities($entity);
         } else {
-            return $this->restoreEntity($entity, $force);
+            return $this->restoreEntity($entity);
         }
     }
 
