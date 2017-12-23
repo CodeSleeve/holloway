@@ -209,6 +209,29 @@ class MapperTest extends TestCase
     }
 
     /** @test */
+    public function it_can_load_nested_relationships_that_have_a_null_value()
+    {
+        // given
+        $this->buildFixtures();
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);
+
+        // when
+        $pup = new Pup(8, 1, 'Moses', 'Bennett', 'white');
+        $pupMapper->store($pup);
+        $pack = $packMapper->with('pups.collar')->find(1);
+
+        // then
+        $moses = $pack->pups()->filter(function($pup) {
+            return $pup->id() == 8;
+        })
+        ->first();
+
+        $this->assertInstanceOf(Pup::class, $moses);
+        $this->assertNull($moses->collar());
+    }
+
+    /** @test */
     public function it_can_load_a_nested_relationship()
     {
         // given

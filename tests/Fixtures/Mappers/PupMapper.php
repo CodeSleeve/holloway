@@ -39,7 +39,7 @@ class PupMapper extends Mapper
      */
     public function setIdentifier($entity, $value) : void
     {
-        $entity->setId($value);
+        $entity->id($value);
     }
 
     /**

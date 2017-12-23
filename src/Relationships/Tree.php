@@ -141,14 +141,25 @@ final class Tree
 
             $record->relations = [];
 
-            foreach($data as $nodeName => $node) {
+            foreach($data as $relationshipName => $node) {
                $relationship = $node['relationship'];
                $relatedRecords = $relationship->for($record);
-               $relatedRecords = $relatedRecords instanceof Collection ? $relatedRecords : collect([$relatedRecords]);
+
+               // if ($relationshipName == 'collar') {
+               //     dd($relationship->getData());
+               // }
+
+               if ($relationship instanceof HasOne || $relationship instanceof BelongsTo) {
+                   if (!$relatedRecords) {
+                       $relatedRecords = collect();
+                   } else {
+                       $relatedRecords = collect([$relatedRecords]);
+                   }
+               }
 
                // If we still have child relations left to map then we'll recurse.
                if ($node['children']) {
-                   $record->relations[$nodeName] = $this->mapData($relatedRecords, $node['children']);
+                   $relatedRecords = $this->mapData($relatedRecords, $node['children']);
                }
 
                // Now that there are no child relations left to map, we'll need to get the mapper for the related records
@@ -159,7 +170,11 @@ final class Tree
 
                    // Next, map them into entities.
                    if ($relationship instanceof HasOne || $relationship instanceof BelongsTo) {
-                       $relatedRecords = $mapper->makeEntity($relatedRecords->first());
+                       $relatedRecords = $relatedRecords->first();
+
+                       if ($relatedRecords) {
+                           $relatedRecords = $mapper->makeEntity($relatedRecords);
+                       }
                    } else {
                        $relatedRecords = $relatedRecords->map(function($record) use ($mapper) {
                            return $mapper->makeEntity($record);
@@ -168,7 +183,7 @@ final class Tree
                }
 
                // Finally, store them into the relations array under the name (of the relationship) that were defined under.
-               $record->relations[$nodeName] = $relatedRecords;
+               $record->relations[$relationshipName] = $relatedRecords;
             }
 
             return $record;
@@ -274,12 +289,26 @@ final class Tree
                     $node = $tree[$nodeName];
                 }
 
-                $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
-                $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
+                if ($node['relationship'] instanceof Custom) {
+                    try {
+                        $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
+                        $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
 
-                $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper));
+                        $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper));
 
-                $tree[$nodeName] = $node;
+                        $tree[$nodeName] = $node;
+                    } catch (\UnexpectedValueException $e) {
+
+                    }
+                } else {
+                    $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
+                    $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
+
+                    $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper));
+
+                    $tree[$nodeName] = $node;
+                }
+
             }
         };
 

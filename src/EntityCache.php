@@ -71,6 +71,15 @@ class EntityCache
     }
 
     /**
+     * @param  string $identifier
+     * @return void
+     */
+    public function remove(string $identifier) : void
+    {
+        unset($this->items[$identifier]);
+    }
+
+    /**
      * @return void
      */
     public function flush() : void

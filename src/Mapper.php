@@ -358,32 +358,6 @@ abstract class Mapper
     }
 
     /**
-     * @param  mixed $entity
-     * @return bool
-     */
-    public function store($entity) : bool
-    {
-        if (is_iterable($entity)) {
-            return $this->storeEntities($entity);
-        } else {
-            return $this->storeEntity($entity);
-        }
-    }
-
-    /**
-     * @param  mixed $entity
-     * @return bool
-     */
-    public function remove($entity) : bool
-    {
-        if (is_iterable($entity)) {
-            return $this->removeEntities($entity);
-        } else {
-            return $this->removeEntity($entity);
-        }
-    }
-
-    /**
      * @param  stdClass $record
      * @return mixed
      */
@@ -421,6 +395,32 @@ abstract class Mapper
     }
 
     /**
+     * @param  mixed $entity
+     * @return bool
+     */
+    public function store($entity) : bool
+    {
+        if (is_iterable($entity)) {
+            return $this->storeEntities($entity);
+        } else {
+            return $this->storeEntity($entity);
+        }
+    }
+
+    /**
+     * @param  mixed $entity
+     * @return bool
+     */
+    public function remove($entity) : bool
+    {
+        if (is_iterable($entity)) {
+            return $this->removeEntities($entity);
+        } else {
+            return $this->removeEntity($entity);
+        }
+    }
+
+    /**
      * @param  iterable $entities
      * @return bool
      */
@@ -446,15 +446,15 @@ abstract class Mapper
         }
 
         $identifier = $this->getIdentifier($entity);
+        $cached = $this->entityCache->get($identifier);
 
-        if ($identifier) {
+        if ($cached) {
             if ($this->firePersistenceEvent('updating', $entity) !== false) {
                 $attributes = $this->dehydrate($entity);
-                $cached = $this->entityCache->get($identifier);
 
-                // TODO: We need a check in here to compare the entity cache attributes to the current attributes on the entity.
+                // We compare the entity cache attributes to the current attributes on the entity.
                 // If there are no dirty attributes then there should be no reason to update the entity in storage.
-                if (true) {
+                if ($attributes !== $cached) {
                     $keyName = $this->getPrimaryKeyName();
 
                     if ($this->hasTimestamps === true) {
@@ -508,17 +508,20 @@ abstract class Mapper
             return false;
         }
 
+        $identifier = $this->getIdentifier($entity);
+
         if (property_exists($this, 'isSoftDeleting') && $this->isSoftDeleting === true && $this->isForceDeleting === false) {
             $this->getConnection()
                 ->table($this->getTableName())
-                ->where($this->getPrimaryKeyName(), $this->getIdentifier($entity))
+                ->where($this->getPrimaryKeyName(), $identifier)
                 ->update([$this->getQualifiedDeletedAtColumn() => Carbon::now()]);
         } else {
             $this->getConnection()
                 ->table($this->getTableName())
-                ->delete($this->getIdentifier($entity));
+                ->delete($identifier);
         }
 
+        $this->entityCache->remove($identifier);
 
         $this->firePersistenceEvent('removed', $entity);
 
