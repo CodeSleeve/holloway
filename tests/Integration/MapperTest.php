@@ -220,6 +220,7 @@ class MapperTest extends TestCase
 
         // then
         $pack->pups()->each(function($pup) {
+            $this->assertInstanceOf(Pup::class, $pup);
             $this->assertInstanceOf(Collar::class, $pup->collar());
         });
     }
