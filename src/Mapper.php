@@ -385,7 +385,7 @@ abstract class Mapper
         });
     }
 
-     /**
+    /**
      * @param  array  $entities
      * @return Collection
      */
