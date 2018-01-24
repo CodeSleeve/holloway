@@ -71,6 +71,11 @@ abstract class Mapper
     protected $hasTimestamps = true;
 
     /**
+     * @var boolean
+     */
+    protected $isAutoIncrementing = true;
+
+    /**
      * @var array
      */
     protected $relationships = [];
@@ -446,7 +451,7 @@ abstract class Mapper
         }
 
         $identifier = $this->getIdentifier($entity);
-        $cached = $this->entityCache->get($identifier);
+        $cached = $identifier ? $this->entityCache->get($identifier) : null;
 
         if ($cached) {
             if ($this->firePersistenceEvent('updating', $entity) !== false) {
@@ -481,11 +486,14 @@ abstract class Mapper
                     $attributes[static::UPDATED_AT] = $timestamp;
                 }
 
-                $identifier = $this->getConnection()
-                    ->table($this->getTableName())
-                    ->insertGetId($attributes);
+                $table = $this->getConnection()->table($this->getTableName());
 
-                $this->setIdentifier($entity, $identifier);
+                if ($this->isAutoIncrementing) {
+                    $this->setIdentifier($entity, $table->insertGetId($attributes));
+                } else {
+                    $table->insert($attributes);
+                }
+
 
                 $this->firePersistenceEvent('created', $entity);
             } else {
