@@ -52,7 +52,7 @@ class EntityCache
      * @param string $identifier
      * @param array  $attributes
      */
-    public function add(string $identifier, array $attributes) : void
+    public function set(string $identifier, array $attributes) : void
     {
         $this->items[$identifier] = $attributes;
     }

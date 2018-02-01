@@ -15,7 +15,7 @@ class EntityCacheTest extends TestCase
         $record = ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett'];
 
         // when
-        $entityCache->add(1, $record);
+        $entityCache->set(1, $record);
 
         // then
         $this->assertSame($record, $entityCache->get(1));
@@ -33,7 +33,7 @@ class EntityCacheTest extends TestCase
         $alteredRecord1 = ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobi', 'last_name' => 'Bennett'];
 
         // when
-        $entityCache->add(1, $record1);
+        $entityCache->set(1, $record1);
         $entityCache->merge([$alteredRecord1, $record2, $record3]);
         $records = $entityCache->all();
 
@@ -49,7 +49,7 @@ class EntityCacheTest extends TestCase
         $entityCache = new EntityCache('id');
 
         // when
-        $entityCache->add(1, ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']);
+        $entityCache->set(1, ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']);
 
         // then
         $this->assertTrue($entityCache->has(1));
@@ -62,7 +62,7 @@ class EntityCacheTest extends TestCase
         $entityCache = new EntityCache('id');
 
         // when
-        $entityCache->add(1, ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']);
+        $entityCache->set(1, ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']);
         $entityCache->flush();
 
         // then
