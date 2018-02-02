@@ -422,6 +422,20 @@ abstract class Mapper
     }
 
     /**
+     * This method will by called by Holloway FactoryBuilder instances
+     * when test factory's create() method is used to persist an entity.
+     * You may override this at your convenience; By default, this method
+     * simply proxies to the store() method.
+     *
+     * @param  mixed $entity
+     * @return bool
+     */
+    public function factoryInsert($entity) : bool
+    {
+        return $this->store($entity);
+    }
+
+    /**
      * @param  iterable $entities
      * @return bool
      */
