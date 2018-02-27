@@ -117,12 +117,14 @@ final class Tree
      */
     protected function loadData(array $nodes, Collection $records)
     {
-        foreach($nodes as $nodeName => $node) {
-           $node['relationship']->load($records, $node['constraints']);
+        if ($records->count() > 0) {
+            foreach($nodes as $nodeName => $node) {
+               $node['relationship']->load($records, $node['constraints']);
 
-           if ($node['children']) {
-               $this->loadData($node['children'], $node['relationship']->getData());
-           }
+               if ($node['children']) {
+                   $this->loadData($node['children'], $node['relationship']->getData());
+               }
+            }
         }
     }
 
