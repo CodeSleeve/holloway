@@ -590,7 +590,7 @@ class Builder
     protected function enforceOrderBy()
     {
         if (empty($this->query->orders) && empty($this->query->unionOrders)) {
-            $this->orderBy($this->model->getQualifiedKeyName(), 'asc');
+            $this->orderBy($this->mapper->getQualifiedKeyName(), 'asc');
         }
     }
 
@@ -629,7 +629,7 @@ class Builder
 
         $perPage = $perPage ?: $this->mapper->getPerPage();
 
-        $results = ($total = $this->toBase()->getCountForPagination())
+        $results = ($total = $this->toBase()->getCountForPagination($columns))
                                     ? $this->forPage($page, $perPage)->get($columns)
                                     : $this->mapper->newCollection();
 
