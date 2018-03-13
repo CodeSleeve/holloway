@@ -65,12 +65,7 @@ class PackMapper extends Mapper
 
         if ($relations->count()) {
             $record->pups = $relations['pups'] ?? null;
-
-            if (isset($relations['collars'])) {
-                $record->collars = $relations['collars']->map(function($record) {
-                    return new Collar($record->id, $record->pup_id, $record->color);
-                });
-            }
+            $record->collars = $relations['collars'] ?? null;
         }
 
         $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at', 'deleted_at'])));
@@ -86,18 +81,17 @@ class PackMapper extends Mapper
     {
         $this->hasMany('pups', Pup::class, 'pack_id', 'id');    // A pack has many pups.
 
-        $this->custom('collars', function($query, $records) {
-            return $query->from('packs')
-                ->join('pups', 'packs.id', '=', 'pups.pack_id')
-                ->join('collars', 'pups.id', '=', 'collars.pup_id')
+        $this->customMany('collars', function($query, $packs) {
+            return $query->from('collars')
                 ->select('collars.*', 'pups.pack_id')
-                ->distinct()
+                ->join('pups', 'collars.pup_id', '=', 'pups.id')
+                ->join('packs', 'pups.pack_id', '=', 'packs.id')
+                ->whereIn('packs.id', $packs->pluck('id'))
                 ->get();
-        }, function($record, $data){
-            return $data
-                ->filter(function(stdClass $relatedRecord) use ($record) {
-                    return $relatedRecord->pack_id == $record->id;
-                });
+        }, function(stdClass $pack, stdClass $collar) {
+            return $pack->id = $collar->pack_id;
+        }, function(stdClass $collar){
+            return new Collar($collar->id, $collar->pup_id, $collar->color);
         });
     }
 

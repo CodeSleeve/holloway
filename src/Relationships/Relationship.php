@@ -22,4 +22,18 @@ interface Relationship
      * @return mixed
      */
     public function for(stdClass $record);
+
+    /**
+     * Return the entity class name for this relationship.
+     *
+     * @return string|null
+     */
+    public function getEntityName() : ?string;
+
+    /**
+     * Return the raw stdClass related records that have been loaded onto this relationship
+     *
+     * @return Collection|null
+     */
+    public function getData() : ?Collection;
 }

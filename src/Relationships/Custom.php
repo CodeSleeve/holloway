@@ -2,48 +2,64 @@
 
 namespace Holloway\Relationships;
 
+use Holloway\Mapper;
+use Closure;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use stdClass;
-use Closure;
 
 class Custom implements Relationship
 {
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $name;
 
-    /**
-     * @var Closure
-     */
-    protected $loadData;
+    /** @var Closure */
+    protected $load;
 
-    /**
-     * @var Closure
-     */
-    protected $parseData;
+    /** @var Closure */
+    protected $for;
 
-    /**
-     * @var QueryBuilder
-     */
+    /** @var Closure|null */
+    protected $map;
+
+    /** @var Closure */
+    protected $tap;
+
+    /** @var string|null */
+    protected $entityName;
+
+    /** @var bool */
+    protected $shouldLimitToOne;
+
+    /** @var QueryBuilder */
     protected $query;
 
-    /**
-     * @var Collection|null
-     */
+    /** @var Collection|null */
     protected $data;
 
     /**
      * @param string       $name
-     * @param Closure      $loadData
-     * @param Closure      $parseData
+     * @param Closure      $load
+     * @param Closure      $for
+     * @param [type]       $mapOrEntityName
+     * @param bool         $shouldLimitToOne
      * @param QueryBuilder $query
      */
-    public function __construct(string $name, Closure $loadData, Closure $parseData, QueryBuilder $query)
+    public function __construct(string $name, Closure $load, Closure $for, $mapOrEntityName, bool $shouldLimitToOne, QueryBuilder $query)
     {
-        $this->loadData = $loadData;
-        $this->parseData = $parseData;
+        $this->name = $name;
+        $this->load = $load;
+        $this->for = $for;
+
+        if (is_string($mapOrEntityName) && $mapOrEntityName !== '') {
+            $this->entityName = $mapOrEntityName;
+        } else if ($mapOrEntityName instanceof Closure) {
+            $this->map = $mapOrEntityName;
+        } else {
+            throw new \InvalidArgumentException('A custom relationship must contain either a Closure for mapping results or the entity class name of the mapper to be used.');
+        }
+
+        $this->shouldLimitToOne = $shouldLimitToOne;
         $this->query = $query;
     }
 
@@ -54,9 +70,9 @@ class Custom implements Relationship
      */
     public function load(Collection $records)
     {
-        $loadData = $this->loadData;
+        $load = $this->load;
 
-        $this->data = $loadData($this->query->newQuery(), $records);
+        $this->data = $load($this->query->newQuery(), $records);
     }
 
     /**
@@ -67,9 +83,38 @@ class Custom implements Relationship
      */
     public function for(stdClass $record)
     {
-        $parseData = $this->parseData;
+        $for = $this->for;
 
-        return $parseData($record, $this->data);
+        return $this->data
+            ->filter(function($relatedRecord) use ($record, $for) {
+                return $for($record, $relatedRecord);
+            });
+    }
+
+    /**
+     * Return the entity class name for this relationship.
+     *
+     * @return string|null
+     */
+    public function getEntityName() : ?string
+    {
+        return $this->entityName;
+    }
+
+    /**
+     * @return Closure|null
+     */
+    public function getMap() : ?Closure
+    {
+        return $this->map;
+    }
+
+    /**
+     * @return bool
+     */
+    public function shouldLimitToOne() : bool
+    {
+        return $this->shouldLimitToOne;
     }
 
     /**

@@ -147,10 +147,6 @@ final class Tree
                $relationship = $node['relationship'];
                $relatedRecords = $relationship->for($record);
 
-               // if ($relationshipName == 'collar') {
-               //     dd($relationship->getData());
-               // }
-
                if ($relationship instanceof HasOne || $relationship instanceof BelongsTo) {
                    if (!$relatedRecords) {
                        $relatedRecords = collect();
@@ -165,13 +161,13 @@ final class Tree
                }
 
                // Now that there are no child relations left to map, we'll need to get the mapper for the related records
-               // and map them into entities. However, if the relationship is a custom on, we'll skip the mapping step
-               // and just store the raw records on as the relaion since custom relationships don't have a mapper.
-               if (!$relationship instanceof Custom) {
+               // and map them into entities. However, if the relationship is a custom one, we'll skip the mapping step
+               // and just store the raw records as the relation since custom relationships don't have a mapper.
+               if ($relationship->getEntityName()) {
                    $mapper = Holloway::instance()->getMapper($relationship->getEntityName());
 
                    // Next, map them into entities.
-                   if ($relationship instanceof HasOne || $relationship instanceof BelongsTo) {
+                   if ($relationship instanceof HasOne || $relationship instanceof BelongsTo || ($relationship instanceof Custom && $relationship->shouldLimitToOne())) {
                        $relatedRecords = $relatedRecords->first();
 
                        if ($relatedRecords) {
@@ -181,6 +177,13 @@ final class Tree
                        $relatedRecords = $relatedRecords->map(function($record) use ($mapper) {
                            return $mapper->makeEntity($record);
                        });
+                   }
+               } else {
+                   // This is a custom relationship and we need to invoke its map() method.
+                   $relatedRecords = $relatedRecords->map($relationship->getMap());
+
+                   if ($relationship->shouldLimitToOne()) {
+                       $relatedRecords = $relatedRecords->first();
                    }
                }
 

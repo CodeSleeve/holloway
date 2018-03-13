@@ -738,10 +738,11 @@ abstract class Mapper
      * @param  string    $name
      * @param  callable  $load
      * @param  callable  $for
-     * @param  string    $entityClassName
+     * @param  mixed     $entityClassName
+     * @param  bool      $limitOne
      * @return void
      */
-    public function custom(string $name, callable $load, callable $for, string $entityClassName = '')
+    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false)
     {
         /**
          * ALL OF THIS NEEDS REVISION: RIGHT NOW WE DON'T HAVE THE ABILITY TO LOAD NESTED RELATIONS FROM
@@ -762,7 +763,39 @@ abstract class Mapper
             $for = Closure::fromCallable($for);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $this->newQuery()->toBase(), $entityClassName);
+        if (is_callable($mapOrEntityName) && !$mapOrEntityName instanceof Closure) {
+            $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
+        }
+
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, $this->newQuery()->toBase());
+    }
+
+    /**
+     * Return a collection of related records (Alias for the custom() method).
+     *
+     * @param  string           $name
+     * @param  callable         $load
+     * @param  callable         $for
+     * @param  string|callable  $mapOrEntityName
+     * @return void
+     */
+    public function customMany(string $name, callable $load, callable $for, $mapOrEntityName)
+    {
+        return $this->custom($name, $load, $for, $mapOrEntityName);
+    }
+
+    /**
+     * Return a single related record.
+     *
+     * @param  string           $name
+     * @param  callable         $load
+     * @param  callable         $for
+     * @param  string|callable  $mapOrEntityName
+     * @return void
+     */
+    public function customOne(string $name, callable $load, callable $for, $mapOrEntityName)
+    {
+        return $this->custom($name, $load, $for, $mapOrEntityName, true);
     }
 
 
