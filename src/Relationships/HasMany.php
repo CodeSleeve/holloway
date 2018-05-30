@@ -25,6 +25,7 @@ class HasMany extends HasOneOrMany
         return $this->data
             ->filter(function(stdClass $relatedRecord) use ($record) {
                 return $relatedRecord->{$this->foreignKeyName} == $record->{$this->localKeyName};
-            });
+            })
+            ->values();
     }
 }

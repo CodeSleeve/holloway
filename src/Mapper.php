@@ -2,7 +2,6 @@
 
 namespace Holloway;
 
-use Carbon\Carbon;
 use Holloway\Entities\Entity;
 use Holloway\Functions\Arr;
 use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
@@ -14,6 +13,7 @@ use InvalidArgumentException;
 use Throwable;
 use stdClass;
 use Closure;
+use DateTime;
 
 abstract class Mapper
 {
@@ -473,7 +473,12 @@ abstract class Mapper
                     $keyName = $this->getPrimaryKeyName();
 
                     if ($this->hasTimestamps === true) {
-                        $attributes[static::UPDATED_AT] = Carbon::now();
+                        $now = new DateTime;
+                        $attributes[static::UPDATED_AT] = $now;
+
+                        if (method_exists($this, 'setUpdatedAtTimestampOnEntity')) {
+                            $this->setUpdatedAtTimestampOnEntity($entity, $now);
+                        }
                     }
 
                     $this->getConnection()
@@ -493,9 +498,17 @@ abstract class Mapper
                 $attributes = $this->dehydrate($entity);
 
                 if ($this->hasTimestamps === true) {
-                    $timestamp = Carbon::now();
-                    $attributes[static::CREATED_AT] = $timestamp;
-                    $attributes[static::UPDATED_AT] = $timestamp;
+                    $now = new DateTime;
+                    $attributes[static::CREATED_AT] = $now;
+                    $attributes[static::UPDATED_AT] = $now;
+
+                    if (method_exists($this, 'setCreatedAtTimestampOnEntity')) {
+                        $this->setCreatedAtTimestampOnEntity($entity, $now);
+                    }
+
+                    if (method_exists($this, 'setUpdatedAtTimestampOnEntity')) {
+                        $this->setUpdatedAtTimestampOnEntity($entity, $now);
+                    }
                 }
 
                 $table = $this->getConnection()->table($this->getTableName());
@@ -535,7 +548,7 @@ abstract class Mapper
             $this->getConnection()
                 ->table($this->getTableName())
                 ->where($this->getPrimaryKeyName(), $identifier)
-                ->update([$this->getQualifiedDeletedAtColumn() => Carbon::now()]);
+                ->update([$this->getQualifiedDeletedAtColumn() => new DateTime]);
         } else {
             $this->getConnection()
                 ->table($this->getTableName())

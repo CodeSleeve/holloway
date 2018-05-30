@@ -102,7 +102,7 @@ final class Tree
      */
     public function initialize()
     {
-        if (!$this->data) {
+       if (!$this->data) {
            $this->data = $this->buildTree($this->loads, $this->rootMapper);
        }
     }
@@ -262,12 +262,11 @@ final class Tree
      *
      * @param  array  $loads
      * @param  Mapper $mapper
+     * @param  array  $tree
      * @return array
      */
-    protected function buildTree(array $loads, Mapper $mapper) : array
+    protected function buildTree(array $loads, Mapper $mapper, array $tree = []) : array
     {
-        $tree = [];
-
         foreach ($loads as $name => $constraints) {
             if (mb_strpos($name, '.') === false) {
                 $nodeName = $name;
@@ -294,26 +293,14 @@ final class Tree
                     $node = $tree[$nodeName];
                 }
 
-                if ($node['relationship'] instanceof Custom) {
-                    try {
-                        $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
-                        $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
-
-                        $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper));
-
-                        $tree[$nodeName] = $node;
-                    } catch (\UnexpectedValueException $e) {
-
-                    }
-                } else {
+                if ($node['relationship']->getEntityName()) {
                     $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
                     $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
 
-                    $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper));
+                    $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper, $node['children']));
 
                     $tree[$nodeName] = $node;
                 }
-
             }
         };
 

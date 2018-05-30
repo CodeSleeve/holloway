@@ -146,6 +146,7 @@ class BelongsToMany extends BaseRelationship
         return $this->data
             ->filter(function(stdClass $relatedRecord) use ($pivotRecords) {
                 return in_array($relatedRecord->{$this->foreignKeyName}, $pivotRecords);
-            });
+            })
+            ->values();
     }
 }
