@@ -36,4 +36,9 @@ interface Relationship
      * @return Collection|null
      */
     public function getData() : ?Collection;
+
+    /**
+     * @return string
+     */
+    public function getName() : string;
 }

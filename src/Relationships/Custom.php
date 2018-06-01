@@ -126,4 +126,12 @@ class Custom implements Relationship
     {
         return $this->data;
     }
+
+    /**
+     * @return string
+     */
+    public function getName() : string
+    {
+        return $this->name;
+    }
 }

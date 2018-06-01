@@ -97,4 +97,12 @@ abstract class BaseRelationship implements Relationship
     {
         return $this->data;
     }
+
+    /**
+     * @return string
+     */
+    public function getName() : string
+    {
+        return $this->name;
+    }
 }
