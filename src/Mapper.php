@@ -461,7 +461,11 @@ abstract class Mapper
         }
 
         $identifier = $this->getIdentifier($entity);
-        $cached = $identifier ? $this->entityCache->get($identifier) : null;
+        $cached = null;
+
+        if ($identifier) {
+            $cached = $this->entityCache->get($identifier) ?: $this->find($identifier);
+        }
 
         if ($cached) {
             if ($this->firePersistenceEvent('updating', $entity) !== false) {
