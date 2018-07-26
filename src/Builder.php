@@ -198,7 +198,7 @@ class Builder
         $entity = $this->find($id);
 
         if (!$entity) {
-            throw (new ModelNotFoundException)->setModel($this->mapper->getAbstractEntityClassName(), $id);
+            throw (new ModelNotFoundException)->setModel($this->mapper->getEntityClassName(), $id);
         }
 
         return $entity;

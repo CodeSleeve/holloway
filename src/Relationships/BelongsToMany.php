@@ -137,7 +137,7 @@ class BelongsToMany extends BaseRelationship
     {
         $pivotRecords = $this->pivotData
             ->filter(function($pivotRecord) use ($record) {
-                return $pivotRecord->{$this->pivotLocalKeyName} = $record->{$this->localKeyName};
+                return $pivotRecord->{$this->pivotLocalKeyName} === $record->{$this->localKeyName};
             })
             ->pluck($this->pivotForeignKeyName)
             ->values()
