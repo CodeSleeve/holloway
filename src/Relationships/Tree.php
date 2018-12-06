@@ -103,7 +103,8 @@ final class Tree
     public function initialize()
     {
        if (!$this->data) {
-           $this->data = $this->buildTree($this->loads, $this->rootMapper);
+           //$this->data = $this->buildTree($this->loads, $this->rootMapper);
+           $this->data = $this->buildTree();
        }
     }
 
@@ -117,13 +118,30 @@ final class Tree
      */
     protected function loadData(array $nodes, Collection $records)
     {
-        if ($records->count() > 0) {
-            foreach($nodes as $nodeName => $node) {
-               $node['relationship']->load($records, $node['constraints']);
+        // if ($records->count() > 0) {
+        //     foreach($nodes as $nodeName => $node) {
+        //        $node['relationship']->load($records, $node['constraints']);
 
-               if ($node['children']) {
-                   $this->loadData($node['children'], $node['relationship']->getData());
-               }
+        //        if ($node['children']) {
+        //            $this->loadData($node['children'], $node['relationship']->getData());
+        //        }
+        //     }
+        // }
+
+        $nodeStack = [];
+        $nodeStack[] = [$nodes, $records];
+
+        while ($nodeStack) {
+            [$nodes, $records] = array_shift($nodeStack);
+
+            if ($records->count() > 0) {
+                foreach($nodes as $nodeName => $node) {
+                    $node['relationship']->load($records, $node['constraints']);
+
+                    if ($node['children']) {
+                        $nodeStack[] = [$node['children'], $node['relationship']->getData()];
+                    }
+                }
             }
         }
     }
@@ -265,44 +283,99 @@ final class Tree
      * @param  array  $tree
      * @return array
      */
-    protected function buildTree(array $loads, Mapper $mapper, array $tree = []) : array
+    // protected function buildTree(array $loads, Mapper $mapper, array $tree = []) : array
+    // {
+    //     foreach ($loads as $name => $constraints) {
+    //         if (mb_strpos($name, '.') === false) {
+    //             $nodeName = $name;
+
+    //             $node = [
+    //                 'name'         => $nodeName,
+    //                 'constraints'  => $constraints,
+    //                 'relationship' => $mapper->getRelationship($nodeName),
+    //                 'children'     => []
+    //             ];
+
+    //             $tree[$nodeName] = $node;
+    //         } else {
+    //             $nodeName = explode('.', $name)[0];
+
+    //             if (!array_key_exists($nodeName, $tree)) {
+    //                 $node = [
+    //                     'name'         => $nodeName,
+    //                     'constraints'  => $constraints,
+    //                     'relationship' => $mapper->getRelationship($nodeName),
+    //                     'children'     => []
+    //                 ];
+    //             } else {
+    //                 $node = $tree[$nodeName];
+    //             }
+
+    //             if ($node['relationship']->getEntityName()) {
+    //                 $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
+    //                 $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
+
+    //                 $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper, $node['children']));
+
+    //                 $tree[$nodeName] = $node;
+    //             }
+    //         }
+    //     };
+
+    //     return $tree;
+    // }
+
+    protected function buildTree()
     {
-        foreach ($loads as $name => $constraints) {
-            if (mb_strpos($name, '.') === false) {
-                $nodeName = $name;
+        $tree = [];
 
-                $node = [
-                    'name'         => $nodeName,
-                    'constraints'  => $constraints,
-                    'relationship' => $mapper->getRelationship($nodeName),
-                    'children'     => []
-                ];
+        foreach ($this->loads as $name => $constraints) {
+            $stack = [[&$tree, $name, $this->rootMapper, $constraints]];
 
-                $tree[$nodeName] = $node;
-            } else {
-                $nodeName = explode('.', $name)[0];
+            while ($stack) {
+                // [$subTree, $name, $mapper, $constraints] = array_shift($stack);    // This line of code will work once we're on php 7.3 and we won't need the element variable below.
+                $element = array_shift($stack);
+                $subTree = &$element[0];
+                $name = $element[1];
+                $mapper = $element[2];
+                $constraints = $element[3];
 
-                if (!array_key_exists($nodeName, $tree)) {
+                if (mb_strpos($name, '.') === false) {
+                    $nodeName = $name;
+
                     $node = [
                         'name'         => $nodeName,
                         'constraints'  => $constraints,
                         'relationship' => $mapper->getRelationship($nodeName),
                         'children'     => []
                     ];
+
+                    $subTree[$nodeName] = $node;
                 } else {
-                    $node = $tree[$nodeName];
-                }
+                    $nodeName = explode('.', $name)[0];
 
-                if ($node['relationship']->getEntityName()) {
-                    $childMapper = $this->holloway->getMapper($node['relationship']->getEntityName());
-                    $remainingLoads = [str_replace("$nodeName.", '', $name) => function() {}];
+                    if (!array_key_exists($nodeName, $subTree)) {
+                        $node = [
+                            'name'         => $nodeName,
+                            'constraints'  => $constraints,
+                            'relationship' => $mapper->getRelationship($nodeName),
+                            'children'     => []
+                        ];
 
-                    $node['children'] = array_merge($node['children'], $this->buildTree($remainingLoads, $childMapper, $node['children']));
+                        $subTree[$nodeName] = $node;
+                    } else {
+                        $node = $subTree[$nodeName];
+                    }
 
-                    $tree[$nodeName] = $node;
+                    $stack[] = [
+                        &$subTree[$nodeName]['children'],
+                        str_replace("$nodeName.", '', $name),
+                        $this->holloway->getMapper($node['relationship']->getEntityName()),
+                        function() {}
+                    ];
                 }
             }
-        };
+        }
 
         return $tree;
     }
