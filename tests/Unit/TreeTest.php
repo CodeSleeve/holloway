@@ -30,8 +30,8 @@ class TreeTest extends TestCase
         $mockPackMapper->shouldReceive('getRelationship')->once()->with('pups')->andReturn($mockPupRelationship);
 
         $holloway->setMappers([
-            Pack::class   => $mockPackMapper,
-            Pup::class    => $mockPupMapper
+            Pack::class  => $mockPackMapper,
+            Pup::class   => $mockPupMapper
         ]);
 
         $tree = new Tree($mockPackMapper);
