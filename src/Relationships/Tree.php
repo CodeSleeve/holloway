@@ -310,12 +310,15 @@ final class Tree
                         $node = $subTree[$nodeName];
                     }
 
-                    $stack[] = [
-                        &$subTree[$nodeName]['children'],
-                        str_replace("$nodeName.", '', $name),
-                        $this->holloway->getMapper($node['relationship']->getEntityName()),
-                        function() {}
-                    ];
+                    // If the relationship isn't a custom one (e.g customMany, etc) we'll push it onto the stack
+                    if ($node['relationship']->getEntityName()) {
+                        $stack[] = [
+                            &$subTree[$nodeName]['children'],
+                            str_replace("$nodeName.", '', $name),
+                            $this->holloway->getMapper($node['relationship']->getEntityName()),
+                            function() {}
+                        ];
+                    }
                 }
             }
         }
