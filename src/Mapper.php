@@ -653,7 +653,7 @@ abstract class Mapper
      */
     protected function firePersistenceEvent(string $eventName, $entity)
     {
-        return static::$eventManager->fire("$eventName: " . get_class($entity), $entity);
+        return static::$eventManager->dispatch("$eventName: " . get_class($entity), $entity);
     }
 
     /**

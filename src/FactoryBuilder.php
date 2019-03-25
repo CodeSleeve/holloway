@@ -17,18 +17,20 @@ class FactoryBuilder extends EloquentFactoryBuilder
     /**
      * Create an new builder instance.
      *
-     * @param  Mapper  $mapper
-     * @param  string  $class
-     * @param  string  $name
-     * @param  array   $definitions
-     * @param  Faker   $faker
-     * @return void
+     * @param Mapper $mapper
+     * @param [type] $class
+     * @param [type] $name
+     * @param array  $definitions
+     * @param array  $states
+     * @param array  $afterMaking
+     * @param array  $afterCreating
+     * @param Faker  $faker
      */
-    public function __construct(Mapper $mapper, $class, $name, array $definitions, array $states, Faker $faker)
+    public function __construct(Mapper $mapper, $class, $name, array $definitions, array $states, array $afterMaking, array $afterCreating, Faker $faker)
     {
         $this->mapper = $mapper;
 
-        parent::__construct($class, $name, $definitions, $states, $faker);
+        parent::__construct($class, $name, $definitions, $states, $afterMaking, $afterCreating, $faker);
     }
 
     /**

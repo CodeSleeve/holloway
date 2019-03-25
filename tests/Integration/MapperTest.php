@@ -507,7 +507,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_update_an_existing_entity_and_fire_storing_updating_updated_and_stored_persistence_events_when_doing_so()
+    public function it_can_update_an_existing_entity_and_dispatch_storing_updating_updated_and_stored_persistence_events_when_doing_so()
     {
         // given
         $this->buildFixtures();
@@ -517,10 +517,10 @@ class MapperTest extends TestCase
         $tobi->firstName('Toby');
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('fire')->once()->with('storing: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('fire')->once()->with('updating: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('fire')->once()->with('updated: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('fire')->once()->with('stored: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('storing: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('updating: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('updated: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('stored: Tests\Fixtures\Entities\Pup', $tobi);
         $mapper->setEventManager($mockDispatcher);
 
         // when
@@ -533,7 +533,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_remove_an_existing_entity_and_fire_removing_and_removed_persistence_events_when_doing_so()
+    public function it_can_remove_an_existing_entity_and_dispatch_removing_and_removed_persistence_events_when_doing_so()
     {
         // given
         $this->buildFixtures();
@@ -541,8 +541,8 @@ class MapperTest extends TestCase
         $tobi = $mapper->find(1);
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('fire')->once()->with('removing: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('fire')->once()->with('removed: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('removing: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('removed: Tests\Fixtures\Entities\Pup', $tobi);
 
         $mapper->setEventManager($mockDispatcher);
 

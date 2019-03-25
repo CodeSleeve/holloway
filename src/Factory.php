@@ -53,7 +53,7 @@ class Factory extends EloquentFactory
     {
         $mapper = $this->manager->getMapper($class);
 
-        return new FactoryBuilder($mapper, $class, $name, $this->definitions, $this->states, $this->faker);
+        return new FactoryBuilder($mapper, $class, $name, $this->definitions, $this->states, $this->afterMaking, $this->afterCreating, $this->faker);
     }
 
 }
