@@ -3,7 +3,6 @@
 namespace Tests\Fixtures\Entities;
 
 use Carbon\Carbon;
-use Holloway\Entities\Entity;
 
 class Pup extends Entity
 {

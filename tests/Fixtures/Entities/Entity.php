@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway\Entities;
+namespace Tests\Fixtures\Entities;
 
 use Carbon\Carbon;
 

@@ -3,7 +3,6 @@
 namespace Tests\Fixtures\Entities;
 
 use Illuminate\Support\Collection;
-use Holloway\Entities\Entity;
 
 class Pack extends Entity
 {

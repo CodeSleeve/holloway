@@ -2,8 +2,6 @@
 
 namespace Tests\Fixtures\Entities;
 
-use Holloway\Entities\Entity;
-
 class Collar extends Entity
 {
     /**
