@@ -17,9 +17,6 @@
         "illuminate/pagination": ">= 5.8",
         "php": ">= 7.3"
     },
-    "require-dev": {
-        "fzaninotto/faker": "~1.4"
-    },
     "autoload": {
         "psr-4": {
             "Holloway\\": "src/"
@@ -34,6 +31,7 @@
         {"type": "path", "url": "./psr"}
     ],
     "require-dev": {
+        "fzaninotto/faker": "~1.4",
         "mockery/mockery": "~1.0",
         "illuminate/events": "^5.5"
     },
