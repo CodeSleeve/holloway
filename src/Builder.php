@@ -10,7 +10,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
-use Illuminate\Support\{Collection, Str};
+use Illuminate\Support\Collection;
 
 class Builder
 {

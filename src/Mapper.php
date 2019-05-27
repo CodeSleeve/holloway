@@ -2,15 +2,12 @@
 
 namespace Holloway;
 
-use Holloway\Entities\Entity;
 use Holloway\Functions\Arr;
 use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
-use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
 use Illuminate\Support\{Collection, Str};
 use InvalidArgumentException;
-use Throwable;
 use stdClass;
 use Closure;
 use DateTime;

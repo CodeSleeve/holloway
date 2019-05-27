@@ -2,7 +2,6 @@
 
 namespace Holloway;
 
-use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,7 +16,6 @@ class HollowayServiceProvider extends ServiceProvider
     {
         Mapper::setConnectionResolver($this->app['db']);
 
-        // Need to figure out how we want to bootstrap this
         Mapper::setEventManager(new Dispatcher);
     }
 

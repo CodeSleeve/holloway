@@ -2,8 +2,6 @@
 
 namespace Holloway;
 
-use Carbon\Carbon;
-
 trait SoftDeletes
 {
     /**
