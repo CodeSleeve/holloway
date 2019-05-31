@@ -1,15 +1,15 @@
 <?php
 
-namespace Tests\Unit;
+namespace CodeSleeve\Tests\Holloway\Unit;
 
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
-use Holloway\Mapper;
-use Holloway\Relationships\Tree;
-use Holloway\Relationships\{HasMany, HasOne, BelongsToMany};
-use Holloway\Holloway;
-use Tests\Fixtures\Entities\{Pack, Pup, Collar, PupFood};
-use Tests\Fixtures\Mappers\{PackMapper, PupMapper, CollarMapper, PupFoodMapper};
+use CodeSleeve\Holloway\Mapper;
+use CodeSleeve\Holloway\Relationships\Tree;
+use CodeSleeve\Holloway\Relationships\{HasMany, HasOne, BelongsToMany};
+use CodeSleeve\Holloway\Holloway;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pack, Pup, Collar, PupFood};
+use CodeSleeve\Tests\Holloway\Fixtures\Mappers\{PackMapper, PupMapper, CollarMapper, PupFoodMapper};
 
 class TreeTest extends TestCase
 {

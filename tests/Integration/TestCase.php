@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Integration;
+namespace CodeSleeve\Tests\Holloway\Integration;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Illuminate\Database\Capsule\Manager as Capsule;

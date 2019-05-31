@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Fixtures\Repositories;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Repositories;
 
-use Holloway\Holloway;
+use CodeSleeve\Holloway\Holloway;
 use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\Entity;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\Entity;
 use Illuminate\Contracts\Pagination\Paginator;
 
 abstract class Repository

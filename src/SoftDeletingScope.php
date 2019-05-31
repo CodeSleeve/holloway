@@ -1,9 +1,9 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 use Carbon\Carbon;
-use Holloway\Scope;
+use CodeSleeve\Holloway\Scope;
 
 class SoftDeletingScope implements Scope
 {

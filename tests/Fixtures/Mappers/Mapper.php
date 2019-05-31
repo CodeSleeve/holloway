@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Fixtures\Mappers;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
-use Holloway\Mapper as BaseMapper;
+use CodeSleeve\Holloway\Mapper as BaseMapper;
 use Illuminate\Support\Collection;
 use stdClass;
 

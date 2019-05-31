@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Fixtures\Mappers;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
 use Carbon\Carbon;
-use Holloway\SoftDeletes;
+use CodeSleeve\Holloway\SoftDeletes;
 use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\{Pack, Pup, Collar};
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pack, Pup, Collar};
 use stdClass;
 
 class PackMapper extends Mapper

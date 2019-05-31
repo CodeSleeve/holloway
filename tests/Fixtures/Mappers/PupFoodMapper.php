@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Fixtures\Mappers;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\{Company, Pup, PupFood};
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Company, Pup, PupFood};
 use stdClass;
 
 class PupFoodMapper extends Mapper

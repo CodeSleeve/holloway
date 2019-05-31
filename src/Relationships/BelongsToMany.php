@@ -1,11 +1,11 @@
 <?php
 
-namespace Holloway\Relationships;
+namespace CodeSleeve\Holloway\Relationships;
 
 use Closure;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
-use Holloway\Mapper;
+use CodeSleeve\Holloway\Mapper;
 use stdClass;
 
 class BelongsToMany extends BaseRelationship

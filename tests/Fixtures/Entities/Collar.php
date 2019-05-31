@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Fixtures\Entities;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Entities;
 
 class Collar extends Entity
 {

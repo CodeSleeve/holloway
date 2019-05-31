@@ -1,11 +1,11 @@
 <?php
 
-namespace Holloway\Relationships;
+namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
-use Holloway\Functions\Str;
-use Holloway\Mapper;
-use Holloway\Holloway;
+use CodeSleeve\Holloway\Functions\Str;
+use CodeSleeve\Holloway\Mapper;
+use CodeSleeve\Holloway\Holloway;
 
 final class Tree
 {

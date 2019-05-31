@@ -1,10 +1,10 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 use BadMethodCallException;
 use Closure;
-use Holloway\Relationships\Tree;
+use CodeSleeve\Holloway\Relationships\Tree;
 use Illuminate\Contracts\Pagination\{Paginator as PaginatorContract, LengthAwarePaginator as LengthAwarePaginatorContract};
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

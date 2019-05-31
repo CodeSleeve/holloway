@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway\Functions;
+namespace CodeSleeve\Holloway\Functions;
 
 class Str
 {

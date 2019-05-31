@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway\Relationships;
+namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
 use Closure;

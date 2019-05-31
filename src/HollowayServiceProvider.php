@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;

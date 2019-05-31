@@ -1,14 +1,12 @@
 <?php
 
-namespace Tests\Integration;
+namespace CodeSleeve\Tests\Holloway\Integration;
 
-use Carbon\Carbon;
-use Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany, Custom};
-use Holloway\{Holloway, Entity, Mapper};
-use Illuminate\Contracts\Pagination;
-use Tests\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
-use Tests\Fixtures\Mappers\{UserMapper, PupMapper, PupFoodMapper, CollarMapper, PackMapper, CompanyMapper};
-use Tests\Helpers\CanBuildTestFixtures;
+use CodeSleeve\Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany, Custom};
+use CodeSleeve\Holloway\Holloway;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
+use CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper;
+use CodeSleeve\Tests\Holloway\Helpers\CanBuildTestFixtures;
 use Mockery as m;
 
 class MapperTest extends TestCase
@@ -22,12 +20,12 @@ class MapperTest extends TestCase
     {
         // Set up our Holloway instance and register our fixture mappers.
         Holloway::instance()->register([
-            'Tests\Fixtures\Mappers\CollarMapper',
-            'Tests\Fixtures\Mappers\CompanyMapper',
-            'Tests\Fixtures\Mappers\PackMapper',
-            'Tests\Fixtures\Mappers\PupFoodMapper',
-            'Tests\Fixtures\Mappers\PupMapper',
-            'Tests\Fixtures\Mappers\UserMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CollarMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CompanyMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PackMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupFoodMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\UserMapper',
         ]);
     }
 
@@ -517,10 +515,10 @@ class MapperTest extends TestCase
         $tobi->firstName('Toby');
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('storing: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('updating: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('updated: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('stored: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('storing: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('updating: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('updated: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('stored: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
         $mapper->setEventManager($mockDispatcher);
 
         // when
@@ -541,8 +539,8 @@ class MapperTest extends TestCase
         $tobi = $mapper->find(1);
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('removing: Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('removed: Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('removing: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('removed: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
 
         $mapper->setEventManager($mockDispatcher);
 

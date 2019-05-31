@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Fixtures\Mappers;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\{Pup, User};
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pup, User};
 use stdClass;
 
 class UserMapper extends Mapper

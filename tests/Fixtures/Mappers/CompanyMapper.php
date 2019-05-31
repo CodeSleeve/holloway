@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Fixtures\Mappers;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
 use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\{Company, PupFood};
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Company, PupFood};
 use stdClass;
 
 class CompanyMapper extends Mapper

@@ -19,12 +19,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Holloway\\": "src/"
+            "CodeSleeve\\Holloway\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "CodeSleeve\\Tests\\Holloway\\": "tests/"
         }
     },
     "repositories": [
@@ -35,5 +35,10 @@
         "mockery/mockery": "~1.0",
         "illuminate/events": "^5.5"
     },
-    "minium-stability": "stable"
+    "minium-stability": "stable",
+    "laravel": {
+        "providers": [
+            "CodeSleeve\\Holloway\\HollowayServiceProvider"
+        ]
+    }
 }

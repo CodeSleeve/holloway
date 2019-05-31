@@ -1,10 +1,8 @@
 <?php
 
-namespace Tests\Fixtures\Mappers;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
-use Illuminate\Support\Collection;
-use Tests\Fixtures\Entities\{Collar, Pup};
-use stdClass;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Collar, Pup};
 
 class CollarMapper extends Mapper
 {

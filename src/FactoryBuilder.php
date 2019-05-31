@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 use Illuminate\Support\Collection;
 use Faker\Generator as Faker;
@@ -18,8 +18,8 @@ class FactoryBuilder extends EloquentFactoryBuilder
      * Create an new builder instance.
      *
      * @param Mapper $mapper
-     * @param [type] $class
-     * @param [type] $name
+     * @param string $class
+     * @param string $name
      * @param array  $definitions
      * @param array  $states
      * @param array  $afterMaking

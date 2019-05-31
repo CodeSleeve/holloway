@@ -1,12 +1,12 @@
 <?php
 
-use Holloway\{Holloway, Mapper, SoftDeletingScope};
+use CodeSleeve\Holloway\{Mapper, SoftDeletingScope};
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Facade;
-use Tests\Fixtures\Mappers\PackMapper;
-use Tests\Helpers\MigrateFixtureTables;
+use CodeSleeve\Tests\Holloway\Fixtures\Mappers\PackMapper;
+use CodeSleeve\Tests\Holloway\Helpers\MigrateFixtureTables;
 
 date_default_timezone_set('UTC');
 

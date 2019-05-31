@@ -1,12 +1,11 @@
 <?php
 
-namespace Tests\Integration;
+namespace CodeSleeve\Tests\Holloway\Integration;
 
-use Holloway\{Holloway, Mapper};
-use Tests\Fixtures\Entities\Pup;
-use Tests\Fixtures\Mappers\PupMapper;
-use Tests\Fixtures\Repositories\PupRepository;
-use Tests\Helpers\CanBuildTestFixtures;
+use CodeSleeve\Holloway\Holloway;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup;
+use CodeSleeve\Tests\Holloway\Fixtures\Repositories\PupRepository;
+use CodeSleeve\Tests\Holloway\Helpers\CanBuildTestFixtures;
 
 class RepositoryTest extends TestCase
 {
@@ -19,12 +18,12 @@ class RepositoryTest extends TestCase
     {
         // Set up our Holloway instance and register our fixture mappers.
         Holloway::instance()->register([
-            'Tests\Fixtures\Mappers\CollarMapper',
-            'Tests\Fixtures\Mappers\CompanyMapper',
-            'Tests\Fixtures\Mappers\PackMapper',
-            'Tests\Fixtures\Mappers\PupFoodMapper',
-            'Tests\Fixtures\Mappers\PupMapper',
-            'Tests\Fixtures\Mappers\UserMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CollarMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CompanyMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PackMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupFoodMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper',
+            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\UserMapper',
         ]);
     }
 

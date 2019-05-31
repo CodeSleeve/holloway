@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 interface Scope
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit;
+namespace CodeSleeve\Tests\Holloway\Unit;
 
 use PHPUnit\Framework\TestCase;
-use Holloway\EntityCache;
+use CodeSleeve\Holloway\EntityCache;
 
 class EntityCacheTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Helpers;
+namespace CodeSleeve\Tests\Holloway\Helpers;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;

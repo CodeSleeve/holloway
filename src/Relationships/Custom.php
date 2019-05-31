@@ -1,8 +1,8 @@
 <?php
 
-namespace Holloway\Relationships;
+namespace CodeSleeve\Holloway\Relationships;
 
-use Holloway\Mapper;
+use CodeSleeve\Holloway\Mapper;
 use Closure;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;

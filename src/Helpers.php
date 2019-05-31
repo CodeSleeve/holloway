@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 /**
  * Create a model factory builder for a given class, name, and amount.

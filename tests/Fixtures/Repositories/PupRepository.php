@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Fixtures\Repositories;
+namespace CodeSleeve\Tests\Holloway\Fixtures\Repositories;
 
-use Tests\Fixtures\Entities\Pup;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup;
 
 class PupRepository extends Repository
 {

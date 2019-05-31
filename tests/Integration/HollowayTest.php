@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\Integration;
+namespace CodeSleeve\Tests\Holloway\Integration;
 
-use Holloway\Mapper;
-use Holloway\Holloway;
-use Tests\Fixtures\Entities\Pup;
-use Tests\Fixtures\Mappers\{PupMapper, CollarMapper, PackMapper, PupFoodMapper, CompanyMapper};
+use CodeSleeve\Holloway\Mapper;
+use CodeSleeve\Holloway\Holloway;
+use CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup;
+use CodeSleeve\Tests\Holloway\Fixtures\Mappers\{PupMapper, CollarMapper, PackMapper, PupFoodMapper, CompanyMapper};
 
 class HollowayTest extends TestCase
 {

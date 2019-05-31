@@ -1,8 +1,8 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
-use Holloway\Functions\Arr;
+use CodeSleeve\Holloway\Functions\Arr;
 use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};

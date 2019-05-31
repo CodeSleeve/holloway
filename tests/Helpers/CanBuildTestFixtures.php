@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Helpers;
+namespace CodeSleeve\Tests\Holloway\Helpers;
 
-use Holloway\Holloway;
-use Holloway\Mapper;
+use CodeSleeve\Holloway\Holloway;
+use CodeSleeve\Holloway\Mapper;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 trait CanBuildTestFixtures

@@ -1,6 +1,6 @@
 <?php
 
-namespace Holloway;
+namespace CodeSleeve\Holloway;
 
 use Faker\Generator as Faker;
 use Illuminate\Database\Eloquent\Factory as EloquentFactory;
