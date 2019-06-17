@@ -208,6 +208,21 @@ class Builder
     }
 
     /**
+     * @throws ModelNotFoundException
+     * @return mixed
+     */
+    public function firstOrFail()
+    {
+        $entity = $this->first();
+
+        if (!$entity) {
+            throw (new ModelNotFoundException)->setModel($this->mapper->getEntityClassName());
+        }
+
+        return $entity;
+    }
+
+    /**
      * @param  array  $ids
      * @return \Illuminate\Support\Collection
      */
