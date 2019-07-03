@@ -606,6 +606,26 @@ abstract class Mapper
     }
 
     /**
+     * Remove a registered global scope on the mapper.
+     *
+     * @param string $scope
+     * @throws \InvalidArgumentException
+     * @return void
+     */
+    public static function removeGlobalScope(string $scope)
+    {
+        if (static::hasGlobalScope($scope)) {
+            if (is_string($scope)) {
+                static::$globalScopes[static::class][$scope] = null;
+            } elseif ($scope instanceof Scope) {
+                static::$globalScopes[static::class][get_class($scope)] = null;
+            } else {
+                throw new InvalidArgumentException('Global scope must be a string name or an instance of Scope.');
+            }
+        }
+    }
+
+    /**
      * Determine if a model has a global scope.
      *
      * @param  Scope|string  $scope
