@@ -778,17 +778,6 @@ abstract class Mapper
      */
     public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false)
     {
-        /**
-         * ALL OF THIS NEEDS REVISION: RIGHT NOW WE DON'T HAVE THE ABILITY TO LOAD NESTED RELATIONS FROM
-         * A CUSTOM DEFINED RELATIONSHIP. THIS IS USED IN SCENARIOS WHERE THE ENTITY THAT'S BEING CREATED
-         * FROM THE CUSTOM RELATIONSHIP DOES ACTUALLY HAVE A MAPPER DEFINED FOR IT BUT JUST NEEDS TO GET ITS
-         * DATA LOADED FROM A CUSTOM QUERY, NOT A QUERY THAT'S GENERATED FROM THAT MAPPER. WE DIDN'T HAVE THIS
-         * EDGE CASE WITH VENDOR INVOICE LINE ITEMS.
-         *
-         * FOR THIS SCENARIO, WE NEED TO MAKE THIS MORE FLEXIBLE SO THAT WE CAN SOMEHOW ALLOW DEVELOPERS TO USE THE EXISTING MAPPER FOR THE ENTITY
-         * IN THE DEFINITION OF THE CUSTOM RELATIONSHIPS SO THAT THE DATA CAN BE LOADED IN A CUSTOM WAY, BUT THE MAPPER
-         * WILL BE USED/INTROPSECTED LIKE A NORMAL MAPPER AND HAVE ITS DEFINED RELATIONSHIPS LOADED/PROCESSED INTO THE TREE (SOMEHOW?)
-         */
         if (!$load instanceof Closure) {
             $load = Closure::fromCallable($load);
         }
@@ -801,7 +790,7 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, $this->newQuery()->toBase());
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, $this->newQueryWithoutScopes()->toBase());
     }
 
     /**
