@@ -5,7 +5,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Facade;
-use CodeSleeve\Tests\Holloway\Fixtures\Mappers\PackMapper;
+use CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper;
 use CodeSleeve\Tests\Holloway\Helpers\MigrateFixtureTables;
 
 date_default_timezone_set('UTC');
@@ -39,5 +39,5 @@ MigrateFixtureTables::up();
 Mapper::setConnectionResolver($capsule->getDatabaseManager());
 Mapper::setEventManager(new Dispatcher);
 
-// Add the soft deleting scope to the pack mapper
-PackMapper::addGlobalScope(new SoftDeletingScope);
+// Add the soft deleting scope to the pup mapper
+PupMapper::addGlobalScope(new SoftDeletingScope);

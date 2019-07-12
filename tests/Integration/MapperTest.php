@@ -573,15 +573,36 @@ class MapperTest extends TestCase
     {
         // given
         $this->buildFixtures();
-        $mapper = Holloway::instance()->getMapper(Pack::class);    // The pack mapper fixture uses soft deletes
-        $bennettPack = $mapper->find(1);
+        $mapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture uses soft deletes
+        $tobi = $mapper->find(1);
 
         // when
-        $mapper->remove($bennettPack);
+        $mapper->remove($tobi);
 
         // then
-        $this->assertCount(1, $mapper->all());
-        $this->assertCount(2, $mapper->withTrashed()->get());
+        $this->assertCount(5, $mapper->all());
+        $this->assertCount(6, $mapper->withTrashed()->get());
+    }
+
+    /** @test */
+    function it_doesnt_load_soft_deleted_entities_when_querying_relationships()
+    {
+        // given
+        $this->buildFixtures();
+
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture uses soft deletes
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $tobi = $pupMapper->find(1);
+        $pupMapper->remove($tobi);
+        $bennetPack = $packMapper->with('pups')->find(1);
+
+
+        // then
+        $this->assertCount(3, $bennetPack->pups());
+        $this->assertCount(5, $pupMapper->get());
+        $this->assertCount(6, $pupMapper->withTrashed()->get());
     }
 
     /** @test */

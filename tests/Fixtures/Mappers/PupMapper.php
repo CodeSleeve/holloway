@@ -5,10 +5,13 @@ namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pup, Collar, Pack, PupFood};
+use CodeSleeve\Holloway\SoftDeletes;
 use stdClass;
 
 class PupMapper extends Mapper
 {
+    use SoftDeletes;
+
     /**
      * string $table
      */
@@ -73,7 +76,7 @@ class PupMapper extends Mapper
             $record->pack = $relations['pack'] ?? null;
         }
 
-        $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at'])));
+        $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at', 'deleted_at'])));
         $entity->setTimestamps(Carbon::createFromFormat('Y-m-d H:i:s', $record->created_at), Carbon::createFromFormat('Y-m-d H:i:s', $record->updated_at));
 
         return $entity;

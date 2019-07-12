@@ -3,15 +3,12 @@
 namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
 
 use Carbon\Carbon;
-use CodeSleeve\Holloway\SoftDeletes;
 use Illuminate\Support\Collection;
 use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pack, Pup, Collar};
 use stdClass;
 
 class PackMapper extends Mapper
 {
-    use SoftDeletes;
-
     /**
      * string $table
      */
@@ -68,7 +65,7 @@ class PackMapper extends Mapper
             $record->collars = $relations['collars'] ?? null;
         }
 
-        $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at', 'deleted_at'])));
+        $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at'])));
         $entity->setTimestamps(Carbon::createFromFormat('Y-m-d H:i:s', $record->created_at), Carbon::createFromFormat('Y-m-d H:i:s', $record->updated_at));
 
         return $entity;
