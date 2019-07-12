@@ -72,7 +72,7 @@ class Custom implements Relationship
     {
         $load = $this->load;
 
-        $this->data = $load($this->query->newQuery(), $records);
+        $this->data = $load((clone $this->query), $records);
     }
 
     /**
