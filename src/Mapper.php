@@ -681,7 +681,7 @@ abstract class Mapper
     public function registerPersistenceEvent(string $eventName, callable $callback)
     {
         if (!$callback instanceof Closure) {
-            $callback = Closure::fromCallable($callaback);
+            $callback = Closure::fromCallable($callback);
         }
 
         static::$eventManager->listen("$eventName: " . $this->entityClassName, $callback);
