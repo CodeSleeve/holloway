@@ -703,7 +703,7 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $foreignKey ?? str_singular($this->getTableName()) . '_id';
+        $foreignKey = $foreignKey ?? Str::singular($this->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
         $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
@@ -720,7 +720,7 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $foreignKey ?? str_singular($this->getTableName()) . '_id';
+        $foreignKey = $foreignKey ?? Str::singular($this->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
         $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
@@ -737,7 +737,7 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $foreignKey ?? str_singular($mapper->getTableName()) . '_id';
+        $foreignKey = $foreignKey ?? Str::singular($mapper->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
         $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
@@ -762,8 +762,8 @@ abstract class Mapper
         $foreignTableName = $mapper->getTableName();
 
         $pivotTableName = $pivotTableName ?? implode('_',  Arr::sort([$localTableName, $foreignTableName]));
-        $pivotLocalKey = $pivotLocalKey ?? str_singular($localTableName) . '_id';
-        $pivotForeignKey = $pivotForeignKey ?? str_singular($foreignTableName) . '_id';
+        $pivotLocalKey = $pivotLocalKey ?? Str::singular($localTableName) . '_id';
+        $pivotForeignKey = $pivotForeignKey ?? Str::singular($foreignTableName) . '_id';
 
         $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, $mapper->toBase());
     }
