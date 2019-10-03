@@ -232,7 +232,7 @@ class Builder
             return collect();
         }
 
-        return $this->whereKey($ids)->get($columns);
+        return $this->whereKey($ids)->get();
     }
 
     /**
