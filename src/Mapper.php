@@ -159,11 +159,16 @@ abstract class Mapper
 
     /**
      * @param  string $name
+     * @throws \Holloway\Exceptions\UnknownRelationshipException
      * @return Relationships\Relationship
      */
     public function getRelationship(string $name) : Relationships\Relationship
     {
-        return $this->relationships[$name];
+        if (isset($this->relationships[$name])) {
+            return $this->relationships[$name];
+        } else {
+            throw new Exceptions\UknownRelationshipException("The $name relationship hasn't been defined on the " . get_class($this) . " mapper.", 1);
+        }
     }
 
     /**
