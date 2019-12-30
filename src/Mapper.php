@@ -16,6 +16,7 @@ abstract class Mapper
 {
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
+    const DEFAULT_TIME_ZONE = 'UTC';
 
     /**
      * @var Resolver
@@ -479,7 +480,7 @@ abstract class Mapper
                     $keyName = $this->getPrimaryKeyName();
 
                     if ($this->hasTimestamps === true) {
-                        $now = new DateTime;
+                        $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
                         $attributes[static::UPDATED_AT] = $now;
 
                         if (method_exists($this, 'setUpdatedAtTimestampOnEntity')) {
@@ -504,7 +505,7 @@ abstract class Mapper
                 $attributes = $this->dehydrate($entity);
 
                 if ($this->hasTimestamps === true) {
-                    $now = new DateTime;
+                    $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
                     $attributes[static::CREATED_AT] = $now;
                     $attributes[static::UPDATED_AT] = $now;
 
