@@ -43,7 +43,7 @@ class FactoryBuilder extends EloquentFactoryBuilder
     {
         $results = $this->make($attributes);
 
-        $this->mapper->factoryInsert($results);
+        $this->mapper->store($results);
 
         return $results;
     }
@@ -79,17 +79,15 @@ class FactoryBuilder extends EloquentFactoryBuilder
      */
     protected function makeInstance(array $attributes = [])
     {
-        if (! isset($this->definitions[$this->class][$this->name])) {
+        if (!isset($this->definitions[$this->class][$this->name])) {
             throw new InvalidArgumentException("Unable to locate factory with name [{$this->name}] [{$this->class}].");
         }
 
-        $record = (object) $this->getRawAttributes($attributes);
+        $attributes = $this->getRawAttributes($attributes);
+        $record = $this->mapper->instantiateEntity($attributes);
+        $record->mapperFill($attributes);
 
-        $relations = array_filter((array) $record, function($attribute) {
-            return $this->mapper->hasRelationship($attribute);
-        }, ARRAY_FILTER_USE_KEY);
-
-        return $this->mapper->hydrate($record, collect($relations));
+        return $record;
     }
 
     /**

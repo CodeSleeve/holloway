@@ -143,6 +143,15 @@ abstract class Mapper
     abstract public function dehydrate($entity) : array;
 
     /**
+     * @param  array $attributes
+     * @return mixed
+     */
+    public function instantiateEntity(array $attributes)
+    {
+        return $this->instantiator->instantiate($this->entityClassName);
+    }
+
+    /**
      * @return string
      */
     public function getCreatedAtColumnName() : string
