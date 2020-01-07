@@ -43,7 +43,7 @@ class FactoryBuilder extends EloquentFactoryBuilder
     {
         $results = $this->make($attributes);
 
-        $this->mapper->store($results);
+        $this->mapper->factoryInsert($results);
 
         return $results;
     }
