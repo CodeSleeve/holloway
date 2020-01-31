@@ -10,7 +10,7 @@ abstract class TestCase extends BaseTestCase
     /**
      * @return void
      */
-    public function setUp()
+    public function setUp() : void
     {
         Capsule::beginTransaction();
     }
@@ -18,7 +18,7 @@ abstract class TestCase extends BaseTestCase
     /**
      * @return void
      */
-    public function tearDown()
+    public function tearDown() : void
     {
         Capsule::rollBack();
     }

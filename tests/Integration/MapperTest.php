@@ -16,7 +16,7 @@ class MapperTest extends TestCase
     /**
      * @return  void
      */
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         // Set up our Holloway instance and register our fixture mappers.
         Holloway::instance()->register([
