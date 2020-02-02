@@ -1,85 +1,30 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Entities;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
 class PupFood extends Entity
 {
-    /**
-     * @var int
-     */
-    protected $id;
+    protected string $name;
+    protected ?Company $company;
+    protected int $company_id;
 
     /**
-     * @var string
-     */
-    protected $name;
-
-    /**
-     * @var Company
-     */
-    protected $company;
-
-    /**
-     * @param int    $id
-     * @param int    $companyId
+     * @param Company $company
      * @param string $name
      */
-    public function __construct(int $id, int $companyId, string $name)
+    public function __construct(Company $company, string $name)
     {
-        $this->id = $id;
-        $this->companyId = $companyId;
+        $this->setCompany($company);
         $this->name = $name;
     }
 
     /**
-     * @param iterable $relationships
-     */
-    public function setRelationships(iterable $relationships)
-    {
-        if (isset($relationships['company'])) {
-            $this->setCompany($relationships['company']);
-        }
-    }
-
-    /**
-     * @return int
-     */
-    public function id() : int
-    {
-        return $this->id;
-    }
-
-    /**
-     * @return companyId
-     */
-    public function companyId() : int
-    {
-        return $this->companyId;
-    }
-
-    /**
-     * @param int $value
+     * @param string $name
      * @return void
      */
-    public function setId(int $value) : void
+    public function setNam(string $name)
     {
-        $this->id = $value;
-    }
-
-    /**
-     * @return string
-     */
-    public function name() : string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @return Company
-     */
-    public function company() : company
-    {
-        return $this->company;
+        $this->name = $name;
     }
 
     /**
@@ -88,5 +33,6 @@ class PupFood extends Entity
     public function setCompany(Company $company)
     {
         $this->company = $company;
+        $this->company_id = $company->id;
     }
 }

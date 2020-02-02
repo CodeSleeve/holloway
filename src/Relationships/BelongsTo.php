@@ -28,7 +28,7 @@ class BelongsTo extends BaseRelationship
     {
         $constraints = $constraints ?: function() {};
 
-        $this->data = (clone $this->query)
+        $this->data = $this->query
             ->from($this->tableName)
             ->whereIn($this->localKeyName, $records->pluck($this->foreignKeyName)->values()->all())
             ->where($constraints)

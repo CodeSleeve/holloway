@@ -1,12 +1,9 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Unit;
+namespace CodeSleeve\Holloway\Tests\Unit;
 
-use Illuminate\Database\Query\Builder as QueryBuilder;
-use Mockery as m;
 use PHPUnit\Framework\TestCase;
 use CodeSleeve\Holloway\Functions\Str;
-use CodeSleeve\Holloway\Builder;
 
 class StrTest extends TestCase
 {

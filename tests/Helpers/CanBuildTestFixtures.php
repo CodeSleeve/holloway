@@ -1,6 +1,6 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Helpers;
+namespace CodeSleeve\Holloway\Tests\Helpers;
 
 use CodeSleeve\Holloway\Holloway;
 use CodeSleeve\Holloway\Mapper;
@@ -39,7 +39,7 @@ trait CanBuildTestFixtures
     protected function buildFixtures()
     {
         Capsule::table('companies')->insert([
-            ['id' => 1, 'name' => 'Diamond Pet Foods', 'founded_at' => '2015-10-05', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 1, 'name' => 'Diamond Pet Foods and Accessories', 'founded_at' => '2015-10-05', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
             ['id' => 2, 'name' => 'Blue Pet Products', 'founded_at' => '2012-11-27', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]
         ]);
 
@@ -69,12 +69,12 @@ trait CanBuildTestFixtures
         ]);
 
         Capsule::table('collars')->insert([
-            ['id' => 1, 'pup_id' => 1, 'color' => 'black', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 2, 'pup_id' => 2, 'color' => 'blue', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 3, 'pup_id' => 3, 'color' => 'red', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 4, 'pup_id' => 4, 'color' => 'leopard print', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 5, 'pup_id' => 5, 'color' => 'orange', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 6, 'pup_id' => 6, 'color' => 'orange', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]
+            ['id' => 1, 'pup_id' => 1, 'company_id' => 1, 'color' => 'black', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 2, 'pup_id' => 2, 'company_id' => 1, 'color' => 'blue', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 3, 'pup_id' => 3, 'company_id' => 1, 'color' => 'red', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 4, 'pup_id' => 4, 'company_id' => 1, 'color' => 'leopard print', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 5, 'pup_id' => 5, 'company_id' => 1, 'color' => 'orange', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+            ['id' => 6, 'pup_id' => 6, 'company_id' => 1, 'color' => 'orange', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]
         ]);
 
         Capsule::table('pups_users')->insert([
@@ -91,6 +91,16 @@ trait CanBuildTestFixtures
             ['pup_id' => 3, 'user_id' => 2],
             ['pup_id' => 4, 'user_id' => 2],
             ['pup_id' => 5, 'user_id' => 2],
+        ]);
+
+        Capsule::table('surrogate_pups_users')->insert([
+            // Travis
+            ['pup_id' => 5, 'user_id' => 1],
+            ['pup_id' => 6, 'user_id' => 1],
+
+            // Marilyn
+            ['pup_id' => 5, 'user_id' => 2],
+            ['pup_id' => 6, 'user_id' => 2]
         ]);
 
         Capsule::table('pups_pup_foods')->insert([

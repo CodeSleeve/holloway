@@ -5,8 +5,8 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Facade;
-use CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper;
-use CodeSleeve\Tests\Holloway\Helpers\MigrateFixtureTables;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper;
+use CodeSleeve\Holloway\Tests\Helpers\MigrateFixtureTables;
 
 date_default_timezone_set('UTC');
 

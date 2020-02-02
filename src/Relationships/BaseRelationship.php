@@ -63,6 +63,14 @@ abstract class BaseRelationship implements Relationship
     }
 
     /**
+     * @return void
+     */
+    public function __clone()
+    {
+        $this->query = clone $this->query;
+    }
+
+    /**
      * Fetch and store the related records for this relationship.
      *
      * @param  Collection    $records

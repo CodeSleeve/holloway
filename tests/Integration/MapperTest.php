@@ -1,12 +1,12 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Integration;
+namespace CodeSleeve\Holloway\Tests\Integration;
 
 use CodeSleeve\Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany, Custom};
 use CodeSleeve\Holloway\Holloway;
-use CodeSleeve\Tests\Holloway\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
-use CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper;
-use CodeSleeve\Tests\Holloway\Helpers\CanBuildTestFixtures;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper;
+use CodeSleeve\Holloway\Tests\Helpers\CanBuildTestFixtures;
 use Mockery as m;
 
 class MapperTest extends TestCase
@@ -20,12 +20,12 @@ class MapperTest extends TestCase
     {
         // Set up our Holloway instance and register our fixture mappers.
         Holloway::instance()->register([
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CollarMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CompanyMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PackMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupFoodMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\UserMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\CompanyMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\PackMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\UserMapper',
         ]);
     }
 
@@ -165,7 +165,7 @@ class MapperTest extends TestCase
 
         // then
         $this->assertInstanceOf($entityClassName, $pupFood);
-        $this->assertEquals(1, $pupFood->id());
+        $this->assertEquals(1, $pupFood->id);
     }
 
     /** @test */
@@ -215,18 +215,18 @@ class MapperTest extends TestCase
         $pupMapper = Holloway::instance()->getMapper(Pup::class);
 
         // when
-        $pup = new Pup(8, 1, 'Moses', 'Bennett', 'white');
+        $bennettPack = $packMapper->find(1);
+        $pup = new Pup($bennettPack, 'Moses', 'Bennett', 'white');
         $pupMapper->store($pup);
         $pack = $packMapper->with('pups.collar')->find(1);
 
         // then
-        $moses = $pack->pups()->filter(function($pup) {
-            return $pup->id() == 8;
-        })
-        ->first();
+        $moses = $pack->pups
+            ->filter(fn($pup) => $pup->first_name == 'Moses')
+            ->first();
 
         $this->assertInstanceOf(Pup::class, $moses);
-        $this->assertNull($moses->collar());
+        $this->assertNull($moses->collar);
     }
 
     /** @test */
@@ -240,9 +240,9 @@ class MapperTest extends TestCase
         $pack = $mapper->with('pups.collar')->find(1);
 
         // then
-        $pack->pups()->each(function($pup) {
+        $pack->pups->each(function($pup) {
             $this->assertInstanceOf(Pup::class, $pup);
-            $this->assertInstanceOf(Collar::class, $pup->collar());
+            $this->assertInstanceOf(Collar::class, $pup->collar);
         });
     }
 
@@ -260,8 +260,8 @@ class MapperTest extends TestCase
         $packs->each(function($pack) {
             $this->assertInstanceOf(Pack::class, $pack);
 
-            $pack->pups()->each(function($pup) {
-                $this->assertInstanceOf(Collar::class, $pup->collar());
+            $pack->pups->each(function($pup) {
+                $this->assertInstanceOf(Collar::class, $pup->collar);
             });
         });
     }
@@ -277,7 +277,7 @@ class MapperTest extends TestCase
         $pup = $mapper->with('collar')->find(1);
 
         // then
-        $this->assertInstanceOf(Collar::class, $pup->collar());
+        $this->assertInstanceOf(Collar::class, $pup->collar);
     }
 
     /** @test */
@@ -292,8 +292,8 @@ class MapperTest extends TestCase
 
         // then
         $pups->each(function($pup) {
-            $this->assertInstanceOf(Collar::class, $pup->collar());
-            $this->assertEquals($pup->collar()->pupId(), $pup->id());
+            $this->assertInstanceOf(Collar::class, $pup->collar);
+            $this->assertEquals($pup->collar->pup_id, $pup->id);
         });
     }
 
@@ -308,9 +308,9 @@ class MapperTest extends TestCase
         $pack = $mapper->with('pups')->find(1);
 
         // then
-        $pack->pups()->each(function($pup) use ($pack) {
+        $pack->pups->each(function($pup) use ($pack) {
             $this->assertInstanceOf(Pup::class, $pup);
-            $this->assertEquals($pup->packId(), $pack->id());
+            $this->assertEquals($pup->pack_id, $pack->id);
         });
     }
 
@@ -326,9 +326,9 @@ class MapperTest extends TestCase
 
         // then
         $packs->each(function($pack) {
-            $pack->pups()->each(function($pup) use ($pack) {
+            $pack->pups->each(function($pup) use ($pack) {
                 $this->assertInstanceOf(Pup::class, $pup);
-                $this->assertEquals($pup->packId(), $pack->id());
+                $this->assertEquals($pup->pack_id, $pack->id);
             });
         });
     }
@@ -344,7 +344,7 @@ class MapperTest extends TestCase
         $pup = $mapper->with('pack')->find(1);
 
         // then
-        $this->assertInstanceOf(Pack::class, $pup->pack());
+        $this->assertInstanceOf(Pack::class, $pup->pack);
     }
 
     /** @test */
@@ -359,7 +359,30 @@ class MapperTest extends TestCase
 
         // then
         $pups->each(function($pup) {
-            $this->assertInstanceOf(Pack::class, $pup->pack());
+            $this->assertInstanceOf(Pack::class, $pup->pack);
+        });
+    }
+
+    /** @test */
+    public function it_can_load_the_same_relationship_from_multiple_paths_at_the_same_time()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(User::class);
+
+        // when
+        $travis = $mapper->with('pups.collar', 'surrogatePups.collar')->find(1);
+
+        // then
+        $this->assertCount(5, $travis->pups);
+        $this->assertCount(2, $travis->surrogatePups);
+        $this->assertEquals('black', $travis->pups->where('first_name', 'Tobias')->first()->collar->color);
+        $this->assertEquals('red', $travis->pups->where('first_name', 'Tucker')->first()->collar->color);
+        $this->assertEquals('blue', $travis->pups->where('first_name', 'Tyler')->first()->collar->color);
+        $this->assertEquals('leopard print', $travis->pups->where('first_name', 'Trinka')->first()->collar->color);
+
+        $travis->surrogatePups->each(function($pup) {
+            $this->assertEquals('orange', $pup->collar->color);
         });
     }
 
@@ -374,8 +397,8 @@ class MapperTest extends TestCase
         $pack = $mapper->with('collars')->first();
 
         // then
-        $this->assertInstanceOf(Collar::class, $pack->collars()->first());
-        $this->assertCount(4, $pack->collars());
+        $this->assertInstanceOf(Collar::class, $pack->collars->first());
+        $this->assertCount(4, $pack->collars);
     }
 
     /** @test */
@@ -390,7 +413,7 @@ class MapperTest extends TestCase
 
         // then
         $pack->each(function($pack) {
-            $pack->collars()->each(function($collar) {
+            $pack->collars->each(function($collar) {
                 $this->assertInstanceOf(Collar::class, $collar);
             });
         });
@@ -407,7 +430,7 @@ class MapperTest extends TestCase
         $pupFood = $mapper->with('company')->find(1);
 
         // then
-        $this->assertInstanceOf(Company::class, $pupFood->company());
+        $this->assertInstanceOf(Company::class, $pupFood->company);
     }
 
     /** @test */
@@ -422,7 +445,7 @@ class MapperTest extends TestCase
 
         // then
         $pupFoods->each(function($pupFood) {
-            $this->assertInstanceOf(Company::class, $pupFood->company());
+            $this->assertInstanceOf(Company::class, $pupFood->company);
         });
     }
 
@@ -437,7 +460,7 @@ class MapperTest extends TestCase
         $user = $mapper->with('pups')->find(1);
 
         // then
-        $user->pups()->each(function($pup) use ($user) {
+        $user->pups->each(function($pup) {
             $this->assertInstanceOf(Pup::class, $pup);
         });
     }
@@ -454,7 +477,7 @@ class MapperTest extends TestCase
 
         // then
         $users->each(function($user) {
-            $user->pups()->each(function($pup) use ($user) {
+            $user->pups->each(function($pup) {
                 $this->assertInstanceOf(Pup::class, $pup);
             });
         });
@@ -465,17 +488,19 @@ class MapperTest extends TestCase
     {
         // given
         $this->buildFixtures();
-        $mapper = Holloway::instance()->getMapper(Pup::class);
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+        $adamsPack = $packMapper->find(2);
 
         // when
-        $pup = new Pup(7, 2, 'Snowball', 'Adams', 'white');
-        $mapper->store($pup);
-        $snowball = $mapper->find(7);
+        $pup = new Pup($adamsPack, 'Snowball', 'Adams', 'white');
+        $pupMapper->store($pup);
+        $snowball = $pupMapper->where('first_name', 'Snowball')->first();
 
         // then
         $this->assertInstanceOf(Pup::class, $snowball);
-        $this->assertEquals('Snowball', $pup->firstName());
-        $this->assertEquals('Adams', $pup->lastName());
+        $this->assertEquals('Snowball', $pup->first_name);
+        $this->assertEquals('Adams', $pup->last_name);
     }
 
     /** @test */
@@ -483,25 +508,28 @@ class MapperTest extends TestCase
     {
         // given
         $this->buildFixtures();
-        $mapper = Holloway::instance()->getMapper(Pup::class);
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+        $bennettPack = $packMapper->find(1);
+        $adamsPack = $packMapper->find(2);
 
         // when
-        $pup1 = new Pup(7, 2, 'Snowball', 'Adams', 'white');
-        $pup2 = new Pup(8, 1, 'Moses', 'Bennett', 'white');
+        $pup1 = new Pup($adamsPack, 'Snowball', 'Adams', 'white');
+        $pup2 = new Pup($bennettPack, 'Moses', 'Bennett', 'white');
 
-        $mapper->store([$pup1, $pup2]);
+        $pupMapper->store([$pup1, $pup2]);
 
-        $snowball = $mapper->find(7);
-        $moses = $mapper->find(8);
+        $snowball = $pupMapper->where('first_name', 'Snowball')->first();
+        $moses = $pupMapper->where('first_name', 'Moses')->first();
 
         // then
         $this->assertInstanceOf(Pup::class, $snowball);
-        $this->assertEquals('Snowball', $pup1->firstName());
-        $this->assertEquals('Adams', $pup1->lastName());
+        $this->assertEquals('Snowball', $snowball->first_name);
+        $this->assertEquals('Adams', $snowball->last_name);
 
         $this->assertInstanceOf(Pup::class, $moses);
-        $this->assertEquals('Moses', $pup2->firstName());
-        $this->assertEquals('Bennett', $pup2->lastName());
+        $this->assertEquals('Moses', $moses->first_name);
+        $this->assertEquals('Bennett', $moses->last_name);
     }
 
     /** @test */
@@ -512,13 +540,13 @@ class MapperTest extends TestCase
         $mapper = Holloway::instance()->getMapper(Pup::class);
 
         $tobi = $mapper->find(1);
-        $tobi->firstName('Toby');
+        $tobi->setFirstName('Toby');
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('storing: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('updating: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('updated: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('stored: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('storing: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('updating: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('updated: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('stored: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
         $mapper->setEventManager($mockDispatcher);
 
         // when
@@ -527,7 +555,7 @@ class MapperTest extends TestCase
 
         // then
         $this->assertInstanceOf(Pup::class, $tobias);
-        $this->assertEquals('Toby', $tobi->firstName());
+        $this->assertEquals('Toby', $tobias->first_name);
     }
 
     /** @test */
@@ -539,8 +567,8 @@ class MapperTest extends TestCase
         $tobi = $mapper->find(1);
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('removing: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('removed: CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('removing: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('removed: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
 
         $mapper->setEventManager($mockDispatcher);
 
@@ -600,7 +628,7 @@ class MapperTest extends TestCase
 
 
         // then
-        $this->assertCount(3, $bennetPack->pups());
+        $this->assertCount(3, $bennetPack->pups);
         $this->assertCount(5, $pupMapper->get());
         $this->assertCount(6, $pupMapper->withTrashed()->get());
     }

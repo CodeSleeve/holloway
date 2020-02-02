@@ -1,11 +1,9 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Mappers;
 
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pack, Pup, Collar};
 use stdClass;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Pack, Pup, Collar};
 
 class PackMapper extends Mapper
 {
@@ -18,58 +16,6 @@ class PackMapper extends Mapper
      * @var string
      */
     protected $entityClassName = Pack::class;
-
-    /**
-     * Return the identifier (primary key) for a given entity.
-     *
-     * @param  mixed $entity
-     * @return int
-     */
-    public function getIdentifier($entity) : int
-    {
-        return $entity->id();
-    }
-
-    /**
-     * Set the identifier (primary key) for a given entity.
-     *
-     * @param mixed $entity
-     * @param mixed $value
-     * @return void
-     */
-    public function setIdentifier($entity, $value) : void
-    {
-        $this->id = $value;
-    }
-
-    /**
-     * @param  mixed $entity
-     * @return array
-     */
-    public function dehydrate($entity) : array
-    {
-        return [];
-    }
-
-    /**
-     * @param  stdClass   $record
-     * @param  Collection $relations
-     * @return mixed
-     */
-    public function hydrate(stdClass $record, Collection $relations)
-    {
-        $className = $this->entityClassName;
-
-        if ($relations->count()) {
-            $record->pups = $relations['pups'] ?? null;
-            $record->collars = $relations['collars'] ?? null;
-        }
-
-        $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at'])));
-        $entity->setTimestamps(Carbon::createFromFormat('Y-m-d H:i:s', $record->created_at), Carbon::createFromFormat('Y-m-d H:i:s', $record->updated_at));
-
-        return $entity;
-    }
 
     /**
      * @return  void
@@ -85,11 +31,9 @@ class PackMapper extends Mapper
                 ->join('packs', 'pups.pack_id', '=', 'packs.id')
                 ->whereIn('packs.id', $packs->pluck('id'))
                 ->get();
-        }, function(stdClass $pack, stdClass $collar) {
-            return $pack->id = $collar->pack_id;
-        }, function(stdClass $collar){
-            return new Collar($collar->id, $collar->pup_id, $collar->color);
-        });
+        }, 
+        fn(stdClass $pack, stdClass $collar) => $pack->id = $collar->pack_id, 
+        Collar::class);
     }
 
     /**

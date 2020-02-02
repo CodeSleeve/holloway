@@ -1,13 +1,37 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Mappers;
 
-use CodeSleeve\Holloway\Mapper as BaseMapper;
-use Illuminate\Support\Collection;
+use Carbon\CarbonImmutable;
 use stdClass;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use CodeSleeve\Holloway\Mapper as BaseMapper;
+use Doctrine\Instantiator\Instantiator;
 
 abstract class Mapper extends BaseMapper
 {
+    /** @var Instantiator */
+    protected $instantiator;
+    
+    /**
+     * @param Instantiator|null $instantiator
+     */
+    public function __construct(?Instantiator $instantiator = null)
+    {
+        parent::__construct();
+
+        $this->instantiator = $instantiator ?: new Instantiator();
+    }
+
+    /**
+     * @return string
+     */
+    public function getEntityClassName() : string
+    {
+        return $this->entityClassName;
+    }
+
     /**
      * Return the identifier (primary key) for a given entity.
      *
@@ -16,7 +40,7 @@ abstract class Mapper extends BaseMapper
      */
     public function getIdentifier($entity)
     {
-        return $entity->getId();
+        return $entity->id;
     }
 
     /**
@@ -38,13 +62,16 @@ abstract class Mapper extends BaseMapper
      */
     public function hydrate(stdClass $record, Collection $relationships)
     {
-        // By default, this method will simply new up an instance of the entity class,
-        // passing each value stdClass objct as a constructor property. If you wish to
-        // do anything more complex than this (hydrating value objects, etc) you should
-        // override the make method on the child entity map class.
-        $className = $this->getEntityClassName();
+        $attributes = array_merge((array) $record, $relationships->all());
 
-        return new $className(...array_values((array) $record));
+        if ($this->hasTimestamps) {
+            $attributes['created_at'] = new CarbonImmutable($record->created_at);
+            $attributes['updated_at'] = new CarbonImmutable($record->updated_at);
+        }
+
+        $object = $this->instantiateEntity($attributes);
+
+        return $object->mapperFill($attributes);
     }
 
     /**
@@ -53,6 +80,8 @@ abstract class Mapper extends BaseMapper
      */
     public function dehydrate($entity) : array
     {
-        return $entity->toArray();
+        $attributes = Arr::except($entity->toArray(), array_map(fn($relationship) => $relationship->getName(), $this->relationships));
+
+        return $attributes;
     }
 }

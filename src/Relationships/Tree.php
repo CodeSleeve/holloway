@@ -3,23 +3,15 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
-use CodeSleeve\Holloway\Functions\Str;
 use CodeSleeve\Holloway\Mapper;
 use CodeSleeve\Holloway\Holloway;
 
 final class Tree
 {
-    /** @var Holloway */
-    protected $holloway;
-
-    /** @var array */
-    protected $loads = [];
-
-    /** @var array */
-    protected $data = [];
-
-    /** @var Mapper */
-    protected $rootMapper;
+    protected Holloway $holloway;
+    protected array $loads = [];
+    protected array $data = [];
+    protected Mapper $rootMapper;
 
     /**
      * @param Mapper $rootMapper
@@ -117,11 +109,20 @@ final class Tree
      */
     protected function loadData(array $nodes, Collection $records)
     {
-        foreach($nodes as $nodeName => $node) {
-            $node['relationship']->load($records, $node['constraints']);
+        $stack = [];
+        $stack[] = [$nodes, $records];
 
-            if ($node['children']) {
-                $this->loadData($node['children'], $node['relationship']->getData());
+        while ($stack) {
+            [$nodes, $records] = array_shift($stack);
+
+            if ($records->count() > 0) {
+                foreach($nodes as $nodeName => $node) {
+                    $node['relationship']->load($records, $node['constraints']);
+
+                    if ($node['children']) {
+                        $stack[] = [$node['children'], $node['relationship']->getData()];
+                    }
+                }
             }
         }
     }
@@ -258,10 +259,6 @@ final class Tree
      *     ]
      * </code>
      *
-     * @param  array  $loads
-     * @param  Mapper $mapper
-     * @param  array  $tree
-     * @return array
      */
     protected function buildTree()
     {
@@ -280,7 +277,7 @@ final class Tree
                     $node = [
                         'name'         => $nodeName,
                         'constraints'  => $constraints,
-                        'relationship' => $mapper->getRelationship($nodeName),
+                        'relationship' => clone $mapper->getRelationship($nodeName),
                         'children'     => []
                     ];
 
@@ -292,7 +289,7 @@ final class Tree
                         $node = [
                             'name'         => $nodeName,
                             'constraints'  => $constraints,
-                            'relationship' => $mapper->getRelationship($nodeName),
+                            'relationship' => clone $mapper->getRelationship($nodeName),
                             'children'     => []
                         ];
 

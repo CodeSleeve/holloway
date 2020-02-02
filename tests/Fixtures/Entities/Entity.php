@@ -1,52 +1,111 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Entities;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 
 abstract class Entity
 {
-    /**
-     * @var Carbon
-     */
-    protected $createdAt;
+    protected $id;
+    protected ?CarbonImmutable $created_at;
+    protected ?CarbonImmutable $updated_at;
 
     /**
-     * @var Carbon
+     * Return an array representation of this entity.
+     *
+     * @return array
      */
-    protected $updatedAt;
-
-    /**
-     * @param iterable $relationships
-     */
-    public function setRelationships(iterable $relationships)
+    public function toArray() : array
     {
-        // NOP
+        return get_object_vars($this);
     }
 
     /**
-     * @param Carbon $createdAt
-     * @param Carbon $updatedAt
+     * @param  string $name
+     * @return mixed
      */
-    public function setTimestamps(Carbon $createdAt, Carbon $updatedAt)
+    public function __get(string $name)
     {
-        $this->createdAt = $createdAt;
-        $this->updatedAt = $updatedAt;
+        $accessor = $this->attributeAccessorName($name);
+
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        } elseif (method_exists($this, $accessor)) {
+            return $this->$accessor();
+        } 
     }
 
     /**
-     * @return Carbon
+     * @param  mixed  $name
+     * @return boolean
      */
-    public function createdAt() : Carbon
+    public function __isset($name)
     {
-        return $this->createdAt;
+        return property_exists($this, $name) || method_exists($this, $this->attributeAccessorName($name));
     }
 
     /**
-     * @return Carbon
+     * @return array
      */
-    public function updatedAt() : ?Carbon
+    public function jsonSerialize() : array
     {
-        return $this->updatedAt;
+        return $this->toArray();
+    }
+
+    /**
+     * @return string
+     */
+    public function toJson() : string
+    {
+        return json_encode($this);
+    }
+
+    /**
+     * FOR USE ONLY BY ENTITY MAPPERS to hydrate our entities
+     *
+     * @param  array  $properties
+     * @return void
+     */
+    public function mapperFill(array $properties) : self
+    {
+        foreach($properties as $propertyName => $propertyValue) {
+            $this->$propertyName = $propertyValue;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param mixed $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    /**
+     * @param CarbonImmutable $createdAt
+     */
+    public function setCreatedAt(CarbonImmutable $createdAt)
+    {
+        $this->created_at = $createdAt;
+    }
+
+    /**
+     * @param CarbonImmutable $updatedAt
+     */
+    public function setUpdatedAt(CarbonImmutable $updatedAt)
+    {
+        $this->updated_at = $updatedAt;
+    }
+
+    /**
+     * @param  string $name
+     * @return string
+     */
+    private function attributeAccessorName(string $name) : string
+    {
+        return 'get' . Str::studly($name);
     }
 }

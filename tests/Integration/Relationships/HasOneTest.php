@@ -1,13 +1,12 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Integration\HasOne;
+namespace CodeSleeve\Holloway\Tests\Integration\HasOne;
 
-use CodeSleeve\Holloway\Holloway;
 use CodeSleeve\Holloway\Relationships\HasOne;
-use CodeSleeve\Tests\Holloway\Fixtures\Entities\Collar;
-use CodeSleeve\Tests\Holloway\Fixtures\Mappers\CollarMapper;
-use CodeSleeve\Tests\Holloway\Helpers\CanBuildTestFixtures;
-use CodeSleeve\Tests\Holloway\Integration\TestCase;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\Collar;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper;
+use CodeSleeve\Holloway\Tests\Helpers\CanBuildTestFixtures;
+use CodeSleeve\Holloway\Tests\Integration\TestCase;
 
 class HasOneTest extends TestCase
 {

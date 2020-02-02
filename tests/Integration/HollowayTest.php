@@ -1,11 +1,13 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Integration;
+namespace CodeSleeve\Holloway\Tests\Integration;
 
 use CodeSleeve\Holloway\Mapper;
 use CodeSleeve\Holloway\Holloway;
-use CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup;
-use CodeSleeve\Tests\Holloway\Fixtures\Mappers\{PupMapper, CollarMapper, PackMapper, PupFoodMapper, CompanyMapper};
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\Pack;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\User;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\{PupMapper, CollarMapper, PackMapper, PupFoodMapper, CompanyMapper};
 
 class HollowayTest extends TestCase
 {
@@ -28,7 +30,9 @@ class HollowayTest extends TestCase
     public function the_mapper_method_should_return_a_new_mapper_instance_when_provided_an_entity_instance()
     {
         // given
-        $entity = new Pup(1, 1, 'Tobias', 'Bennett', 'black');
+        $pack = new Pack('Bennet Pack');
+        $pack->setId(1);
+        $entity = new Pup($pack, 'Tobias', 'Bennett', 'black');
         $holloway = Holloway::instance();
 
         // when
@@ -53,7 +57,6 @@ class HollowayTest extends TestCase
 
     /**
      * @test
-     * @expectedException UnexpectedValueException
      */
     public function if_i_attempt_to_make_a_mapper_for_an_entity_that_does_not_have_a_map_registered_it_should_throw_an_exception()
     {
@@ -61,6 +64,7 @@ class HollowayTest extends TestCase
         $holloway = Holloway::instance();
 
         // when / then
+        $this->expectException(\UnexpectedValueException::class);
         $mapper = $holloway->getMapper(User::class);
     }
 

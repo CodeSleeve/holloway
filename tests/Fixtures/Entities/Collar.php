@@ -1,66 +1,39 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Entities;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
 class Collar extends Entity
 {
-    /**
-     * @var int
-     */
-    protected $id;
+    protected ?Pup $pup;
+    protected int $pup_id;
+    protected string $color;
 
     /**
-     * @var int
-     */
-    protected $pupId;
-
-    /**
-     * @var string
-     */
-    protected $color;
-
-    /**
-     * @param int    $id
-     * @param int    $pupId
+     * @param Pup $pup
      * @param string $color
      */
-    public function __construct(int $id, int $pupId, string $color)
+    public function __construct(Pup $pup, string $color)
     {
-        $this->id = $id;
-        $this->pupId = $pupId;
+        $this->setPup($pup);
         $this->color = $color;
     }
 
     /**
-     * @return int
-     */
-    public function id() : int
-    {
-        return $this->id;
-    }
-
-    /**
-     * @param int $value
+     * @param Pup $pup
      * @return void
      */
-    public function setId(int $value) : void
+    public function setPup(Pup $pup)
     {
-        $this->id = $value;
+        $this->pup_id = $pup->id;
+        $this->pup = $pup;
     }
 
     /**
-     * @return int
+     * @param string $color
+     * @return void
      */
-    public function pupId() : int
+    public function setColor(string $color)
     {
-        return $this->pupId;
-    }
-
-    /**
-     * @return string
-     */
-    public function color() : string
-    {
-        return $this->color;
+        $this->color = $color;
     }
 }

@@ -15,7 +15,7 @@
     "require": {
         "illuminate/database": ">= 5.8",
         "illuminate/pagination": ">= 5.8",
-        "php": ">= 7.3"
+        "php": ">= 7.4"
     },
     "autoload": {
         "psr-4": {
@@ -24,7 +24,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "CodeSleeve\\Tests\\Holloway\\": "tests/"
+            "CodeSleeve\\Holloway\\Tests\\": "tests/"
         }
     },
     "repositories": [
@@ -33,7 +33,8 @@
     "require-dev": {
         "fzaninotto/faker": "~1.4",
         "mockery/mockery": "~1.0",
-        "illuminate/events": "^5.5"
+        "illuminate/events": "^5.5",
+        "doctrine/instantiator": "~1.0.3"
     },
     "minium-stability": "stable",
     "laravel": {

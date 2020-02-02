@@ -1,6 +1,6 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Helpers;
+namespace CodeSleeve\Holloway\Tests\Helpers;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -59,7 +59,7 @@ class MigrateFixtureTables extends Migration
                 $table->increments('id');
 
                 $table->unsignedInteger('pack_id');
-                $table->foreign('pack_id')->references('id')->on('packs')->onDelete('cascade');
+                $table->foreign('pack_id')->references('id')->on('packs');
 
                 $table->string('first_name');
                 $table->string('last_name');
@@ -74,7 +74,10 @@ class MigrateFixtureTables extends Migration
                 $table->increments('id');
 
                 $table->unsignedInteger('pup_id');
-                $table->foreign('pup_id')->references('id')->on('pups')->onDelete('cascade');
+                $table->foreign('pup_id')->references('id')->on('pups');
+
+                $table->unsignedInteger('company_id');
+                $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
 
                 $table->string('color');
                 $table->timestamps();
@@ -83,6 +86,18 @@ class MigrateFixtureTables extends Migration
 
         if (!Schema::hasTable('pups_users')) {
             Schema::create('pups_users', function (Blueprint $table) {
+                $table->unsignedInteger('pup_id');
+                $table->foreign('pup_id')->references('id')->on('pups')->onDelete('cascade');
+
+                $table->unsignedInteger('user_id');
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
+                $table->primary(['pup_id', 'user_id']);
+            });
+        }
+
+        if (!Schema::hasTable('surrogate_pups_users')) {
+            Schema::create('surrogate_pups_users', function (Blueprint $table) {
                 $table->unsignedInteger('pup_id');
                 $table->foreign('pup_id')->references('id')->on('pups')->onDelete('cascade');
 

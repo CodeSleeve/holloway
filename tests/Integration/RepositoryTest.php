@@ -1,11 +1,12 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Integration;
+namespace CodeSleeve\Holloway\Tests\Integration;
 
 use CodeSleeve\Holloway\Holloway;
-use CodeSleeve\Tests\Holloway\Fixtures\Entities\Pup;
-use CodeSleeve\Tests\Holloway\Fixtures\Repositories\PupRepository;
-use CodeSleeve\Tests\Holloway\Helpers\CanBuildTestFixtures;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\Pack;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup;
+use CodeSleeve\Holloway\Tests\Fixtures\Repositories\PupRepository;
+use CodeSleeve\Holloway\Tests\Helpers\CanBuildTestFixtures;
 
 class RepositoryTest extends TestCase
 {
@@ -18,12 +19,12 @@ class RepositoryTest extends TestCase
     {
         // Set up our Holloway instance and register our fixture mappers.
         Holloway::instance()->register([
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CollarMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\CompanyMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PackMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupFoodMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\PupMapper',
-            'CodeSleeve\Tests\Holloway\Fixtures\Mappers\UserMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\CompanyMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\PackMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper',
+            'CodeSleeve\Holloway\Tests\Fixtures\Mappers\UserMapper',
         ]);
     }
 
@@ -80,7 +81,7 @@ class RepositoryTest extends TestCase
         $pup = $repository->findOneBy('first_name', 'Tobias');
 
         // then
-        $this->assertEquals('Tobias', $pup->firstName());
+        $this->assertEquals('Tobias', $pup->first_name);
     }
 
     /** @test **/
@@ -89,9 +90,10 @@ class RepositoryTest extends TestCase
         // given
         $this->buildFixtures();
         $repository = new PupRepository;
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);
+        $tobias = $pupMapper->find(1);
 
         // when
-        $tobias = new Pup(1, 1, 'Tobias', 'Bennett', 'black');
         $repository->remove($tobias);
         $pups = $repository->all();
 

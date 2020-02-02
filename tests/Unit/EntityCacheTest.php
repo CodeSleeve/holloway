@@ -1,6 +1,6 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Unit;
+namespace CodeSleeve\Holloway\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use CodeSleeve\Holloway\EntityCache;

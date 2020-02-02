@@ -4,7 +4,6 @@ namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
 use stdClass;
-use Closure;
 
 interface Relationship
 {

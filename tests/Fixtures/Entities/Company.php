@@ -1,67 +1,20 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Entities;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
 use Illuminate\Support\Collection;
 
 class Company extends Entity
 {
-    /**
-     * @var int
-     */
-    protected $id;
+    protected string $founded_at;
+    protected ?Collection $users;
 
     /**
-     * @var string
-     */
-    protected $foundedAt;
-
-    /**
-     * @var Collection|null
-     */
-    protected $users;
-
-    /**
-     * @param int        $id
      * @param string     $foundedAt
      * @param Collection $users
      */
-    public function __construct(int $id, string $foundedAt)
+    public function __construct(string $foundedAt)
     {
-        $this->id = $id;
-        $this->foundedAt = $foundedAt;
-    }
-
-    /**
-     * @return int
-     */
-    public function id() : int
-    {
-        return $this->id;
-    }
-
-    /**
-     * @param int $value
-     * @return void
-     */
-    public function setId(int $value) : void
-    {
-        $this->id = $value;
-    }
-
-    /**
-     * @return string
-     */
-    public function foundedAt() : string
-    {
-        return $this->foundedAt;
-    }
-
-    /**
-     * @return Collection|null
-     */
-    public function users() : ?Collection
-    {
-        return $this->users;
+        $this->founded_at = $foundedAt;
     }
 }

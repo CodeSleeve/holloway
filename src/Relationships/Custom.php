@@ -2,7 +2,6 @@
 
 namespace CodeSleeve\Holloway\Relationships;
 
-use CodeSleeve\Holloway\Mapper;
 use Closure;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
@@ -10,38 +9,20 @@ use stdClass;
 
 class Custom implements Relationship
 {
-    /** @var string */
-    protected $name;
-
-    /** @var Closure */
-    protected $load;
-
-    /** @var Closure */
-    protected $for;
-
-    /** @var Closure|null */
-    protected $map;
-
-    /** @var Closure */
-    protected $tap;
-
-    /** @var string|null */
-    protected $entityName;
-
-    /** @var bool */
-    protected $shouldLimitToOne;
-
-    /** @var QueryBuilder */
-    protected $query;
-
-    /** @var Collection|null */
-    protected $data;
+    protected string $name;
+    protected Closure $load;
+    protected Closure $for;
+    protected ?Closure $map;
+    protected ?string $entityName = null;
+    protected bool $shouldLimitToOne;
+    protected QueryBuilder $query;
+    protected ?Collection $data;
 
     /**
      * @param string       $name
      * @param Closure      $load
      * @param Closure      $for
-     * @param [type]       $mapOrEntityName
+     * @param mixed        $mapOrEntityName
      * @param bool         $shouldLimitToOne
      * @param QueryBuilder $query
      */
@@ -64,6 +45,14 @@ class Custom implements Relationship
     }
 
     /**
+     * @return void
+     */
+    public function __clone()
+    {
+        $this->query = clone $this->query;
+    }
+
+    /**
      * Fetch and store the related records for this relationship.
      *
      * @param  Collection $records
@@ -72,7 +61,7 @@ class Custom implements Relationship
     {
         $load = $this->load;
 
-        $this->data = $load((clone $this->query), $records);
+        $this->data = $load($this->query, $records);
     }
 
     /**
@@ -85,10 +74,7 @@ class Custom implements Relationship
     {
         $for = $this->for;
 
-        return $this->data
-            ->filter(function($relatedRecord) use ($record, $for) {
-                return $for($record, $relatedRecord);
-            });
+        return $this->data->filter(fn($relatedRecord) => $for($record, $relatedRecord));
     }
 
     /**

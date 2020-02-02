@@ -1,11 +1,8 @@
 <?php
 
-namespace CodeSleeve\Tests\Holloway\Fixtures\Mappers;
+namespace CodeSleeve\Holloway\Tests\Fixtures\Mappers;
 
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use CodeSleeve\Tests\Holloway\Fixtures\Entities\{Pup, User};
-use stdClass;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Pup, User};
 
 class UserMapper extends Mapper
 {
@@ -43,46 +40,11 @@ class UserMapper extends Mapper
     }
 
     /**
-     * @param  mixed $entity
-     * @return array
-     */
-    public function dehydrate($entity) : array
-    {
-        return [];
-    }
-
-    /**
-     * @param  stdClass   $record
-     * @param  Collection $relations
-     * @return mixed
-     */
-    public function hydrate(stdClass $record, Collection $relations)
-    {
-        $className = $this->entityClassName;
-
-        if ($relations->count()) {
-            $record->pups = $relations['pups'] ?? null;
-        }
-
-        $entity = new $className(...array_values(array_except((array) $record, ['created_at', 'updated_at'])));
-        $entity->setTimestamps(Carbon::createFromFormat('Y-m-d H:i:s', $record->created_at), Carbon::createFromFormat('Y-m-d H:i:s', $record->updated_at));
-
-        return $entity;
-    }
-
-    /**
      * @return  void
      */
     public function defineRelations()
     {
-        $this->belongsToMany('pups', Pup::class, 'pups_users', 'user_id', 'pup_id');    // A user belongs to many pups.
-    }
-
-    /**
-     * @return string
-     */
-    public function getEntityClassName() : string
-    {
-        return $this->entityClassName;
+        $this->belongsToMany('pups', Pup::class, 'pups_users', 'user_id', 'pup_id');                       // A user belongs to many pups.
+        $this->belongsToMany('surrogatePups', Pup::class, 'surrogate_pups_users', 'user_id', 'pup_id');    // A user belongs to many pups that they may care for (surrogate)
     }
 }

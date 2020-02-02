@@ -5,7 +5,6 @@ namespace CodeSleeve\Holloway\Relationships;
 use Closure;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
-use CodeSleeve\Holloway\Mapper;
 use stdClass;
 
 class BelongsToMany extends BaseRelationship
@@ -110,7 +109,7 @@ class BelongsToMany extends BaseRelationship
              ->whereIn($this->pivotLocalKeyName, $records->pluck($this->localKeyName)->all())
              ->get();
 
-        $this->data = (clone $this->query)
+        $this->data = $this->query
             ->from($this->tableName)
             ->whereIn($this->foreignKeyName, $this->pivotData->pluck($this->pivotForeignKeyName)->all())
             ->where($constraints)

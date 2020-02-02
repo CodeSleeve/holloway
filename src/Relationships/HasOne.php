@@ -2,7 +2,6 @@
 
 namespace CodeSleeve\Holloway\Relationships;
 
-use Illuminate\Support\Collection;
 use stdClass;
 
 class HasOne extends HasOneOrMany
@@ -23,9 +22,7 @@ class HasOne extends HasOneOrMany
     public function for(stdClass $record) : ?stdClass
     {
         return $this->data
-            ->filter(function(stdClass $relatedRecord) use ($record) {
-                return $relatedRecord->{$this->foreignKeyName} == $record->{$this->localKeyName};
-            })
+            ->filter(fn(stdClass $relatedRecord) => $relatedRecord->{$this->foreignKeyName} == $record->{$this->localKeyName})
             ->first();
     }
 }
