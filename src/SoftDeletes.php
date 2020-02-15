@@ -59,18 +59,18 @@ trait SoftDeletes
         // If the restoring event does not return false, we will proceed with this
         // restore operation. Otherwise, we bail out so the developer will stop
         // the restore totally. We will clear the deleted timestamp and save.
-        if (static::$eventManager->fire('restoring', $entity) === false) {
+        if ($this->firePersistenceEvent('restoring', $entity) === false) {
             return false;
         }
 
         $this->getConnection()
             ->table($this->getTableName())
             ->where($this->getPrimaryKeyName(), $this->getIdentifier($entity))
-            ->update([$this->getQualifiedDeletedAtColumn(), null]);
+            ->update([$this->getQualifiedDeletedAtColumn() => null]);
 
-        static::$eventManager->fire('removed', $entity);
+        $this->firePersistenceEvent('restored', $entity);
 
-        return $result;
+        return true;
     }
 
     /**
