@@ -484,6 +484,39 @@ class MapperTest extends TestCase
     }
 
     /** @test */
+    public function it_can_chunk_relationships()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pup::class);
+
+        // when
+        $mapper->with('collar')
+            ->orderBy('created_at')
+            ->chunk(2, function($pups) {
+                $pups->each(function($pup) {
+                    $this->assertInstanceOf(Collar::class, $pup->collar);
+                });
+            });
+    }
+
+    /** @test */
+    public function it_can_chunk_relationships_by_id()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pup::class);
+
+        // when
+        $mapper->with('collar')
+            ->chunkById(2, function($pups) {
+                $pups->each(function($pup) {
+                    $this->assertInstanceOf(Collar::class, $pup->collar);
+                });
+            });
+    }
+
+    /** @test */
     public function it_can_save_a_new_entity()
     {
         // given
