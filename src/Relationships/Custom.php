@@ -74,7 +74,7 @@ class Custom implements Relationship
     {
         $for = $this->for;
 
-        return $this->data->filter(fn($relatedRecord) => $for($record, $relatedRecord));
+        return $this->data->filter(fn($relatedRecord) => $for($record, $relatedRecord))->values();
     }
 
     /**
