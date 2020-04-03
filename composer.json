@@ -1,7 +1,7 @@
 {
     "name": "codesleeve/holloway",
-    "description": "Holloway DataMapper.",
-    "keywords": ["datamapper"],
+    "description": "Holloway: A datamapper built on top of Illuminate\\Database.",
+    "keywords": ["datamapper, laravel, Illuminate, database"],
     "license": "MIT",
     "authors": [
         {
