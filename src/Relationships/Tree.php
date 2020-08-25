@@ -40,7 +40,7 @@ final class Tree
      */
     public function removeLoads($loads)
     {
-        $loads = is_array($loads) ?: func_get_args();
+        $loads = is_array($loads) ? $loads : func_get_args();
 
         $this->loads = array_diff_key($this->loads, array_flip($loads));
     }
