@@ -695,4 +695,10 @@ class MapperTest extends TestCase
         $this->assertCount(3, $blackPups);
         $this->assertCount(1, $whitePups);
     }
+
+    /** @test */
+    public function it_applies_global_query_scopes_when_querying_relations()
+    {
+        $this->markTestIncomplete('This test has not been implemented yet.');
+    }
 }

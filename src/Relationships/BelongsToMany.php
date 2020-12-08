@@ -55,15 +55,15 @@ class BelongsToMany extends BaseRelationship
     protected $pivotData;
 
     /**
-     * @param string       $name
-     * @param string       $tableName
-     * @param string       $foreignKeyName
-     * @param string       $localKeyName
-     * @param string       $entityName
-     * @param string       $pivotTableName
-     * @param string       $pivotForeignKeyName
-     * @param string       $pivotLocalKeyName
-     * @param QueryBuilder $query
+     * @param string   $name
+     * @param string   $tableName
+     * @param string   $foreignKeyName
+     * @param string   $localKeyName
+     * @param string   $entityName
+     * @param string   $pivotTableName
+     * @param string   $pivotForeignKeyName
+     * @param string   $pivotLocalKeyName
+     * @param Closure  $query
      */
     public function __construct(
         string $name,
@@ -74,7 +74,7 @@ class BelongsToMany extends BaseRelationship
         string $pivotTableName,
         string $pivotForeignKeyName,
         string $pivotLocalKeyName,
-        QueryBuilder $query)
+        Closure $query)
     {
        parent::__construct($name, $tableName, $foreignKeyName, $localKeyName, $entityName, $query);
 
@@ -102,15 +102,14 @@ class BelongsToMany extends BaseRelationship
     public function load(Collection $records, ?Closure $constraints = null)
     {
         $constraints = $constraints ?: function() {};
+        $query = ($this->query)();
 
-        $this->pivotData = $this->query
-             ->newQuery()
+        $this->pivotData = $query->newQuery()
              ->from($this->pivotTableName)
              ->whereIn($this->pivotLocalKeyName, $records->pluck($this->localKeyName)->all())
              ->get();
 
-        $this->data = $this->query
-            ->from($this->tableName)
+        $this->data = $query->from($this->tableName)
             ->whereIn($this->foreignKeyName, $this->pivotData->pluck($this->pivotForeignKeyName)->all())
             ->where($constraints)
             ->get();

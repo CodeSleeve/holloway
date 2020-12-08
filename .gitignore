@@ -1,2 +1,5 @@
 /vendor
+.phpunit.result.cache
 *.code-workspace
+*.sublime-project
+*.sublime-workspace

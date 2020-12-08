@@ -27,7 +27,7 @@ abstract class HasOneOrMany extends BaseRelationship
     {
         $constraints = $constraints ?: function() {};
 
-        $this->data = $this->query
+        $this->data = ($this->query)()
             ->from($this->tableName)
             ->whereIn($this->foreignKeyName, $records->pluck($this->localKeyName)->values()->all())
             ->where($constraints)

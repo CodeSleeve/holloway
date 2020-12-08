@@ -15,7 +15,7 @@ class Custom implements Relationship
     protected ?Closure $map;
     protected ?string $entityName = null;
     protected bool $shouldLimitToOne;
-    protected QueryBuilder $query;
+    protected Closure $query;
     protected ?Collection $data;
 
     /**
@@ -26,7 +26,7 @@ class Custom implements Relationship
      * @param bool         $shouldLimitToOne
      * @param QueryBuilder $query
      */
-    public function __construct(string $name, Closure $load, Closure $for, $mapOrEntityName, bool $shouldLimitToOne, QueryBuilder $query)
+    public function __construct(string $name, Closure $load, Closure $for, $mapOrEntityName, bool $shouldLimitToOne, Closure $query)
     {
         $this->name = $name;
         $this->load = $load;
@@ -45,14 +45,6 @@ class Custom implements Relationship
     }
 
     /**
-     * @return void
-     */
-    public function __clone()
-    {
-        $this->query = clone $this->query;
-    }
-
-    /**
      * Fetch and store the related records for this relationship.
      *
      * @param  Collection $records
@@ -61,7 +53,7 @@ class Custom implements Relationship
     {
         $load = $this->load;
 
-        $this->data = $load($this->query, $records);
+        $this->data = $load(($this->query)(), $records);
     }
 
     /**

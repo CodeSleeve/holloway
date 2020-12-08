@@ -721,7 +721,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? Str::singular($this->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
-        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
+        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
     }
 
     /**
@@ -738,7 +738,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? Str::singular($this->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
-        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
+        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
     }
 
     /**
@@ -755,7 +755,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? Str::singular($mapper->getTableName()) . '_id';
         $localKey = $localKey ?? $this->primaryKeyName;
 
-        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, $mapper->toBase());
+        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
     }
 
     /**
@@ -780,7 +780,7 @@ abstract class Mapper
         $pivotLocalKey = $pivotLocalKey ?? Str::singular($localTableName) . '_id';
         $pivotForeignKey = $pivotForeignKey ?? Str::singular($foreignTableName) . '_id';
 
-        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, $mapper->toBase());
+        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, fn() => $mapper->toBase());
     }
 
     /**
@@ -805,7 +805,7 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, $this->newQueryWithoutScopes()->toBase());
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes()->toBase());
     }
 
     /**

@@ -35,7 +35,7 @@ abstract class BaseRelationship implements Relationship
     protected $entityName;
 
     /**
-     * @var QueryBuilder
+     * @var Closure
      */
     protected $query;
 
@@ -50,9 +50,9 @@ abstract class BaseRelationship implements Relationship
      * @param string       $foreignKeyName
      * @param string       $localKeyName
      * @param string       $entityName
-     * @param QueryBuilder $query
+     * @param Closure      $query
      */
-    public function __construct(string $name, string $tableName, string $foreignKeyName, string $localKeyName, string $entityName, QueryBuilder $query)
+    public function __construct(string $name, string $tableName, string $foreignKeyName, string $localKeyName, string $entityName, Closure $query)
     {
         $this->name = $name;
         $this->tableName = $tableName;
@@ -60,14 +60,6 @@ abstract class BaseRelationship implements Relationship
         $this->localKeyName = $localKeyName;
         $this->entityName = $entityName;
         $this->query = $query;
-    }
-
-    /**
-     * @return void
-     */
-    public function __clone()
-    {
-        $this->query = clone $this->query;
     }
 
     /**
