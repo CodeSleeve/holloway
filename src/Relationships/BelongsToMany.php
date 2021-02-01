@@ -106,11 +106,11 @@ class BelongsToMany extends BaseRelationship
 
         $this->pivotData = $query->newQuery()
              ->from($this->pivotTableName)
-             ->whereIn($this->pivotLocalKeyName, $records->pluck($this->localKeyName)->all())
+             ->whereIn("{$this->pivotTableName}.{$this->pivotLocalKeyName}", $records->pluck($this->localKeyName)->all())
              ->get();
 
         $this->data = $query->from($this->tableName)
-            ->whereIn($this->foreignKeyName, $this->pivotData->pluck($this->pivotForeignKeyName)->all())
+            ->whereIn("{$this->tableName}.{$this->foreignKeyName}", $this->pivotData->pluck($this->pivotForeignKeyName)->all())
             ->where($constraints)
             ->get();
 
@@ -133,17 +133,13 @@ class BelongsToMany extends BaseRelationship
     public function for(stdClass $record) : Collection
     {
         $pivotRecords = $this->pivotData
-            ->filter(function($pivotRecord) use ($record) {
-                return $pivotRecord->{$this->pivotLocalKeyName} === $record->{$this->localKeyName};
-            })
+            ->filter(fn($pivotRecord) => $pivotRecord->{$this->pivotLocalKeyName} === $record->{$this->localKeyName})
             ->pluck($this->pivotForeignKeyName)
             ->values()
             ->all();
 
         return $this->data
-            ->filter(function(stdClass $relatedRecord) use ($pivotRecords) {
-                return in_array($relatedRecord->{$this->foreignKeyName}, $pivotRecords);
-            })
+            ->filter(fn(stdClass $relatedRecord) => in_array($relatedRecord->{$this->foreignKeyName}, $pivotRecords))
             ->values();
     }
 }

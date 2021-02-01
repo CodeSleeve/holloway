@@ -3,7 +3,6 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Closure;
 use stdClass;
 

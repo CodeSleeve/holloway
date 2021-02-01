@@ -29,7 +29,7 @@ abstract class HasOneOrMany extends BaseRelationship
 
         $this->data = ($this->query)()
             ->from($this->tableName)
-            ->whereIn($this->foreignKeyName, $records->pluck($this->localKeyName)->values()->all())
+            ->whereIn("{$this->tableName}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
             ->where($constraints)
             ->get();
     }

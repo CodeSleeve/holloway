@@ -30,7 +30,7 @@ class BelongsTo extends BaseRelationship
 
         $this->data = ($this->query)()
             ->from($this->tableName)
-            ->whereIn($this->localKeyName, $records->pluck($this->foreignKeyName)->values()->all())
+            ->whereIn("{$this->tableName}.{$this->localKeyName}", $records->pluck($this->foreignKeyName)->values()->all())
             ->where($constraints)
             ->get();
     }
