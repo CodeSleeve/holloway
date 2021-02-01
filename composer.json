@@ -27,14 +27,12 @@
             "CodeSleeve\\Holloway\\Tests\\": "tests/"
         }
     },
-    "repositories": [
-        {"type": "path", "url": "./psr"}
-    ],
     "require-dev": {
         "fzaninotto/faker": "~1.4",
         "mockery/mockery": "~1.0",
         "illuminate/events": "^5.5",
-        "doctrine/instantiator": "~1.0.3"
+        "doctrine/instantiator": "~1.0.3",
+        "phpunit/phpunit": "^7"
     },
     "minium-stability": "stable",
     "laravel": {
