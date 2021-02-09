@@ -2,12 +2,13 @@
 
 namespace CodeSleeve\Holloway\Tests\Fixtures\Mappers;
 
-use Carbon\CarbonImmutable;
 use stdClass;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
-use CodeSleeve\Holloway\Mapper as BaseMapper;
 use Doctrine\Instantiator\Instantiator;
+use CodeSleeve\Holloway\Mapper as BaseMapper;
+use CodeSleeve\Holloway\Tests\Fixtures\Entities\Entity;
 
 abstract class Mapper extends BaseMapper
 {
@@ -83,5 +84,28 @@ abstract class Mapper extends BaseMapper
         $attributes = Arr::except($entity->toArray(), array_map(fn($relationship) => $relationship->getName(), $this->relationships));
 
         return $attributes;
+    }
+
+    /**
+     * @param Entity $entity
+     * @param \DateTime $now
+     * @return void
+     */
+    public function setCreatedAtTimestampOnEntity(Entity $entity, \DateTime $now)
+    {
+        $createdAt = CarbonImmutable::instance($now);
+
+        $entity->setCreatedAt($createdAt);
+    }
+
+    /**
+     * @param \DateTime $now
+     * @param Entity    $entity
+     */
+    public function setUpdatedAtTimestampOnEntity(Entity $entity, \DateTime $now)
+    {
+        $updatedAt = CarbonImmutable::instance($now);
+
+        $entity->setUpdatedAt($updatedAt);
     }
 }

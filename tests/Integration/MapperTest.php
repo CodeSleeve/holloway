@@ -2,6 +2,7 @@
 
 namespace CodeSleeve\Holloway\Tests\Integration;
 
+use Carbon\CarbonImmutable;
 use CodeSleeve\Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany, Custom};
 use CodeSleeve\Holloway\Holloway;
 use CodeSleeve\Holloway\Tests\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
@@ -617,6 +618,30 @@ class MapperTest extends TestCase
     }
 
     /** @test */
+    public function it_will_update_the_updated_at_column_and_ignore_changes_to_the_created_at_column_when_an_entity_with_timestamps_is_updated()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pup::class);
+
+        $tobi = $mapper->find(1);
+        $previousUpdatedAtValue = $tobi->updated_at;
+        $previousCreatedAtValue = $tobi->created_at;
+
+        // when
+        sleep(1);                                       // Create artificial delay so that our seeded data is 1 second behind the test code below.
+        $tobi->setFirstName('Toby');
+        $tobi->setCreatedAt(CarbonImmutable::now());    // Changes to the timestamp properties should be ignored by the mapper.
+        $mapper->store($tobi);
+        $tobias = \Illuminate\Database\Capsule\Manager::table('pups')->find(1);
+
+        // then
+        $this->assertNotEquals($previousUpdatedAtValue->toDateTimeString(), $tobias->updated_at);     // The updated_at column should have a new timestamp value.
+        $this->assertEquals($previousCreatedAtValue->toDateTimeString(), $tobias->created_at);        // The created_at column should not have changed.
+        $this->assertEquals($tobi->updated_at->toDateTimeString(), $tobias->updated_at);              // The Entity updated_at property should now have the new CarbonImmutable value set by the mapper fixture after the record was upated.
+    }
+
+    /** @test */
     public function it_can_remove_an_existing_entity_and_dispatch_removing_and_removed_persistence_events_when_doing_so()
     {
         // given
@@ -690,25 +715,6 @@ class MapperTest extends TestCase
         $this->assertCount(5, $pupMapper->get());
         $this->assertCount(6, $pupMapper->withTrashed()->get());
     }
-
-    /** @test */
-    // public function it_can_persist_timestamps_in_storage_and_insert_them_onto_newly_created_entities()
-    // {
-    //     // given
-    //     $this->buildFixtures();
-    //     $pupMapper = Holloway::instance()->getMapper(Pup::class);
-    //     $packMapper = Holloway::instance()->getMapper(Pack::class);
-    //     $adamsPack = $packMapper->find(2);
-
-    //     // when
-    //     $pup = new Pup($adamsPack, 'Snowball', 'Adams', 'white');
-    //     $pupMapper->store($pup);
-    //     $snowball = $pupMapper->where('first_name', 'Snowball')->first();
-
-    //     // then
-    //     $this->assertInstanceOf(Pup::class, $snowball);
-        
-    // }
 
     /** @test */
     public function it_allows_end_users_to_creat_query_scopes()
