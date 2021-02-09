@@ -2,10 +2,10 @@
 
 namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
-use Carbon\Carbon;
-
 class Pup extends Entity
 {
+    use HasTimestamps;
+    
     protected string $firstName;
     protected string $lastName;
     protected string $coat;

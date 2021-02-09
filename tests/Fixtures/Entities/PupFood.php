@@ -4,6 +4,8 @@ namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
 class PupFood extends Entity
 {
+    use HasTimestamps;
+    
     protected string $name;
     protected ?Company $company;
     protected int $company_id;

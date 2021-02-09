@@ -6,6 +6,8 @@ use Illuminate\Support\Collection;
 
 class Company extends Entity
 {
+    use HasTimestamps;
+    
     protected string $founded_at;
     protected ?Collection $users;
 

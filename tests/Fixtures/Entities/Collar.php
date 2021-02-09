@@ -4,6 +4,8 @@ namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
 class Collar extends Entity
 {
+    use HasTimestamps;
+    
     protected ?Pup $pup;
     protected int $pup_id;
     protected string $color;

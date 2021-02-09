@@ -55,8 +55,8 @@ trait CanBuildTestFixtures
         ]);
 
         Capsule::table('packs')->insert([
-            ['id' => 1, 'name' => 'Bennett Pack', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
-            ['id' => 2, 'name' => 'Adams Pack', 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]
+            ['id' => 1, 'name' => 'Bennett Pack'],
+            ['id' => 2, 'name' => 'Adams Pack']
         ]);
 
         Capsule::table('pups')->insert([

@@ -18,6 +18,11 @@ class PackMapper extends Mapper
     protected $entityClassName = Pack::class;
 
     /**
+     * @var boolean
+     */
+    protected $hasTimestamps = false;
+
+    /**
      * @return  void
      */
     public function defineRelations()

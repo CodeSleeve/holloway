@@ -2,14 +2,11 @@
 
 namespace CodeSleeve\Holloway\Tests\Fixtures\Entities;
 
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
 abstract class Entity
 {
     protected $id;
-    protected ?CarbonImmutable $created_at;
-    protected ?CarbonImmutable $updated_at;
 
     /**
      * Return an array representation of this entity.
@@ -82,22 +79,6 @@ abstract class Entity
     public function setId($id)
     {
         $this->id = $id;
-    }
-
-    /**
-     * @param CarbonImmutable $createdAt
-     */
-    public function setCreatedAt(CarbonImmutable $createdAt)
-    {
-        $this->created_at = $createdAt;
-    }
-
-    /**
-     * @param CarbonImmutable $updatedAt
-     */
-    public function setUpdatedAt(CarbonImmutable $updatedAt)
-    {
-        $this->updated_at = $updatedAt;
     }
 
     /**

@@ -50,7 +50,6 @@ class MigrateFixtureTables extends Migration
             Schema::create('packs', function (Blueprint $table) {
                 $table->increments('id');
                 $table->string('name');
-                $table->timestamps();
             });
         }
 

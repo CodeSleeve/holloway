@@ -6,6 +6,8 @@ use Illuminate\Support\Collection;
 
 class User extends Entity
 {
+    use HasTimestamps;
+    
     protected string $first_name;
     protected $last_name;
     protected $email;

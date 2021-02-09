@@ -517,7 +517,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_save_a_new_entity()
+    public function it_can_save_a_new_entity_and_set_timestamps_on_it()
     {
         // given
         $this->buildFixtures();
@@ -534,10 +534,31 @@ class MapperTest extends TestCase
         $this->assertInstanceOf(Pup::class, $snowball);
         $this->assertEquals('Snowball', $pup->first_name);
         $this->assertEquals('Adams', $pup->last_name);
+        $this->assertInstanceOf(\Carbon\CarbonImmutable::class, $snowball->created_at);
+        $this->assertInstanceOf(\Carbon\CarbonImmutable::class, $snowball->updated_at);
     }
 
     /** @test */
-    public function it_can_save_a_iterable_of_new_entities()
+    public function it_can_save_a_new_entity_without_setting_timestamps_on_it()
+    {
+       // given
+       $this->buildFixtures();
+       $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+       // when
+       $pack = new Pack('new pack');
+       $packMapper->store($pack);
+       $newPack = $packMapper->find($pack->id);
+
+       // then
+       $this->assertInstanceOf(Pack::class, $newPack);
+       $this->assertEquals('new pack', $newPack->name);
+       $this->assertNull($newPack->created_at);
+       $this->assertNull($newPack->updated_at);
+    }
+
+    /** @test */
+    public function it_can_save_a_iterable_of_new_entities_and_set_timestamps_on_them()
     {
         // given
         $this->buildFixtures();
@@ -559,10 +580,14 @@ class MapperTest extends TestCase
         $this->assertInstanceOf(Pup::class, $snowball);
         $this->assertEquals('Snowball', $snowball->first_name);
         $this->assertEquals('Adams', $snowball->last_name);
+        $this->assertInstanceOf(\Carbon\CarbonImmutable::class, $snowball->created_at);
+        $this->assertInstanceOf(\Carbon\CarbonImmutable::class, $snowball->updated_at);
 
         $this->assertInstanceOf(Pup::class, $moses);
         $this->assertEquals('Moses', $moses->first_name);
         $this->assertEquals('Bennett', $moses->last_name);
+        $this->assertInstanceOf(\Carbon\CarbonImmutable::class, $moses->created_at);
+        $this->assertInstanceOf(\Carbon\CarbonImmutable::class, $moses->updated_at);
     }
 
     /** @test */
@@ -665,6 +690,25 @@ class MapperTest extends TestCase
         $this->assertCount(5, $pupMapper->get());
         $this->assertCount(6, $pupMapper->withTrashed()->get());
     }
+
+    /** @test */
+    // public function it_can_persist_timestamps_in_storage_and_insert_them_onto_newly_created_entities()
+    // {
+    //     // given
+    //     $this->buildFixtures();
+    //     $pupMapper = Holloway::instance()->getMapper(Pup::class);
+    //     $packMapper = Holloway::instance()->getMapper(Pack::class);
+    //     $adamsPack = $packMapper->find(2);
+
+    //     // when
+    //     $pup = new Pup($adamsPack, 'Snowball', 'Adams', 'white');
+    //     $pupMapper->store($pup);
+    //     $snowball = $pupMapper->where('first_name', 'Snowball')->first();
+
+    //     // then
+    //     $this->assertInstanceOf(Pup::class, $snowball);
+        
+    // }
 
     /** @test */
     public function it_allows_end_users_to_creat_query_scopes()
