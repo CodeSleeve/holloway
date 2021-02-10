@@ -489,6 +489,7 @@ abstract class Mapper
                     $keyName = $this->getPrimaryKeyName();
 
                     if ($this->hasTimestamps === true) {
+                        $attributes = \Illuminate\Support\Arr::except($attributes, [self::UPDATED_AT, self::CREATED_AT]);
                         $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
                         $attributes[static::UPDATED_AT] = $now;
 
