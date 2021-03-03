@@ -13,9 +13,11 @@
         }
     ],
     "require": {
-        "illuminate/database": ">= 5.8",
-        "illuminate/pagination": ">= 5.8",
-        "php": ">= 7.4"
+        "php": ">= 7.4",
+        "illuminate/database": ">= 8.0",
+        "illuminate/pagination": ">= 8.0",
+        "illuminate/events": "^8.0",
+        "laravel/legacy-factories": "^1.1"
     },
     "autoload": {
         "psr-4": {
@@ -28,11 +30,10 @@
         }
     },
     "require-dev": {
-        "fzaninotto/faker": "~1.4",
-        "mockery/mockery": "~1.0",
-        "illuminate/events": "^5.5",
-        "doctrine/instantiator": "~1.0.3",
-        "phpunit/phpunit": "^7"
+        "fzaninotto/faker": "^1.9.1",
+        "mockery/mockery": "^1.4.2",
+        "doctrine/instantiator": "~1.4.0",
+        "phpunit/phpunit": "^8.5.8|^9.3.3"
     },
     "minium-stability": "stable",
     "laravel": {

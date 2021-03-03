@@ -46,14 +46,13 @@ class Factory extends EloquentFactory
      * Create a builder for the given entity.
      *
      * @param  string  $class
-     * @param  string  $name
      * @return FactoryBuilder
      */
-    public function of($class, $name = 'default')
+    public function of($class)
     {
         $mapper = $this->manager->getMapper($class);
 
-        return new FactoryBuilder($mapper, $class, $name, $this->definitions, $this->states, $this->afterMaking, $this->afterCreating, $this->faker);
+        return new FactoryBuilder($mapper, $class, $this->definitions, $this->states, $this->afterMaking, $this->afterCreating, $this->faker);
     }
 
 }

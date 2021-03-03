@@ -19,18 +19,24 @@ class FactoryBuilder extends EloquentFactoryBuilder
      *
      * @param Mapper $mapper
      * @param string $class
-     * @param string $name
      * @param array  $definitions
      * @param array  $states
      * @param array  $afterMaking
      * @param array  $afterCreating
      * @param Faker  $faker
      */
-    public function __construct(Mapper $mapper, $class, $name, array $definitions, array $states, array $afterMaking, array $afterCreating, Faker $faker)
-    {
+    public function __construct(
+        Mapper $mapper,
+        $class,
+        array $definitions,
+        array $states,
+        array $afterMaking,
+        array $afterCreating,
+        Faker $faker
+    ) {
         $this->mapper = $mapper;
 
-        parent::__construct($class, $name, $definitions, $states, $afterMaking, $afterCreating, $faker);
+        parent::__construct($class, $definitions, $states, $afterMaking, $afterCreating, $faker);
     }
 
     /**
@@ -79,8 +85,8 @@ class FactoryBuilder extends EloquentFactoryBuilder
      */
     protected function makeInstance(array $attributes = [])
     {
-        if (!isset($this->definitions[$this->class][$this->name])) {
-            throw new InvalidArgumentException("Unable to locate factory with name [{$this->name}] [{$this->class}].");
+        if (!isset($this->definitions[$this->class])) {
+            throw new InvalidArgumentException("Unable to locate factory for [{$this->class}].");
         }
 
         $attributes = $this->getRawAttributes($attributes);
