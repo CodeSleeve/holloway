@@ -632,9 +632,9 @@ abstract class Mapper
     {
         if (static::hasGlobalScope($scope)) {
             if (is_string($scope)) {
-                static::$globalScopes[static::class][$scope] = null;
+                unset(static::$globalScopes[static::class][$scope]);
             } elseif ($scope instanceof Scope) {
-                static::$globalScopes[static::class][get_class($scope)] = null;
+                unset(static::$globalScopes[static::class][get_class($scope)]);
             } else {
                 throw new InvalidArgumentException('Global scope must be a string name or an instance of Scope.');
             }

@@ -751,4 +751,10 @@ class MapperTest extends TestCase
     {
         $this->markTestIncomplete('This test has not been implemented yet.');
     }
+
+    /** @test */
+    public function global_query_scopes_that_are_removed_will_no_longer_be_applied_when_querying_relations()
+    {
+        $this->markTestIncomplete('This test has not been implemented yet.');
+    }
 }
