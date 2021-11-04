@@ -69,6 +69,11 @@ abstract class Mapper
     protected $hasTimestamps = true;
 
     /**
+     * @var string
+     */
+    protected $timestampFormat = 'Y-m-d H:i:s';
+
+    /**
      * @var boolean
      */
     protected $isAutoIncrementing = true;
@@ -491,7 +496,7 @@ abstract class Mapper
                     if ($this->hasTimestamps === true) {
                         $attributes = \Illuminate\Support\Arr::except($attributes, [self::UPDATED_AT, self::CREATED_AT]);
                         $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
-                        $attributes[static::UPDATED_AT] = $now;
+                        $attributes[static::UPDATED_AT] = $now->format($this->timestampFormat);
 
                         if (method_exists($this, 'setUpdatedAtTimestampOnEntity')) {
                             $this->setUpdatedAtTimestampOnEntity($entity, $now);
@@ -516,8 +521,8 @@ abstract class Mapper
 
                 if ($this->hasTimestamps === true) {
                     $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
-                    $attributes[static::CREATED_AT] = $now;
-                    $attributes[static::UPDATED_AT] = $now;
+                    $attributes[static::CREATED_AT] = $now->format($this->timestampFormat);
+                    $attributes[static::UPDATED_AT] = $now->format($this->timestampFormat);
 
                     if (method_exists($this, 'setCreatedAtTimestampOnEntity')) {
                         $this->setCreatedAtTimestampOnEntity($entity, $now);
