@@ -30,15 +30,17 @@
         }
     },
     "require-dev": {
-        "fzaninotto/faker": "^1.9.1",
+        "fakerphp/faker": "^1.9.1",
         "mockery/mockery": "^1.4.2",
         "doctrine/instantiator": "~1.4.0",
         "phpunit/phpunit": "^8.5.8|^9.3.3"
     },
     "minium-stability": "stable",
-    "laravel": {
-        "providers": [
-            "CodeSleeve\\Holloway\\HollowayServiceProvider"
-        ]
+    "extra": {
+        "laravel": {
+            "providers": [
+                "CodeSleeve\\Holloway\\HollowayServiceProvider"
+            ]
+        }
     }
 }
