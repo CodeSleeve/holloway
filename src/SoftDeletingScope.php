@@ -16,23 +16,16 @@ class SoftDeletingScope implements Scope
 
     /**
      * Apply the scope to a given Mapper query builder.
-     *
-     * @param  Builder $builder
-     * @param  Mapper  $mapper
-     * @return void
      */
-    public function apply(Builder $builder, Mapper $mapper)
+    public function apply(Builder $builder, Mapper $mapper) : void
     {
         $builder->whereNull($mapper->getQualifiedDeletedAtColumn());
     }
 
     /**
      * Extend the query builder with the needed functions.
-     *
-     * @param  Builder  $builder
-     * @return void
      */
-    public function extend(Builder $builder)
+    public function extend(Builder $builder) : void
     {
         foreach ($this->extensions as $extension) {
             $this->{"add{$extension}"}($builder);
@@ -50,11 +43,8 @@ class SoftDeletingScope implements Scope
     /**
      * Get the "deleted at" column for the builder.
      * If we have joins on the query, we'll need to use the fully qualified name.
-     *
-     * @param  Builder  $builder
-     * @return string
      */
-    protected function getDeletedAtColumn(Builder $builder)
+    protected function getDeletedAtColumn(Builder $builder) : string
     {
         if (count((array) $builder->getQuery()->joins) > 0) {
             return $builder->getMapper()->getQualifiedDeletedAtColumn();
@@ -65,11 +55,8 @@ class SoftDeletingScope implements Scope
 
     /**
      * Add the restore extension to the builder.
-     *
-     * @param  Builder  $builder
-     * @return void
      */
-    protected function addRestore(Builder $builder)
+    protected function addRestore(Builder $builder) : void
     {
         $builder->macro('restore', function (Builder $builder) {
             $builder->withTrashed();
@@ -80,11 +67,8 @@ class SoftDeletingScope implements Scope
 
     /**
      * Add the with-trashed extension to the builder.
-     *
-     * @param  Builder  $builder
-     * @return void
      */
-    protected function addWithTrashed(Builder $builder)
+    protected function addWithTrashed(Builder $builder) : void
     {
         $builder->macro('withTrashed', function (Builder $builder) {
             return $builder->withoutGlobalScope($this);
@@ -93,11 +77,8 @@ class SoftDeletingScope implements Scope
 
     /**
      * Add the without-trashed extension to the builder.
-     *
-     * @param  Builder  $builder
-     * @return void
      */
-    protected function addWithoutTrashed(Builder $builder)
+    protected function addWithoutTrashed(Builder $builder) : void
     {
         $builder->macro('withoutTrashed', function (Builder $builder) {
             $mapper = $builder->getMapper();
@@ -112,11 +93,8 @@ class SoftDeletingScope implements Scope
 
     /**
      * Add the only-trashed extension to the builder.
-     *
-     * @param  Builder  $builder
-     * @return void
      */
-    protected function addOnlyTrashed(Builder $builder)
+    protected function addOnlyTrashed(Builder $builder) : void
     {
         $builder->macro('onlyTrashed', function (Builder $builder) {
             $mapper = $builder->getMapper();

@@ -36,7 +36,7 @@ abstract class Mapper
     /**
      * @var EntityCache
      */
-    protected $entityCache;
+    protected EntityCache $entityCache;
 
     /**
      * @var string
@@ -120,7 +120,6 @@ abstract class Mapper
     /**
      * Return the identifier (primary key) for a given entity.
      *
-     * @param  mixed $entity
      * @return mixed
      */
     abstract public function getIdentifier($entity);
@@ -132,7 +131,7 @@ abstract class Mapper
      * @param mixed $entity
      * @return void
      */
-    abstract public function setIdentifier($entity, $value);
+    abstract public function setIdentifier($entity, $value) : void;
 
     /**
      * @param  stdClass   $record
@@ -148,8 +147,7 @@ abstract class Mapper
     abstract public function dehydrate($entity) : array;
 
     /**
-     * @param  array $attributes
-     * @return mixed
+     * Instantiate a new entity instance.
      */
     public function instantiateEntity(array $attributes)
     {
@@ -157,7 +155,7 @@ abstract class Mapper
     }
 
     /**
-     * @return string
+     * Get the name of the created at column used by this mapper.
      */
     public function getCreatedAtColumnName() : string
     {
@@ -165,7 +163,7 @@ abstract class Mapper
     }
 
     /**
-     * @return string
+     * Get the name of the updated at column used by this mapper.
      */
     public function getUpdatedAtColumnName() : string
     {
@@ -173,10 +171,24 @@ abstract class Mapper
     }
 
     /**
-     * @param  string $name
-     * @throws \Holloway\Exceptions\UnknownRelationshipException
-     * @return Relationships\Relationship
+     * Clear the entity cache on this mapper.
      */
+    public function clearEntityCache() : void
+    {
+        $this->entityCache->flush();
+    }
+
+    /**
+     * Get the number of cached entities on this mapper.
+     */
+    public function getNumberOfCachedEntities() : int
+    {
+        return $this->entityCache->count();
+    }
+
+    /**
+    * Retrieve the given relationship from this mapper or throw an exception if it hasn't been defined.
+    */
     public function getRelationship(string $name) : Relationships\Relationship
     {
         if (isset($this->relationships[$name])) {
@@ -187,9 +199,8 @@ abstract class Mapper
     }
 
     /**
-     * @param  string  $name
-     * @return boolean
-     */
+    * Determine whether the given relationship name is defined on this mapper.
+    */
     public function hasRelationship(string $name) : bool
     {
         return isset($this->relationships[$name]) ?: false;
@@ -197,11 +208,8 @@ abstract class Mapper
 
     /**
      * Begin querying a mapper with eager loading.
-     *
-     * @param  array|string  $relations
-     * @return \Illuminate\Database\Eloquent\Builder|static
      */
-    public function with($relations)
+    public function with($relations) : Builder
     {
         $relations = is_string($relations) ? func_get_args() : $relations;
 
@@ -210,10 +218,8 @@ abstract class Mapper
 
     /**
      * Get all of the entities from the database.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection|static[]
      */
-    public function all()
+    public function all() : Collection
     {
         return $this->newQuery()->get();
     }
@@ -221,10 +227,9 @@ abstract class Mapper
     /**
      * Eager load relations on the mapper.
      *
-     * @param  array|string  $relations
-     * @return $this
+     * @param  mixed  $relations
      */
-    public function load($relations)
+    public function load($relations) : self
     {
         $query = $this->newQuery()->with(
             is_string($relations) ? func_get_args() : $relations
@@ -237,19 +242,14 @@ abstract class Mapper
 
     /**
      * Resolve a connection instance.
-     *
-     * @param  string|null  $connection
-     * @return Connection
      */
-    public static function resolveConnection(string $connection = null) : Connection
+    public static function resolveConnection(?string $connection = null) : Connection
     {
         return static::$resolver->connection($connection);
     }
 
     /**
      * Get the connection resolver instance.
-     *
-     * @return Resolver
      */
     public static function getConnectionResolver() : Resolver
     {
@@ -258,9 +258,6 @@ abstract class Mapper
 
     /**
      * Set the connection resolver instance.
-     *
-     * @param  Resolver $resolver
-     * @return void
      */
     public static function setConnectionResolver(Resolver $resolver) : void
     {
@@ -269,8 +266,6 @@ abstract class Mapper
 
     /**
      * Unset the connection resolver for entities.
-     *
-     * @return void
      */
     public static function unsetConnectionResolver() : void
     {
@@ -279,9 +274,6 @@ abstract class Mapper
 
     /**
      * Set the event manager instance.
-     *
-     * @param  EventManagerInterface $eventManager
-     * @return void
      */
     public static function setEventManager(EventManagerInterface $eventManager) : void
     {
@@ -290,8 +282,6 @@ abstract class Mapper
 
     /**
      * Unset the connection resolver for entities.
-     *
-     * @return void
      */
     public static function unsetEventManager() : void
     {
@@ -299,17 +289,15 @@ abstract class Mapper
     }
 
     /**
-     * @return void
+     * Flush this mapper's entity cache.
      */
-    public function flushEntityCache()
+    public function flushEntityCache() : void
     {
-        return $this->entityCache->flush();
+        $this->entityCache->flush();
     }
 
     /**
      * Get a new query builder for the mapper's table.
-     *
-     * @return Builder
      */
     public function newQuery() : Builder
     {
@@ -339,11 +327,8 @@ abstract class Mapper
 
     /**
      * Get a new query instance without a given scope.
-     *
-     * @param  \Illuminate\Database\Eloquent\Scope|string  $scope
-     * @return Builder
      */
-    public function newQueryWithoutScope($scope)
+    public function newQueryWithoutScope(Scope|string $scope) : Builder
     {
         $builder = $this->newQuery();
 
@@ -351,22 +336,17 @@ abstract class Mapper
     }
 
     /**
-     * Create a new Eloquent query builder for the mapper.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return Builder|static
+     * Create a new Holloway query builder for the mapper.
      */
-    public function newHollowayBuilder($query)
+    public function newHollowayBuilder(QueryBuilder $query) : Builder
     {
         return new Builder($query);
     }
 
     /**
      * Get a new query builder instance for the connection.
-     *
-     * @return \Illuminate\Database\Query\Builder
      */
-    protected function newBaseQueryBuilder()
+    protected function newBaseQueryBuilder() : QueryBuilder
     {
         $connection = $this->getConnection();
 
@@ -376,10 +356,9 @@ abstract class Mapper
     }
 
     /**
-     * @param  stdClass $record
-     * @return mixed
+     * Make a new entity instance using a stdClass record from storage.
      */
-    public function makeEntity(stdClass $record)
+    public function makeEntity(stdClass $record) : mixed
     {
         $primaryKey = $this->primaryKeyName;
 
@@ -393,8 +372,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  Collection $records
-     * @return Collection
+     * Make a collection of new entity instances from a Collection of stdClass records.
      */
     public function makeEntities(Collection $records) : Collection
     {
@@ -404,8 +382,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  array  $entities
-     * @return Collection
+     * Return a new collection of Entities.
      */
     public function newCollection(array $entities = []) : Collection
     {
@@ -413,8 +390,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  mixed $entity
-     * @return bool
+     * Persist a single entity or collection of entities to storage.
      */
     public function store($entity) : bool
     {
@@ -426,8 +402,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  mixed $entity
-     * @return bool
+     * Remove a single entity or collection of entities from storage.
      */
     public function remove($entity) : bool
     {
@@ -443,9 +418,6 @@ abstract class Mapper
      * when test factory's create() method is used to persist an entity.
      * You may override this at your convenience; By default, this method
      * simply proxies to the store() method.
-     *
-     * @param  mixed $entity
-     * @return bool
      */
     public function factoryInsert($entity) : bool
     {
@@ -453,8 +425,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  iterable $entities
-     * @return bool
+     * Persist a collection of entities into storage.
      */
     protected function storeEntities(iterable $entities) : bool
     {
@@ -468,8 +439,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  mixed $entity
-     * @return bool
+     * Persist a single entity into storage.
      */
     protected function storeEntity($entity) : bool
     {
@@ -555,8 +525,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  mixed $entity
-     * @return bool
+     * Remove a single entity from storage.
      */
     protected function removeEntity($entity) : bool
     {
@@ -585,8 +554,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  iterable $entities
-     * @return bool
+     * Remove a collection of entities from storage.
      */
     protected function removeEntities(iterable $entities) : bool
     {
@@ -605,35 +573,33 @@ abstract class Mapper
     // =======================================================================//
 
     /**
-     * Register a new global scope on the model.
+     * Register a new global scope on this mapper.
      *
-     * @param Scope|Closure|string  $scope
-     * @param  Closure|null  $implementation
-     * @return mixed
-     *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
-    public static function addGlobalScope($scope, Closure $implementation = null)
+    public static function addGlobalScope(Scope|Closure|string $scope, ?Closure $implementation = null) : void
     {
         if (is_string($scope) && ! is_null($implementation)) {
-            return static::$globalScopes[static::class][$scope] = $implementation;
+            static::$globalScopes[static::class][$scope] = $implementation;
+
+            return;
         } elseif ($scope instanceof Closure) {
-            return static::$globalScopes[static::class][spl_object_hash($scope)] = $scope;
+            static::$globalScopes[static::class][spl_object_hash($scope)] = $scope;
+
+            return;
         } elseif ($scope instanceof Scope) {
-            return static::$globalScopes[static::class][get_class($scope)] = $scope;
+            static::$globalScopes[static::class][get_class($scope)] = $scope;
+
+            return;
         }
 
-        throw new InvalidArgumentException('Global scope must be an instance of Closure or Scope.');
+        throw new InvalidArgumentException('Global scope must be an instance of string, Closure, or Scope.');
     }
 
     /**
      * Remove a registered global scope on the mapper.
-     *
-     * @param string $scope
-     * @throws \InvalidArgumentException
-     * @return void
      */
-    public static function removeGlobalScope(string $scope)
+    public static function removeGlobalScope(Scope|string $scope) : void
     {
         if (static::hasGlobalScope($scope)) {
             if (is_string($scope)) {
@@ -648,58 +614,46 @@ abstract class Mapper
 
     /**
      * Determine if a model has a global scope.
-     *
-     * @param  Scope|string  $scope
-     * @return bool
      */
-    public static function hasGlobalScope($scope)
+    public static function hasGlobalScope(Scope|string $scope) : bool
     {
         return ! is_null(static::getGlobalScope($scope));
     }
 
     /**
      * Get a global scope registered with the model.
-     *
-     * @param  Scope|string  $scope
-     * @return Scope|\Closure|null
      */
-    public static function getGlobalScope($scope)
+    public static function getGlobalScope(Scope|string $scope) : Scope|Closure|string
     {
         if (is_string($scope)) {
             return \Illuminate\Support\Arr::get(static::$globalScopes, static::class.'.'.$scope);
         }
 
-        return \Iluminate\Support\Arr::get(
+        return \Illuminate\Support\Arr::get(
             static::$globalScopes, static::class.'.'.get_class($scope)
         );
     }
 
     /**
      * Get the global scopes for this class instance.
-     *
-     * @return array
      */
-    public function getGlobalScopes()
+    public function getGlobalScopes() : array
     {
         return \Illuminate\Support\Arr::get(static::$globalScopes, static::class, []);
     }
 
     /**
-     * @param  string  $eventName
-     * @param  mixed   $entity
-     * @return void
-     */
+    * Fire a persistence event for the given entity.
+    */
     protected function firePersistenceEvent(string $eventName, $entity)
     {
         return static::$eventManager->dispatch("$eventName: " . get_class($entity), $entity);
     }
 
     /**
-     * @param  string   $eventName
-     * @param  callable $callback
-     * @return void
+     * Register a new persistence event listern.
      */
-    public function registerPersistenceEvent(string $eventName, callable $callback)
+    public function registerPersistenceEvent(string $eventName, callable $callback) : void
     {
         if (!$callback instanceof Closure) {
             $callback = Closure::fromCallable($callback);
@@ -714,13 +668,9 @@ abstract class Mapper
     // =======================================================================//
 
     /**
-     * @param  string       $name
-     * @param  string       $entityName
-     * @param  string|null  $foreignKey
-     * @param  string|null  $localKey
-     * @return void
+     * Define a new hasOne relationship
      */
-    protected function hasOne(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null)
+    protected function hasOne(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null) : void
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
@@ -731,11 +681,7 @@ abstract class Mapper
     }
 
     /**
-     * @param  string       $name
-     * @param  string       $entityName
-     * @param  string|null  $foreignKey
-     * @param  string|null  $localKey
-     * @return void
+     * Define a new hasMany relationship
      */
     protected function hasMany(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null)
     {
@@ -748,13 +694,9 @@ abstract class Mapper
     }
 
     /**
-     * @param  string       $name
-     * @param  string       $entityName
-     * @param  string|null  $foreignKey
-     * @param  string|null  $localKey
-     * @return void
+     * Define a new belongsTo relationship
      */
-    protected function belongsTo(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null)
+    protected function belongsTo(string $name, string $entityName, ?string $foreignKey = null, ?string $localKey = null) : void
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
@@ -765,14 +707,9 @@ abstract class Mapper
     }
 
     /**
-     * @param  string       $name
-     * @param  string       $entityName
-     * @param  string|null  $pivotTableName
-     * @param  string|null  $foreignKey
-     * @param  string|null  $localKey
-     * @return void
+     * Define a new belongsToMany relationship
      */
-    protected function belongsToMany(string $name, string $entityName, ?string $pivotTableName = null, ?string $pivotLocalKey = null, ?string $pivotForeignKey = null)
+    protected function belongsToMany(string $name, string $entityName, ?string $pivotTableName = null, ?string $pivotLocalKey = null, ?string $pivotForeignKey = null) : void
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
@@ -790,14 +727,9 @@ abstract class Mapper
     }
 
     /**
-     * @param  string    $name
-     * @param  callable  $load
-     * @param  callable  $for
-     * @param  mixed     $entityClassName
-     * @param  bool      $limitOne
-     * @return void
+     * Define a new custom relationship
      */
-    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false)
+    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false) : void
     {
         if (!$load instanceof Closure) {
             $load = Closure::fromCallable($load);
@@ -815,13 +747,7 @@ abstract class Mapper
     }
 
     /**
-     * Return a collection of related records (Alias for the custom() method).
-     *
-     * @param  string           $name
-     * @param  callable         $load
-     * @param  callable         $for
-     * @param  string|callable  $mapOrEntityName
-     * @return void
+     * Define a new customMany relationship
      */
     public function customMany(string $name, callable $load, callable $for, $mapOrEntityName)
     {
@@ -848,78 +774,55 @@ abstract class Mapper
     // =======================================================================//
 
 
-    /**
-     * @return Connection
-     */
     public function getConnection() : Connection
     {
         return static::resolveConnection($this->getConnectionName());
     }
 
-    /**
-     * @return string
-     */
     public function getConnectionName() : string
     {
         return $this->connection;
     }
 
-    /**
-     * @param  string  $name
-     * @return void
-     */
-    public function setConnection(string $name)
+    public function setConnection(string $name) : void
     {
         $this->connection = $name;
     }
 
     /**
      * Get the auto incrementing key type.
-     *
-     * @return string
      */
-    public function getKeyType()
+    public function getKeyType() : string
     {
         return $this->keyType;
     }
 
     /**
      * Get the value indicating whether the IDs are incrementing.
-     *
-     * @return bool
      */
-    public function getIncrementing()
+    public function getIsAutoIncrementing() : bool
     {
-        return $this->incrementing;
+        return $this->isAutoIncrementing;
     }
 
     /**
      * Set whether IDs are incrementing.
-     *
-     * @param  bool  $value
-     * @return $this
      */
-    public function setIncrementing($value)
+    public function setIsAutoIncrementing(bool $value) : void
     {
-        $this->incrementing = $value;
-
-        return $this;
+        $this->isAutoIncrementing = $value;
     }
 
     /**
      * Get the queueable identity for the entity.
-     *
-     * @return mixed
      */
-    public function getQueueableId()
+    public function getQueueableId() : string
     {
         return $this->primaryKeyName;
     }
 
     /**
      * Get the default foreign key name for the mapper.
-     *
-     * @return string
      */
     public function getForeignKeyName() : string
     {
@@ -930,8 +833,6 @@ abstract class Mapper
 
     /**
      * Get the number of entities to return per page.
-     *
-     * @return int
      */
     public function getPerPage() : int
     {
@@ -940,9 +841,6 @@ abstract class Mapper
 
     /**
      * Set the number of entities to return per page.
-     *
-     * @param  int  $perPage
-     * @return self
      */
     public function setPerPage(int $perPage) : self
     {
@@ -952,7 +850,7 @@ abstract class Mapper
     }
 
     /**
-     * @return array
+     * Get the relationships defined on this mapper.
      */
     public function getRelationships() : array
     {
@@ -960,7 +858,7 @@ abstract class Mapper
     }
 
     /**
-     * @return array
+     * Get the eager loads defined on this mapper.
      */
     public function getWith() : array
     {
@@ -968,7 +866,7 @@ abstract class Mapper
     }
 
     /**
-     * @return string
+     * Get the name of the table that's used by this mapper.
      */
     public function getTableName() : string
     {
@@ -982,16 +880,15 @@ abstract class Mapper
     }
 
     /**
-     * @param  string  $tableName
-     * @return void
+     * Set the name of the table that used by this mapper.
      */
-    public function setTableName(string $tableName)
+    public function setTableName(string $tableName) : void
     {
         $this->tableName = $tableName;
     }
 
     /**
-     * @return string
+     * Get the name of the primary key column on the table used by this mapper.
      */
     public function getPrimaryKeyName() : string
     {
@@ -999,16 +896,15 @@ abstract class Mapper
     }
 
     /**
-     * @param  string  $primaryKeyName
-     * @return void
+     * Set the name of the primary key column of the table that's used by this mapper.
      */
-    public function setPrimaryKeyName(string $primaryKeyName)
+    public function setPrimaryKeyName(string $primaryKeyName) : void
     {
         $this->primaryKeyName = $primaryKeyName;
     }
 
     /**
-     * @return string
+     * Get the fully qualified primary key column name for the table that's used by this mapper.
      */
     public function getQualifiedKeyName() : string
     {

@@ -13,58 +13,40 @@ final class Tree
     protected array $data = [];
     protected Mapper $rootMapper;
 
-    /**
-     * @param Mapper $rootMapper
-     */
     public function __construct(Mapper $rootMapper)
     {
         $this->holloway = Holloway::instance();
         $this->rootMapper = $rootMapper;
     }
 
-    /**
-     * @param  mixed  $loads
-     * @return $this
-     */
-    public function addLoads($loads)
+    public function addLoads($loads) : self
     {
         $loads = is_array($loads) ? $loads : func_get_args();
         $loads = $this->normalize($loads);
-
         $this->loads = array_merge($this->loads, $loads);
+
+        return $this;
     }
 
-    /**
-     * @param  mixed  $loads
-     * @return $this
-     */
-    public function removeLoads($loads)
+    public function removeLoads($loads) : self
     {
         $loads = is_array($loads) ? $loads : func_get_args();
-
         $this->loads = array_diff_key($this->loads, array_flip($loads));
+
+        return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getLoads() : array
     {
         return $this->loads;
     }
 
-    /**
-     * @return array
-     */
     public function getData() : array
     {
         return $this->data;
     }
 
-    /**
-     * @param array $data
-     */
-    public function setData(array $data)
+    public function setData(array $data) : void
     {
         $this->data = $data;
     }
@@ -74,9 +56,6 @@ final class Tree
      *
      * 1. Traverse the tree and load data into the relationship on each node.
      * 2. Traverse the tree again and make entities for each node.
-     *
-     * @param  Collection $records
-     * @return Collection
      */
     public function loadInto(Collection $records) : Collection
     {
@@ -89,10 +68,8 @@ final class Tree
     /**
      * If this tree doesn't currently contain any data then we'll call the buildTree()
      * method in order to pre-populate the nodes of the tree with our nested relations.
-     *
-     * @return void
      */
-    public function initialize()
+    public function initialize() : void
     {
        if (!$this->data) {
            $this->data = $this->buildTree();
@@ -102,10 +79,6 @@ final class Tree
     /**
      * Traverse each of the tree nodes (each node is a relationship)
      * and load related data for it.
-     *
-     * @param  array      $nodes
-     * @param  Collection $records
-     * @return void
      */
     protected function loadData(array $nodes, Collection $records)
     {

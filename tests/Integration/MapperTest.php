@@ -485,7 +485,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    public function it_can_chunk_relationships()
+    public function it_can_chunk_relationships_and_clear_the_entity_cache_after_each_chunk()
     {
         // given
         $this->buildFixtures();
@@ -499,10 +499,13 @@ class MapperTest extends TestCase
                     $this->assertInstanceOf(Collar::class, $pup->collar);
                 });
             });
+
+        // then
+        $this->assertEquals(0, $mapper->getNumberOfCachedEntities());
     }
 
     /** @test */
-    public function it_can_chunk_relationships_by_id()
+    public function it_can_chunk_relationships_by_id_and_clear_the_entity_cache_after_each_chunk()
     {
         // given
         $this->buildFixtures();
@@ -515,6 +518,9 @@ class MapperTest extends TestCase
                     $this->assertInstanceOf(Collar::class, $pup->collar);
                 });
             });
+
+        // then
+        $this->assertEquals(0, $mapper->getNumberOfCachedEntities());
     }
 
     /** @test */

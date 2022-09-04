@@ -19,9 +19,11 @@ $capsule = new Capsule($container);
 $container['db'] = $capsule->getDatabaseManager();
 
 $capsule->addConnection([
+    //'driver'    => 'pgsql',
     'driver'    => 'mysql',
     'host'      => 'localhost',
     'database'  => 'holloway',
+    //'username'  => 'postgres',
     'username'  => 'root',
     'password'  => 'password',
     'charset'   => 'utf8',

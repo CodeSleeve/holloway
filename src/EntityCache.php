@@ -4,63 +4,38 @@ namespace CodeSleeve\Holloway;
 
 class EntityCache
 {
-    /**
-     * @var array
-     */
-    protected $items = [];
-
-    /**
-     * @var string
-     */
-    protected $keyName;
-
-    /**
-     * @param string $keyName
-     */
-    public function __construct(string $keyName)
-    {
-        $this->keyName = $keyName;
+    public function __construct(
+        protected string $keyName, 
+        protected array $items = [],
+    ) {
+        //
     }
 
-    /**
-     * @param  string $identifier
-     * @return array|null
-     */
     public function get(string $identifier) : ?array
     {
         return $this->items[$identifier] ?? null;
     }
 
-    /**
-     * @return array
-     */
     public function all() : array
     {
         return $this->items;
     }
 
-    /**
-     * @param string $identifier
-     * @return bool
-     */
+    public function count() : int
+    {
+        return count($this->items);
+    }
+
     public function has(string $identifier) : bool
     {
         return array_key_exists($identifier, $this->items);
     }
 
-    /**
-     * @param string $identifier
-     * @param array  $attributes
-     */
     public function set(string $identifier, array $attributes) : void
     {
         $this->items[$identifier] = $attributes;
     }
 
-    /**
-     * @param  array $records
-     * @return void
-     */
     public function merge(array $records) : void
     {
         foreach ($records as $record) {
@@ -70,18 +45,11 @@ class EntityCache
         }
     }
 
-    /**
-     * @param  string $identifier
-     * @return void
-     */
     public function remove(string $identifier) : void
     {
         unset($this->items[$identifier]);
     }
 
-    /**
-     * @return void
-     */
     public function flush() : void
     {
         $this->items = [];

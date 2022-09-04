@@ -19,38 +19,28 @@ class Builder
 
     /**
      * The base query builder instance.
-     *
-     * @var QueryBuilder
      */
-    protected $query;
+    protected ?QueryBuilder $query = null;
 
     /**
      * The mapper for this builder.
-     *
-     * @var Mapper
      */
-    protected $mapper;
+    protected ?Mapper $mapper = null;
 
     /**
      * The relationship tree that should be loaded with this query.
-     *
-     * @var Tree
      */
-    protected $tree;
+    protected ?Tree $tree = null;
 
     /**
      * All of the globally registered builder macros.
-     *
-     * @var array
      */
-    protected static $macros = [];
+    protected static array $macros = [];
 
     /**
      * All of the locally registered builder macros.
-     *
-     * @var array
      */
-    protected $localMacros = [];
+    protected array $localMacros = [];
 
     /**
      * A replacement for the typical delete function.
@@ -61,27 +51,21 @@ class Builder
 
     /**
      * The methods that should be returned from query builder.
-     *
-     * @var array
      */
-    protected $passthru = [
+    protected array $passthru = [
         'insert', 'insertGetId', 'getBindings', 'toSql',
         'exists', 'count', 'min', 'max', 'avg', 'sum', 'getConnection',
     ];
 
     /**
      * Applied global scopes.
-     *
-     * @var array
      */
-    protected $scopes = [];
+    protected array $scopes = [];
 
     /**
      * Removed global scopes.
-     *
-     * @var array
      */
-    protected $removedScopes = [];
+    protected array $removedScopes = [];
 
     /**
      * @param  \Illuminate\Database\Query\Builder $query
@@ -280,7 +264,7 @@ class Builder
      * @param  string  $boolean
      * @return Builder
      */
-    public function where($column, string $operator = null, $value = null, string $boolean = 'and') : Builder
+    public function where($column, string $operator = null, $value = null, string $boolean = 'and') : self
     {
         if ($column instanceof Closure) {
             $query = $this->mapper->newQueryWithoutScopes();
@@ -303,16 +287,13 @@ class Builder
      * @param  mixed            $value
      * @return Builder
      */
-    public function orWhere($column, string $operator = null, $value = null) : Builder
+    public function orWhere($column, string $operator = null, $value = null) : self
     {
         return $this->where($column, $operator, $value, 'or');
     }
 
     /**
      * Execute the query as a "select" statement.
-     *
-     * @param  array  $columns
-     * @return Collection
      */
     public function get() : Collection
     {
@@ -488,11 +469,8 @@ class Builder
      * Set the relations that should be eager loaded.
      * Here, all we're really doing is passing these through to this
      * query's tree so that they'll be loaded when we tell our tree to render.
-     *
-     * @param  mixed  $relations
-     * @return $this
      */
-    public function with($relations)
+    public function with(mixed $relations) : self
     {
         $this->getTree()
             ->addLoads(is_string($relations) ? func_get_args() : $relations);
@@ -502,11 +480,8 @@ class Builder
 
     /**
      * Prevent the specified relations from being eager loaded.
-     *
-     * @param  mixed  $relations
-     * @return $this
      */
-    public function without($relations)
+    public function without(mixed $relations) : self
     {
         $this->getTree()->removeLoads(is_string($relations) ? func_get_args() : $relations);
 
@@ -515,12 +490,8 @@ class Builder
 
     /**
      * Chunk the results of the query.
-     *
-     * @param  int  $count
-     * @param  callable  $callback
-     * @return bool
      */
-    public function chunk($count, callable $callback)
+    public function chunk(int $count, callable $callback) : bool
     {
         $this->enforceOrderBy();
 
@@ -549,6 +520,11 @@ class Builder
 
             unset($results);
 
+            // After each chunk has been processed, we will flush the entity cache so that
+            // the developer doesn't have to worry about memory leaks when then process
+            // really large data sets with this method.
+            $this->mapper->clearEntityCache();
+
             $page++;
         } while ($countResults == $count);
 
@@ -557,14 +533,8 @@ class Builder
 
     /**
      * Chunk the results of a query by comparing numeric IDs.
-     *
-     * @param  int  $count
-     * @param  callable  $callback
-     * @param  string  $column
-     * @param  string|null  $alias
-     * @return bool
      */
-    public function chunkById($count, callable $callback, $column = null, $alias = null)
+    public function chunkById(int $count, callable $callback, ?string $column = null, ?string $alias = null) : bool
     {
         $column = is_null($column) ? $this->getMapper()->getPrimaryKeyName() : $column;
 
@@ -593,6 +563,11 @@ class Builder
                 return false;
             }
 
+            // After each chunk has been processed, we will flush the entity cache so that
+            // the developer doesn't have to worry about memory leaks when then process
+            // really large data sets with this method.
+            $this->mapper->clearEntityCache();
+
             $lastId = $results->last()->{$alias};
         } while ($countResults == $count);
 
@@ -601,8 +576,6 @@ class Builder
 
     /**
      * Return the load tree for this query.
-     *
-     * @return Tree
      */
     public function getTree() : Tree
     {
@@ -615,10 +588,8 @@ class Builder
 
     /**
      * Add a generic "order by" clause if the query doesn't already have one.
-     *
-     * @return void
      */
-    protected function enforceOrderBy()
+    protected function enforceOrderBy() : void
     {
         if (empty($this->query->orders) && empty($this->query->unionOrders)) {
             $this->orderBy($this->mapper->getQualifiedKeyName(), 'asc');
@@ -654,17 +625,10 @@ class Builder
 
     /**
      * Paginate the given query into a simple paginator.
-     *
-     * @param  int  $perPage
-     * @param  array  $columns
-     * @param  string  $pageName
-     * @param  int|null  $page
-     * @return PaginatorContract
      */
-    public function simplePaginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null) : PaginatorContract
+    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract 
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
-
         $perPage = $perPage ?: $this->mapper->getPerPage();
 
         // Next we will set the limit and offset for this query so that when we get the
@@ -680,8 +644,6 @@ class Builder
 
     /**
      * Get the underlying query builder instance.
-     *
-     * @return QueryBuilder
      */
     public function getQuery() : QueryBuilder
     {
@@ -690,11 +652,8 @@ class Builder
 
     /**
      * Set the underlying query builder instance.
-     *
-     * @param  QueryBuilder $query
-     * @return $this
      */
-    public function setQuery(QueryBuilder $query)
+    public function setQuery(QueryBuilder $query) : self
     {
         $this->query = $query;
 
@@ -703,8 +662,6 @@ class Builder
 
     /**
      * Get a base query builder instance.
-     *
-     * @return \Illuminate\Database\Query\Builder
      */
     public function toBase() : QueryBuilder
     {
@@ -713,12 +670,8 @@ class Builder
 
     /**
      * Register a new global scope.
-     *
-     * @param  string  $identifier
-     * @param  \Illuminate\Database\Eloquent\Scope|\Closure  $scope
-     * @return $this
      */
-    public function withGlobalScope($identifier, $scope) : Builder
+    public function withGlobalScope(string $identifier, Scope|Closure $scope) : self
     {
         $this->scopes[$identifier] = $scope;
 
@@ -731,11 +684,8 @@ class Builder
 
     /**
      * Remove a registered global scope.
-     *
-     * @param  \Illuminate\Database\Eloquent\Scope|string  $scope
-     * @return $this
      */
-    public function withoutGlobalScope($scope) : Builder
+    public function withoutGlobalScope(Scope|string $scope) : self
     {
         if (! is_string($scope)) {
             $scope = get_class($scope);
@@ -750,11 +700,8 @@ class Builder
 
     /**
      * Remove all or passed registered global scopes.
-     *
-     * @param  array|null  $scopes
-     * @return $this
      */
-    public function withoutGlobalScopes(array $scopes = null) : Builder
+    public function withoutGlobalScopes(?array $scopes) : self
     {
         if (is_array($scopes)) {
             foreach ($scopes as $scope) {
