@@ -23,7 +23,7 @@ final class Tree
     {
         $loads = is_array($loads) ? $loads : func_get_args();
         $loads = $this->normalize($loads);
-        $this->loads = array_merge($this->loads, $loads);
+        $this->loads = [...$this->loads, ...$loads];
 
         return $this;
     }
