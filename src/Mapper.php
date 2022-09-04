@@ -623,7 +623,7 @@ abstract class Mapper
     /**
      * Get a global scope registered with the model.
      */
-    public static function getGlobalScope(Scope|string $scope) : Scope|Closure|string
+    public static function getGlobalScope(Scope|string $scope) : Scope|Closure|string|null
     {
         if (is_string($scope)) {
             return \Illuminate\Support\Arr::get(static::$globalScopes, static::class.'.'.$scope);
