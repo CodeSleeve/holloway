@@ -33,7 +33,7 @@ abstract class Mapper
     protected int $perPage = 15;
     protected bool $hasTimestamps = true;
     protected string $timestampFormat = 'Y-m-d H:i:s';
-    protected bool $isAutoIncrementing = true;
+    protected bool $incrementing = true;
     protected array $relationships = [];
     protected array $with = [];
     protected static array $globalScopes = [];
@@ -452,7 +452,7 @@ abstract class Mapper
 
                 $table = $this->getConnection()->table($this->getTable());
 
-                if ($this->isAutoIncrementing) {
+                if ($this->incrementing) {
                     $this->setIdentifier($entity, $table->insertGetId($attributes));
                 } else {
                     $table->insert($attributes);
@@ -747,17 +747,17 @@ abstract class Mapper
     /**
      * Get the value indicating whether the IDs are incrementing.
      */
-    public function getIsAutoIncrementing() : bool
+    public function getIncrementing() : bool
     {
-        return $this->isAutoIncrementing;
+        return $this->incrementing;
     }
 
     /**
      * Set whether IDs are incrementing.
      */
-    public function setIsAutoIncrementing(bool $value) : void
+    public function setIncrementing(bool $value) : void
     {
-        $this->isAutoIncrementing = $value;
+        $this->incrementing = $value;
     }
 
     /**
