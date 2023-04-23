@@ -6,11 +6,8 @@ use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Collar, Company, Pup};
 
 class CollarMapper extends Mapper
 {
-    /** @var string */
-    protected $tableName = 'collars';
-
-    /** @var string */
-    protected $entityClassName = Collar::class;
+    protected string $table = 'collars';
+    protected string $entityClassName = Collar::class;
 
     /**
      * @return  void

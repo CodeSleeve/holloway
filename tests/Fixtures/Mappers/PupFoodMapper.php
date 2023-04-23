@@ -6,15 +6,8 @@ use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Company, Pup, PupFood};
 
 class PupFoodMapper extends Mapper
 {
-    /**
-     * string $table
-     */
-    protected $table = 'pup_foods';
-
-    /**
-     * @var string
-     */
-    protected $entityClassName = PupFood::class;
+    protected string $table = 'pup_foods';
+    protected string $entityClassName = PupFood::class;
 
     /**
      * @return  void

@@ -9,15 +9,8 @@ class PupMapper extends Mapper
 {
     use SoftDeletes;
 
-    /**
-     * string $table
-     */
-    protected $table = 'pups';
-
-    /**
-     * @var string
-     */
-    protected $entityClassName = Pup::class;
+    protected string $table = 'pups';
+    protected string $entityClassName = Pup::class;
 
     /**
      * @return  void

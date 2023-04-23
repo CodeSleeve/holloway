@@ -12,9 +12,6 @@ use CodeSleeve\Holloway\Tests\Fixtures\Entities\Entity;
 
 abstract class Mapper extends BaseMapper
 {
-    /** @var Instantiator */
-    protected $instantiator;
-    
     /**
      * @param Instantiator|null $instantiator
      */
@@ -61,18 +58,18 @@ abstract class Mapper extends BaseMapper
      * @param  Collection $relationships
      * @return mixed
      */
-    public function hydrate(stdClass $record, Collection $relationships)
+    public function hydrate(stdClass $record, Collection $relations)
     {
-        $attributes = array_merge((array) $record, $relationships->all());
+        $attributes = array_merge((array) $record, $relations->all());
 
         if ($this->hasTimestamps) {
             $attributes['created_at'] = new CarbonImmutable($record->created_at);
             $attributes['updated_at'] = new CarbonImmutable($record->updated_at);
         }
 
-        $object = $this->instantiateEntity($attributes);
+        $entity = $this->instantiateEntity($attributes);
 
-        return $object->mapperFill($attributes);
+        return $entity->mapperFill($attributes);
     }
 
     /**

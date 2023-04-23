@@ -166,7 +166,7 @@ class Builder
     {
         $this->mapper = $mapper;
 
-        $this->query->from($mapper->getTableName());
+        $this->query->from($mapper->getTable());
 
         return $this;
     }
@@ -536,7 +536,7 @@ class Builder
      */
     public function chunkById(int $count, callable $callback, ?string $column = null, ?string $alias = null) : bool
     {
-        $column = is_null($column) ? $this->getMapper()->getPrimaryKeyName() : $column;
+        $column = is_null($column) ? $this->getMapper()->getKeyName() : $column;
 
         $alias = is_null($alias) ? $column : $alias;
 

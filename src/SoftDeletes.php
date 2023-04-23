@@ -64,8 +64,8 @@ trait SoftDeletes
         }
 
         $this->getConnection()
-            ->table($this->getTableName())
-            ->where($this->getPrimaryKeyName(), $this->getIdentifier($entity))
+            ->table($this->getTable())
+            ->where($this->getKeyName(), $this->getIdentifier($entity))
             ->update([$this->getQualifiedDeletedAtColumn() => null]);
 
         $this->firePersistenceEvent('restored', $entity);
@@ -105,6 +105,6 @@ trait SoftDeletes
      */
     public function getQualifiedDeletedAtColumn()
     {
-        return $this->getTableName().'.'.$this->getDeletedAtColumnName();
+        return $this->getTable().'.'.$this->getDeletedAtColumnName();
     }
 }

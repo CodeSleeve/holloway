@@ -7,20 +7,9 @@ use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Pack, Pup, Collar};
 
 class PackMapper extends Mapper
 {
-    /**
-     * string $table
-     */
-    protected $table = 'packs';
-
-    /**
-     * @var string
-     */
-    protected $entityClassName = Pack::class;
-
-    /**
-     * @var boolean
-     */
-    protected $hasTimestamps = false;
+    protected string $table = 'packs';
+    protected string $entityClassName = Pack::class;
+    protected bool $hasTimestamps = false;
 
     /**
      * @return  void

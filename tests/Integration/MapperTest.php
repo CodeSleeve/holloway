@@ -37,10 +37,10 @@ class MapperTest extends TestCase
         $mapper = new PupMapper;
 
         // when
-        $tableName = $mapper->getTableName();
+        $table = $mapper->getTable();
 
         // then
-        $this->assertEquals('pups', $tableName);
+        $this->assertEquals('pups', $table);
     }
 
     /** @test */

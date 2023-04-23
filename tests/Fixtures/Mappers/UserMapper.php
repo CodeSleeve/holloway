@@ -6,15 +6,8 @@ use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Pup, User};
 
 class UserMapper extends Mapper
 {
-    /**
-     * string $table
-     */
-    protected $table = 'users';
-
-    /**
-     * @var string
-     */
-    protected $entityClassName = User::class;
+    protected string $table = 'users';
+    protected string $entityClassName = User::class;
 
     /**
      * Return the identifier (primary key) for a given entity.
