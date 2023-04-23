@@ -30,6 +30,11 @@ abstract class Mapper extends BaseMapper
         return $this->entityClassName;
     }
 
+    public function defineRelations() : void
+    {
+        # code...
+    }
+
     /**
      * Return the identifier (primary key) for a given entity.
      *

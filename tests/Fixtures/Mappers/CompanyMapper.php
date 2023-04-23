@@ -12,7 +12,7 @@ class CompanyMapper extends Mapper
     /**
      * @return  void
      */
-    public function defineRelations()
+    public function defineRelations() : void
     {
         $this->hasMany('collars', Collar::class);     // A company has many collars (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
         $this->hasMany('pupFoods', PupFood::class);   // A company has many pup foods (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).

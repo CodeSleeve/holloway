@@ -14,7 +14,7 @@ class PackMapper extends Mapper
     /**
      * @return  void
      */
-    public function defineRelations()
+    public function defineRelations() : void
     {
         $this->hasMany('pups', Pup::class, 'pack_id', 'id');    // A pack has many pups.
 

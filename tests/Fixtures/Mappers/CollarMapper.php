@@ -12,7 +12,7 @@ class CollarMapper extends Mapper
     /**
      * @return  void
      */
-    public function defineRelations()
+    public function defineRelations() : void
     {
         $this->belongsTo('company', Company::class, 'company_id', 'id');    // A collar is manufactured by a company.
         $this->belongsTo('pup', Pup::class, 'pup_id', 'id');                // A collar belongs to a pup.

@@ -63,6 +63,11 @@ abstract class Mapper
     abstract public function getEntityClassName() : string;
 
     /**
+     * Define the relations on this mapper.
+     */
+    abstract public function defineRelations() : void;
+
+    /**
      * Return the identifier (primary key) for a given entity.
      *
      * @return mixed

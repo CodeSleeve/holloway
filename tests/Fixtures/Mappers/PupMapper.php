@@ -15,7 +15,7 @@ class PupMapper extends Mapper
     /**
      * @return  void
      */
-    public function defineRelations()
+    public function defineRelations() : void
     {
         $this->hasOne('collar', Collar::class, 'pup_id', 'id');    // A pup has one collar.
         $this->belongsTo('pack', Pack::class, 'pack_id', 'id');    // A pup belongs to a pack.

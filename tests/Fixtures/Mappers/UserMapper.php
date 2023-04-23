@@ -35,7 +35,7 @@ class UserMapper extends Mapper
     /**
      * @return  void
      */
-    public function defineRelations()
+    public function defineRelations() : void
     {
         $this->belongsToMany('pups', Pup::class, 'pups_users', 'user_id', 'pup_id');                       // A user belongs to many pups.
         $this->belongsToMany('surrogatePups', Pup::class, 'surrogate_pups_users', 'user_id', 'pup_id');    // A user belongs to many pups that they may care for (surrogate)
