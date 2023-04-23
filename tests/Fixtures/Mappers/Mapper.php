@@ -83,6 +83,10 @@ abstract class Mapper extends BaseMapper
     {
         $attributes = Arr::except($entity->toArray(), array_map(fn($relationship) => $relationship->getName(), $this->relationships));
 
+        if (!$attributes['id']) {
+            unset($attributes['id']);
+        }
+
         return $attributes;
     }
 
