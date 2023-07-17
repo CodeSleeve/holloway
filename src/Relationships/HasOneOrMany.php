@@ -18,19 +18,16 @@ abstract class HasOneOrMany extends BaseRelationship
      *
      * 3. Finally, we'll apply any contraints (if any) that were defined on the load and
      * return the fetched records.
-     *
-     * @param  Collection    $records
-     * @param  Closure|null  $constraints
-     * @return Relationship
      */
-    public function load(Collection $records, ?Closure $constraints = null)
+    public function load(Collection $records, ?Closure $constraints = null) : void
     {
         $constraints = $constraints ?: function() {};
 
         $this->data = ($this->query)()
-            ->from($this->tableName)
-            ->whereIn("{$this->tableName}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
-            ->where($constraints)
+            ->where($constraints)   // Allow for constraints to be applied to the to a Holloway\Builder $query
+            ->toBase()
+            ->from($this->table)
+            ->whereIn("{$this->table}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
             ->get();
     }
 }

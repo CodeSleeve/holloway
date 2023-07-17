@@ -49,11 +49,11 @@ class Custom implements Relationship
      *
      * @param  Collection $records
      */
-    public function load(Collection $records)
+    public function load(Collection $records) : void
     {
         $load = $this->load;
 
-        $this->data = $load(($this->query)(), $records);
+        $this->data = $load(($this->query)()->toBase(), $records);
     }
 
     /**

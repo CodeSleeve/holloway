@@ -174,21 +174,21 @@ abstract class Mapper
         return $this->newQuery()->get();
     }
 
-    /**
-     * Eager load relations on the mapper.
-     *
-     * @param  mixed  $relations
-     */
-    public function load($relations) : self
-    {
-        $query = $this->newQuery()->with(
-            is_string($relations) ? func_get_args() : $relations
-        );
+    // /**
+    //  * Eager load relations on the mapper.
+    //  *
+    //  * @param  mixed  $relations
+    //  */
+    // public function load($relations) : self
+    // {
+    //     $query = $this->newQuery()->with(
+    //         is_string($relations) ? func_get_args() : $relations
+    //     );
 
-        $query->eagerLoadRelations([$this]);
+    //     $query->eagerLoadRelations([$this]);
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     /**
      * Resolve a connection instance.
@@ -629,7 +629,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? Str::singular($this->getTable()) . '_id';
         $localKey = $localKey ?? $this->primaryKey;
 
-        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->newQuery());
     }
 
     /**
@@ -642,7 +642,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? Str::singular($this->getTable()) . '_id';
         $localKey = $localKey ?? $this->primaryKey;
 
-        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->newQuery());
     }
 
     /**
@@ -655,7 +655,7 @@ abstract class Mapper
         $foreignKey = $foreignKey ?? Str::singular($mapper->getTable()) . '_id';
         $localKey = $localKey ?? $this->primaryKey;
 
-        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->newQuery());
     }
 
     /**
@@ -675,7 +675,7 @@ abstract class Mapper
         $pivotLocalKey = $pivotLocalKey ?? Str::singular($localTableName) . '_id';
         $pivotForeignKey = $pivotForeignKey ?? Str::singular($foreignTableName) . '_id';
 
-        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, fn() => $mapper->newQuery());
     }
 
     /**
@@ -695,7 +695,7 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes()->toBase());
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQuery());
     }
 
     /**
