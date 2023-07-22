@@ -55,8 +55,6 @@ class BelongsToMany extends BaseRelationship
     public function load(Collection $records, ?Closure $constraints = null) : void
     {
         $constraints = $constraints ?: function() {};
-        // $query = ($this->query)()
-        //     ->toBase();
 
         $this->pivotData = ($this->query)()
              ->toBase()
@@ -65,9 +63,11 @@ class BelongsToMany extends BaseRelationship
              ->whereIn("{$this->pivotTable}.{$this->pivotLocalKeyName}", $records->pluck($this->localKeyName)->all())
              ->get();
 
-        $this->data = ($this->query)()
-            ->where($constraints)
-            ->toBase()
+        $query = ($this->query)();
+
+        $constraints($query);           // Allow for constraints to be applied to the Holloway\Builder $query
+
+        $this->data = $query->toBase()
             ->from($this->table)
             ->whereIn("{$this->table}.{$this->foreignKeyName}", $this->pivotData->pluck($this->pivotForeignKeyName)->all())
             ->get();

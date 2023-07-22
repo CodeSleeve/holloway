@@ -24,10 +24,12 @@ class BelongsTo extends BaseRelationship
     {
         $constraints = $constraints ?: function() {};
 
-        $this->data = ($this->query)()
-            ->where($constraints) // Allow for constraints to be applied to the to a Holloway\Builder $query
-            ->toBase()
-            ->from($this->table)
+        $query = ($this->query)();
+
+        $constraints($query);     // Allow for constraints to be applied to the Holloway\Builder $query
+        
+        $this->data = $query
+            ->toBase()            // Convert the query to a base query instance
             ->whereIn("{$this->table}.{$this->localKeyName}", $records->pluck($this->foreignKeyName)->values()->all())
             ->get();
     }

@@ -67,10 +67,6 @@ class Builder
      */
     protected array $removedScopes = [];
 
-    /**
-     * @param  \Illuminate\Database\Query\Builder $query
-     * @return void
-     */
     public function __construct(QueryBuilder $query)
     {
         $this->query = $query;
@@ -686,7 +682,7 @@ class Builder
      * Remove a registered global scope.
      */
     public function withoutGlobalScope(Scope|string $scope) : self
-    {
+    {   
         if (! is_string($scope)) {
             $scope = get_class($scope);
         }

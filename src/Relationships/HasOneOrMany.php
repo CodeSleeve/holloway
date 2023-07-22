@@ -23,11 +23,12 @@ abstract class HasOneOrMany extends BaseRelationship
     {
         $constraints = $constraints ?: function() {};
 
-        $this->data = ($this->query)()
-            ->where($constraints)   // Allow for constraints to be applied to the to a Holloway\Builder $query
+        $query = ($this->query)();
+
+        $constraints($query);    // Allow for constraints to be applied to the Holloway\Builder $query
+
+        $this->data = $query->whereIn("{$this->table}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
             ->toBase()
-            ->from($this->table)
-            ->whereIn("{$this->table}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
             ->get();
     }
 }

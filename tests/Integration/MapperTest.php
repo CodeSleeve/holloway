@@ -5,6 +5,7 @@ namespace CodeSleeve\Holloway\Tests\Integration;
 use Carbon\CarbonImmutable;
 use CodeSleeve\Holloway\Relationships\{HasOne, BelongsTo, HasMany, BelongsToMany, Custom};
 use CodeSleeve\Holloway\Holloway;
+use CodeSleeve\Holloway\SoftDeletingScope;
 use CodeSleeve\Holloway\Tests\Fixtures\Entities\{User, Pup, PupFood, Collar, Pack, Company};
 use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper;
 use CodeSleeve\Holloway\Tests\Helpers\CanBuildTestFixtures;
@@ -715,11 +716,32 @@ class MapperTest extends TestCase
         $pupMapper->remove($tobi);
         $bennetPack = $packMapper->with('pups')->find(1);
 
-
         // then
         $this->assertCount(3, $bennetPack->pups);
         $this->assertCount(5, $pupMapper->get());
         $this->assertCount(6, $pupMapper->withTrashed()->get());
+    }
+
+    /** @test */
+    function it_allows_soft_deleting_scopes_to_be_removed_when_querying_relationships()
+    {
+        // given
+        $this->buildFixtures();
+
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture uses soft deletes
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $tobi = $pupMapper->find(1);
+        $pupMapper->remove($tobi);
+        $bennetPack = $packMapper->with([
+            'pups' => fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
+        ])
+        ->find(1);
+
+        // then
+        $this->assertCount(4, $bennetPack->pups);
+        $this->assertCount(5, $pupMapper->get());
     }
 
     /** @test */
