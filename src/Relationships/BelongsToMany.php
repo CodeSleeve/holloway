@@ -68,7 +68,6 @@ class BelongsToMany extends BaseRelationship
         $constraints($query);           // Allow for constraints to be applied to the Holloway\Builder $query
 
         $this->data = $query->toBase()
-            ->from($this->table)
             ->whereIn("{$this->table}.{$this->foreignKeyName}", $this->pivotData->pluck($this->pivotForeignKeyName)->all())
             ->get();
     }

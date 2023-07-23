@@ -104,17 +104,23 @@ trait CanBuildTestFixtures
         ]);
 
         Capsule::table('pups_pup_foods')->insert([
-            ['pup_id' => 1, 'pup_food_id' => 1],
-            ['pup_id' => 1, 'pup_food_id' => 2],
+            ['pup_id' => 1, 'pup_food_id' => 1],    // Tobi eats 4Health
+            ['pup_id' => 1, 'pup_food_id' => 2],    // Tobi eats Taste of the Wild
 
-            ['pup_id' => 2, 'pup_food_id' => 1],
-            ['pup_id' => 2, 'pup_food_id' => 2],
+            ['pup_id' => 2, 'pup_food_id' => 1],    // Tyler eats 4Health
+            ['pup_id' => 2, 'pup_food_id' => 2],    // Tyler eats Taste of the Wild
 
-            ['pup_id' => 3, 'pup_food_id' => 1],
-            ['pup_id' => 3, 'pup_food_id' => 2],
+            ['pup_id' => 3, 'pup_food_id' => 1],    // Tucker eats 4Health
+            ['pup_id' => 3, 'pup_food_id' => 2],    // Tucker eats Taste of the Wild
 
-            ['pup_id' => 4, 'pup_food_id' => 1],
-            ['pup_id' => 4, 'pup_food_id' => 2]
+            ['pup_id' => 4, 'pup_food_id' => 1],    // Trinka eats 4Health
+            ['pup_id' => 4, 'pup_food_id' => 2],    // Trinka eats Taste of the Wild
+
+            ['pup_id' => 5, 'pup_food_id' => 1],    // Lucky eats 4Health
+            ['pup_id' => 5, 'pup_food_id' => 2],    // Lucky eats Taste of the Wild
+
+            ['pup_id' => 6, 'pup_food_id' => 1],    // Duchess eats 4Health
+            ['pup_id' => 6, 'pup_food_id' => 2]     // Duchess eats Taste of the Wild
         ]);
     }
 }

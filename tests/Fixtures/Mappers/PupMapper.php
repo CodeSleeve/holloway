@@ -17,9 +17,9 @@ class PupMapper extends Mapper
      */
     public function defineRelations() : void
     {
-        $this->hasOne('collar', Collar::class, 'pup_id', 'id');    // A pup has one collar.
-        $this->belongsTo('pack', Pack::class, 'pack_id', 'id');    // A pup belongs to a pack.
-        $this->belongsToMany('pupFoods', PupFood::class);          // A pup belongs to many foods (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
+        $this->hasOne('collar', Collar::class, 'pup_id', 'id');                 // A pup has one collar.
+        $this->belongsTo('pack', Pack::class, 'pack_id', 'id');                 // A pup belongs to a pack.
+        $this->belongsToMany('pupFoods', PupFood::class, 'pups_pup_foods');     // A pup belongs to many foods (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
     }
 
     /**

@@ -2,10 +2,13 @@
 
 namespace CodeSleeve\Holloway\Tests\Fixtures\Mappers;
 
+use CodeSleeve\Holloway\SoftDeletes;
 use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Company, Pup, PupFood};
 
 class PupFoodMapper extends Mapper
 {
+    use SoftDeletes;
+    
     protected string $table = 'pup_foods';
     protected string $entityClassName = PupFood::class;
 

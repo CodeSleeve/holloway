@@ -2,10 +2,13 @@
 
 namespace CodeSleeve\Holloway\Tests\Fixtures\Mappers;
 
+use CodeSleeve\Holloway\SoftDeletes;
 use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Collar, Company, Pup};
 
 class CollarMapper extends Mapper
 {
+    use SoftDeletes;
+
     protected string $table = 'collars';
     protected string $entityClassName = Collar::class;
 

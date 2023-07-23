@@ -1,6 +1,8 @@
 <?php
 
 use CodeSleeve\Holloway\{Mapper, SoftDeletingScope};
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
@@ -63,5 +65,7 @@ MigrateFixtureTables::up();
 Mapper::setConnectionResolver($capsule->getDatabaseManager());
 Mapper::setEventManager(new Dispatcher);
 
-// Add the soft deleting scope to the pup mapper
+// Add the soft deleting scopes to a few of the mappers.
+CollarMapper::addGlobalScope(new SoftDeletingScope);
 PupMapper::addGlobalScope(new SoftDeletingScope);
+PupFoodMapper::addGlobalScope(new SoftDeletingScope);

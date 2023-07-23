@@ -723,7 +723,7 @@ class MapperTest extends TestCase
     }
 
     /** @test */
-    function it_allows_soft_deleting_scopes_to_be_removed_when_querying_relationships()
+    function it_allows_soft_deleting_scopes_to_be_removed_when_querying_has_many_relationships()
     {
         // given
         $this->buildFixtures();
@@ -742,6 +742,53 @@ class MapperTest extends TestCase
         // then
         $this->assertCount(4, $bennetPack->pups);
         $this->assertCount(5, $pupMapper->get());
+    }
+
+    /** @test */
+    function it_allows_soft_deleting_scopes_to_be_removed_when_querying_has_one_relationships()
+    {
+        // given
+        $this->buildFixtures();
+
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture uses soft deletes
+        $collarMapper = Holloway::instance()->getMapper(Collar::class);
+
+        // when
+        $tobisCollar = $collarMapper->find(1);
+        $collarMapper->remove($tobisCollar);
+        
+        $tobi = $pupMapper->with([
+            'collar' => fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
+        ])
+        ->find(1);
+
+        // then
+        $this->assertInstanceOf(Collar::class, $tobi->collar);
+        $this->assertCount(5, $collarMapper->get());
+    }
+
+    /** @test */
+    function it_allows_soft_deleting_scopes_to_be_removed_when_querying_belongs_to_many_relationships()
+    {
+        // given
+        $this->buildFixtures();
+
+        $pupMapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture uses soft deletes
+        $pupFoodMapper = Holloway::instance()->getMapper(PupFood::class);
+
+        // when
+        $tasteOfTheWild = $pupFoodMapper->find(2);
+        $pupFoodMapper->remove($tasteOfTheWild);
+        
+        $tobi = $pupMapper->with([
+            'pupFoods' => fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
+        ])
+        ->find(1);
+
+        // then
+        $this->assertInstanceOf(PupFood::class, $tobi->pupFoods[0]);
+        $this->assertInstanceOf(PupFood::class, $tobi->pupFoods[1]);
+        $this->assertCount(2, $pupFoodMapper->get());
     }
 
     /** @test */
