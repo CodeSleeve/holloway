@@ -53,7 +53,7 @@ class Custom implements Relationship
     {
         $load = $this->load;
 
-        $this->data = $load(($this->query)()->toBase(), $records);
+        $this->data = $load(($this->query)()->toBase(), $records);  // Convert the query to a base query instance
     }
 
     /**

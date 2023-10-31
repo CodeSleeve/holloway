@@ -695,7 +695,7 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQuery());
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes());
     }
 
     /**
