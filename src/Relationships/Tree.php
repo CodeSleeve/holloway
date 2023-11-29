@@ -195,7 +195,13 @@ final class Tree
      * Given an array of relationship loads of the form:
      *
      * <code>
-     *     ['parentRelation.childRelation.firstGrandchildRelation', 'parentRelation.childRelation.secondGrandchildRelation']
+     *     [
+     *          'parentRelation.childRelation.firstGrandchildRelation', 
+     *          'parentRelation.childRelation.secondGrandchildRelation',
+     *          'parentRelation.childRelation.thirdGrandchildRelation' => function($query) {
+     *              $query->where('foo', 'bar');
+     *          },
+     *     ]
      * </code>
      *
      * convert it into an array (tree) of the form:
@@ -225,6 +231,15 @@ final class Tree
      *                             'relationship' => <Relationship> $relationship,
      *                             'children'     => null
      *                         ],
+     * 
+        *                      'thirdGrandchildRelation' => [
+        *                          'name'         => 'thirdGrandchildRelation',
+        *                          'constraints'  => function($query) {
+        *                             $query->where('foo', 'bar');
+        *                          },
+        *                          'relationship' => <Relationship> $relationship,
+        *                          'children'     => null,
+        *                      ],
      *                     ]
      *                 ]
      *             ]
@@ -261,7 +276,7 @@ final class Tree
                     if (!array_key_exists($nodeName, $subTree)) {
                         $node = [
                             'name'         => $nodeName,
-                            'constraints'  => $constraints,
+                            'constraints'  => function() {},
                             'relationship' => clone $mapper->getRelationship($nodeName),
                             'children'     => []
                         ];
@@ -277,7 +292,7 @@ final class Tree
                             &$subTree[$nodeName]['children'],
                             str_replace("$nodeName.", '', $name),
                             $this->holloway->getMapper($node['relationship']->getEntityName()),
-                            function() {}
+                            $constraints,
                         ];
                     }
                 }

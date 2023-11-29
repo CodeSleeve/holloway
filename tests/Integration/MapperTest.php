@@ -714,10 +714,10 @@ class MapperTest extends TestCase
         // when
         $tobi = $pupMapper->find(1);
         $pupMapper->remove($tobi);
-        $bennetPack = $packMapper->with('pups')->find(1);
+        $bennettPack = $packMapper->with('pups')->find(1);
 
         // then
-        $this->assertCount(3, $bennetPack->pups);
+        $this->assertCount(3, $bennettPack->pups);
         $this->assertCount(5, $pupMapper->get());
         $this->assertCount(6, $pupMapper->withTrashed()->get());
     }
@@ -734,14 +734,37 @@ class MapperTest extends TestCase
         // when
         $tobi = $pupMapper->find(1);
         $pupMapper->remove($tobi);
-        $bennetPack = $packMapper->with([
+        $bennettPack = $packMapper->with([
             'pups' => fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
         ])
         ->find(1);
 
         // then
-        $this->assertCount(4, $bennetPack->pups);
+        $this->assertCount(4, $bennettPack->pups);
         $this->assertCount(5, $pupMapper->get());
+    }
+
+    /** @test */
+    function it_allows_soft_deleting_scopes_to_be_removed_when_querying_nested_has_one_relationships()
+    {
+        // given
+        $this->buildFixtures();
+
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+        $collarMapper = Holloway::instance()->getMapper(Collar::class);
+
+        // when
+        $tobiasCollar = $collarMapper->find(1);
+        $collarMapper->remove($tobiasCollar);
+        
+        $bennettPack = $packMapper->with([
+            'pups.collar' => fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
+        ])
+        ->find(1);
+
+        // then
+        $this->assertInstanceOf(Collar::class, $bennettPack->pups->first(fn($pup) => $pup->first_name === 'Tobias')->collar);
+        $this->assertCount(5, $collarMapper->get());
     }
 
     /** @test */
@@ -754,8 +777,8 @@ class MapperTest extends TestCase
         $collarMapper = Holloway::instance()->getMapper(Collar::class);
 
         // when
-        $tobisCollar = $collarMapper->find(1);
-        $collarMapper->remove($tobisCollar);
+        $tobiasCollar = $collarMapper->find(1);
+        $collarMapper->remove($tobiasCollar);
         
         $tobi = $pupMapper->with([
             'collar' => fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class),
