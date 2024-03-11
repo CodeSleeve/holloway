@@ -6,70 +6,48 @@ class Pup extends Entity
 {
     use HasTimestamps;
     
-    protected string $firstName;
-    protected string $lastName;
+    protected string $first_name;
+    protected string $last_name;
     protected string $coat;
     protected ?Collar $collar;
     protected ?Pack $pack;
     protected int $pack_id;
 
-    /**
-     * @param Pack $pack
-     * @param string $firstName
-     * @param string $lastName
-     * @param string $coat
-     * @param Collar|null $collar
-     */
-    public function __construct(Pack $pack,  string $firstName, string $lastName, string $coat, ?Collar $collar = null)
-    {
+    public function __construct(
+        Pack $pack,  
+        string $first_name, 
+        string $last_name, 
+        string $coat, 
+        ?Collar $collar = null
+    ) {
         $this->setPack($pack);
-        $this->first_name = $firstName;
-        $this->last_name = $lastName;
+        $this->first_name = $first_name;
+        $this->last_name = $last_name;
         $this->coat = $coat;
         $this->collar = $collar;
     }
 
-    /**
-     * @param string $firstName
-     * @return void
-     */
-    public function setFirstName(string $firstName)
+    public function setFirstName(string $firstName) : void
     {
         $this->first_name = $firstName;
     }
 
-    /**
-     * @param string $lastName
-     * @return void
-     */
-    public function setLastName(string $lastName)
+    public function setLastName(string $lastName) : void
     {
         $this->last_name = $lastName;
     }
 
-    /**
-     * @param string $coat
-     * @return void
-     */
-    public function setCoat(string $coat)
+    public function setCoat(string $coat) : void
     {
         $this->coat = $coat;
     }
     
-    /**
-     * @param Collar $collar
-     * @return void
-     */
-    public function setCollar(Collar $collar)
+    public function setCollar(Collar $collar) : void
     {
         $this->collar = $collar;
     }
 
-    /**
-     * @param Pack $pack
-     * @return void
-     */
-    public function setPack(Pack $pack)
+    public function setPack(Pack $pack) : void
     {
         $this->pack = $pack;
         $this->pack_id = $pack->id;

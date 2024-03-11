@@ -12,7 +12,7 @@ interface Relationship
      *
      * @param  Collection $records
      */
-    public function load(Collection $records);
+    public function load(Collection $records) : void;
 
     /**
      * Generate the related entities for a given record.

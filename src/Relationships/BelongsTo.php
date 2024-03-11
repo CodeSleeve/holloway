@@ -19,19 +19,18 @@ class BelongsTo extends BaseRelationship
      *
      * 3. Finally, we'll apply any contraints (if any) that were defined on the load and
      * return the fetched records.
-     *
-     * @param  Collection    $records
-     * @param  Closure|null  $constraints
-     * @return void
      */
-    public function load(Collection $records, ?Closure $constraints = null)
+    public function load(Collection $records, ?Closure $constraints = null) : void
     {
         $constraints = $constraints ?: function() {};
 
-        $this->data = ($this->query)()
-            ->from($this->tableName)
-            ->whereIn("{$this->tableName}.{$this->localKeyName}", $records->pluck($this->foreignKeyName)->values()->all())
-            ->where($constraints)
+        $query = ($this->query)();
+
+        $constraints($query);     // Allow for constraints to be applied to the Holloway\Builder $query
+        
+        $this->data = $query
+            ->toBase()            // Convert the query to a base query instance
+            ->whereIn("{$this->table}.{$this->localKeyName}", $records->pluck($this->foreignKeyName)->values()->all())
             ->get();
     }
 

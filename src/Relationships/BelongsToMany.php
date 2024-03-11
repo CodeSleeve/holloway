@@ -3,82 +3,35 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Closure;
-use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Collection;
 use stdClass;
+use Illuminate\Support\Collection;
 
 class BelongsToMany extends BaseRelationship
 {
-    /**
-     * @var string
-     */
-    protected $name;
+    protected string $name;
+    protected string $table;
+    protected string $foreignKeyName;
+    protected string $localKeyName;
+    protected string $entityName;
+    protected string $pivotTable;
+    protected string $pivotForeignKeyName;
+    protected string $pivotLocalKeyName;
+    protected Collection $pivotData;
 
-    /**
-     * @var string
-     */
-    protected $tableName;
-
-    /**
-     * @var string
-     */
-    protected $foreignKeyName;
-
-    /**
-     * @var string
-     */
-    protected $localKeyName;
-
-    /**
-     * @var string
-     */
-    protected $entityName;
-
-    /**
-     * @var string
-     */
-    protected $pivotTableName;
-
-    /**
-     * @var string
-     */
-    protected $pivotForeignKeyName;
-
-    /**
-     * @var string
-     */
-    protected $pivotLocalKeyName;
-
-    /**
-     * @var Collection
-     */
-    protected $pivotData;
-
-    /**
-     * @param string   $name
-     * @param string   $tableName
-     * @param string   $foreignKeyName
-     * @param string   $localKeyName
-     * @param string   $entityName
-     * @param string   $pivotTableName
-     * @param string   $pivotForeignKeyName
-     * @param string   $pivotLocalKeyName
-     * @param Closure  $query
-     */
     public function __construct(
         string $name,
-        string $tableName,
+        string $table,
         string $foreignKeyName,
         string $localKeyName,
         string $entityName,
-        string $pivotTableName,
+        string $pivotTable,
         string $pivotForeignKeyName,
         string $pivotLocalKeyName,
         Closure $query)
     {
-       parent::__construct($name, $tableName, $foreignKeyName, $localKeyName, $entityName, $query);
+       parent::__construct($name, $table, $foreignKeyName, $localKeyName, $entityName, $query);
 
-       $this->pivotTableName = $pivotTableName;
+       $this->pivotTable = $pivotTable;
        $this->pivotLocalKeyName = $pivotLocalKeyName;
        $this->pivotForeignKeyName = $pivotForeignKeyName;
     }
@@ -99,22 +52,24 @@ class BelongsToMany extends BaseRelationship
      * @param  Closure|null  $constraints
      * @return void
      */
-    public function load(Collection $records, ?Closure $constraints = null)
+    public function load(Collection $records, ?Closure $constraints = null) : void
     {
         $constraints = $constraints ?: function() {};
-        $query = ($this->query)();
 
-        $this->pivotData = $query->newQuery()
-             ->from($this->pivotTableName)
-             ->whereIn("{$this->pivotTableName}.{$this->pivotLocalKeyName}", $records->pluck($this->localKeyName)->all())
+        $this->pivotData = ($this->query)()
+             ->toBase()
+             ->newQuery()
+             ->from($this->pivotTable)
+             ->whereIn("{$this->pivotTable}.{$this->pivotLocalKeyName}", $records->pluck($this->localKeyName)->all())
              ->get();
 
-        $this->data = $query->from($this->tableName)
-            ->whereIn("{$this->tableName}.{$this->foreignKeyName}", $this->pivotData->pluck($this->pivotForeignKeyName)->all())
-            ->where($constraints)
-            ->get();
+        $query = ($this->query)();
 
-        return $this;
+        $constraints($query);           // Allow for constraints to be applied to the Holloway\Builder $query
+
+        $this->data = $query->toBase()
+            ->whereIn("{$this->table}.{$this->foreignKeyName}", $this->pivotData->pluck($this->pivotForeignKeyName)->all())
+            ->get();
     }
 
     /**

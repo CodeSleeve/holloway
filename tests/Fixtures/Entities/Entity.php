@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 
 abstract class Entity
 {
-    protected $id;
+    protected int|string|null $id = null;
 
     /**
      * Return an array representation of this entity.

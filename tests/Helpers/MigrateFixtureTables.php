@@ -32,6 +32,7 @@ class MigrateFixtureTables extends Migration
                 $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
 
                 $table->string('name');
+                $table->dateTime('deleted_at')->nullable();
                 $table->timestamps();
             });
         }
@@ -79,6 +80,7 @@ class MigrateFixtureTables extends Migration
                 $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
 
                 $table->string('color');
+                $table->dateTime('deleted_at')->nullable();
                 $table->timestamps();
             });
         }

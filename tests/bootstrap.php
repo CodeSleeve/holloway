@@ -1,6 +1,8 @@
 <?php
 
 use CodeSleeve\Holloway\{Mapper, SoftDeletingScope};
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
@@ -31,7 +33,7 @@ if (file_exists(__DIR__ . '/../.env')) {
     $dotenv->load();
 }
 
-// Setup a postgres connection
+// Setup a postgres connection by default, but can be overriden easily with .env
 $capsule->addConnection([
     'driver'    => $_ENV['DB_DRIVER'] ?? 'pgsql',
     'host'      => $_ENV['DB_HOST'] ?? 'localhost',
@@ -45,18 +47,6 @@ $capsule->addConnection([
     'sslmode' => 'prefer',
 ]);
 
-// set up a mysql connection
-// $capsule->addConnection([
-//     'driver'    => 'mysql',
-//     'host'      => 'localhost',
-//     'database'  => 'holloway_test',
-//     'username'  => 'root',
-//     'password'  => 'password',
-//     'charset'   => 'utf8',
-//     'collation' => 'utf8_unicode_ci',
-//     'prefix'    => '',
-//     'schema'    => 'public',
-// ]);
 
 // Make this Capsule instance available globally via static methods
 $capsule->setAsGlobal();
@@ -68,5 +58,7 @@ MigrateFixtureTables::up();
 Mapper::setConnectionResolver($capsule->getDatabaseManager());
 Mapper::setEventManager(new Dispatcher);
 
-// Add the soft deleting scope to the pup mapper
+// Add the soft deleting scopes to a few of the mappers.
+CollarMapper::addGlobalScope(new SoftDeletingScope);
 PupMapper::addGlobalScope(new SoftDeletingScope);
+PupFoodMapper::addGlobalScope(new SoftDeletingScope);

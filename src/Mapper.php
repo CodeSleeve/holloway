@@ -2,103 +2,48 @@
 
 namespace CodeSleeve\Holloway;
 
-use CodeSleeve\Holloway\Functions\Arr;
-use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
-use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
-use Illuminate\Support\{Collection, Str};
-use InvalidArgumentException;
-use stdClass;
 use Closure;
 use DateTime;
+use stdClass;
+use InvalidArgumentException;
+use CodeSleeve\Holloway\Functions\Arr;
+use Doctrine\Instantiator\Instantiator;
+use Illuminate\Support\{Collection, Str};
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
+use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
 
 abstract class Mapper
 {
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
     const DEFAULT_TIME_ZONE = 'UTC';
-
-    /**
-     * @var Resolver
-     */
-    protected static $resolver;
-
-    /**
-     * @var EventManagerInterface
-     */
-    protected static $eventManager;
-
-    /**
-     * @var \Illuminate\Contracts\Events\Dispatcher
-     */
-    protected static $dispatcher;
-
-    /**
-     * @var EntityCache
-     */
+    
+    protected static ?Resolver $resolver = null;
+    protected static ?EventManagerInterface $eventManager = null;
+    protected Instantiator $instantiator;
+    protected static Dispatcher $dispatcher;
     protected EntityCache $entityCache;
-
-    /**
-     * @var string
-     */
-    protected $connection = '';
-
-    /**
-     * @var string
-     */
-    protected $tableName = '';
-
-    /**
-     * @var string
-     */
-    protected $primaryKeyName = 'id';
-
-    /**
-     * @var string
-     */
-    protected $keyType = 'int';
-
-    /**
-     * @var integer
-     */
-    protected $perPage = 15;
-
-    /**
-     * @var boolean
-     */
-    protected $hasTimestamps = true;
-
-    /**
-     * @var string
-     */
-    protected $timestampFormat = 'Y-m-d H:i:s';
-
-    /**
-     * @var boolean
-     */
-    protected $isAutoIncrementing = true;
-
-    /**
-     * @var array
-     */
-    protected $relationships = [];
-
-    /**
-     * @var array
-     */
-    protected $with = [];
-
-    /**
-     * @var array
-     */
-    protected static $globalScopes = [];
+    protected string $entityClassName = '';
+    protected string $connection = '';
+    protected string $table = '';
+    protected string $primaryKey = 'id';
+    protected string $keyType = 'int';
+    protected int $perPage = 15;
+    protected bool $hasTimestamps = true;
+    protected string $timestampFormat = 'Y-m-d H:i:s';
+    protected bool $incrementing = true;
+    protected array $relationships = [];
+    protected array $with = [];
+    protected static array $globalScopes = [];
 
     /**
      * Create a new mapper intance.
      */
     public function __construct()
     {
-        $this->entityCache = new EntityCache($this->primaryKeyName);
+        $this->entityCache = new EntityCache($this->primaryKey);
     }
 
     /**
@@ -118,6 +63,11 @@ abstract class Mapper
     abstract public function getEntityClassName() : string;
 
     /**
+     * Define the relations on this mapper.
+     */
+    abstract public function defineRelations() : void;
+
+    /**
      * Return the identifier (primary key) for a given entity.
      *
      * @return mixed
@@ -135,10 +85,10 @@ abstract class Mapper
 
     /**
      * @param  stdClass   $record
-     * @param  Collection $relationships
+     * @param  Collection $relations
      * @return mixed
      */
-    abstract public function hydrate(stdClass $record, Collection $relationships);
+    abstract public function hydrate(stdClass $record, Collection $relations);
 
     /**
      * @param  mixed $entity
@@ -224,21 +174,21 @@ abstract class Mapper
         return $this->newQuery()->get();
     }
 
-    /**
-     * Eager load relations on the mapper.
-     *
-     * @param  mixed  $relations
-     */
-    public function load($relations) : self
-    {
-        $query = $this->newQuery()->with(
-            is_string($relations) ? func_get_args() : $relations
-        );
+    // /**
+    //  * Eager load relations on the mapper.
+    //  *
+    //  * @param  mixed  $relations
+    //  */
+    // public function load($relations) : self
+    // {
+    //     $query = $this->newQuery()->with(
+    //         is_string($relations) ? func_get_args() : $relations
+    //     );
 
-        $query->eagerLoadRelations([$this]);
+    //     $query->eagerLoadRelations([$this]);
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     /**
      * Resolve a connection instance.
@@ -281,7 +231,7 @@ abstract class Mapper
     }
 
     /**
-     * Unset the connection resolver for entities.
+     * Unset the event manager for entities.
      */
     public static function unsetEventManager() : void
     {
@@ -351,7 +301,9 @@ abstract class Mapper
         $connection = $this->getConnection();
 
         return new QueryBuilder(
-            $connection, $connection->getQueryGrammar(), $connection->getPostProcessor()
+            $connection, 
+            $connection->getQueryGrammar(), 
+            $connection->getPostProcessor()
         );
     }
 
@@ -360,11 +312,11 @@ abstract class Mapper
      */
     public function makeEntity(stdClass $record) : mixed
     {
-        $primaryKey = $this->primaryKeyName;
+        $primaryKey = $this->primaryKey;
 
         $this->entityCache->set($record->$primaryKey, (array) $record);
 
-        $relations = collect($record->relations ?? []);
+        $relations = new Collection($record->relations ?? []);
 
         unset($record->relations);
 
@@ -470,7 +422,7 @@ abstract class Mapper
                 // We compare the entity cache attributes to the current attributes on the entity.
                 // If there are no dirty attributes then there should be no reason to update the entity in storage.
                 if ($attributes !== $cached) {
-                    $keyName = $this->getPrimaryKeyName();
+                    $keyName = $this->getKeyName();
 
                     if ($this->hasTimestamps === true) {
                         $attributes = \Illuminate\Support\Arr::except($attributes, [self::UPDATED_AT, self::CREATED_AT]);
@@ -483,7 +435,7 @@ abstract class Mapper
                     }
 
                     $this->getConnection()
-                        ->table($this->getTableName())
+                        ->table($this->getTable())
                         ->where($keyName, $identifier)
                         ->update($attributes);
 
@@ -512,9 +464,9 @@ abstract class Mapper
                     }
                 }
 
-                $table = $this->getConnection()->table($this->getTableName());
+                $table = $this->getConnection()->table($this->getTable());
 
-                if ($this->isAutoIncrementing) {
+                if ($this->incrementing) {
                     $this->setIdentifier($entity, $table->insertGetId($attributes));
                 } else {
                     $table->insert($attributes);
@@ -546,12 +498,12 @@ abstract class Mapper
 
         if (property_exists($this, 'isSoftDeleting') && $this->isSoftDeleting === true && $this->isForceDeleting === false) {
             $this->getConnection()
-                ->table($this->getTableName())
-                ->where($this->getPrimaryKeyName(), $identifier)
+                ->table($this->getTable())
+                ->where($this->getKeyName(), $identifier)
                 ->update([$this->getQualifiedDeletedAtColumn() => new DateTime]);
         } else {
             $this->getConnection()
-                ->table($this->getTableName())
+                ->table($this->getTable())
                 ->delete($identifier);
         }
 
@@ -683,10 +635,10 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $foreignKey ?? Str::singular($this->getTableName()) . '_id';
-        $localKey = $localKey ?? $this->primaryKeyName;
+        $foreignKey = $foreignKey ?? Str::singular($this->getTable()) . '_id';
+        $localKey = $localKey ?? $this->primaryKey;
 
-        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\HasOne($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->newQuery());
     }
 
     /**
@@ -696,10 +648,10 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $foreignKey ?? Str::singular($this->getTableName()) . '_id';
-        $localKey = $localKey ?? $this->primaryKeyName;
+        $foreignKey = $foreignKey ?? Str::singular($this->getTable()) . '_id';
+        $localKey = $localKey ?? $this->primaryKey;
 
-        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\HasMany($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->newQuery());
     }
 
     /**
@@ -709,10 +661,10 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $foreignKey ?? Str::singular($mapper->getTableName()) . '_id';
-        $localKey = $localKey ?? $this->primaryKeyName;
+        $foreignKey = $foreignKey ?? Str::singular($mapper->getTable()) . '_id';
+        $localKey = $localKey ?? $this->primaryKey;
 
-        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTableName(), $foreignKey, $localKey, $entityName, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\BelongsTo($name, $mapper->getTable(), $foreignKey, $localKey, $entityName, fn() => $mapper->newQuery());
     }
 
     /**
@@ -722,17 +674,17 @@ abstract class Mapper
     {
         $mapper = Holloway::instance()->getMapper($entityName);
 
-        $foreignKey = $mapper->getPrimaryKeyName();
-        $localKey =  $this->getPrimaryKeyName();
+        $foreignKey = $mapper->getKeyName();
+        $localKey =  $this->getKeyName();
 
-        $localTableName = $this->getTableName();
-        $foreignTableName = $mapper->getTableName();
+        $localTableName = $this->getTable();
+        $foreignTableName = $mapper->getTable();
 
         $pivotTableName = $pivotTableName ?? implode('_',  Arr::sort([$localTableName, $foreignTableName]));
         $pivotLocalKey = $pivotLocalKey ?? Str::singular($localTableName) . '_id';
         $pivotForeignKey = $pivotForeignKey ?? Str::singular($foreignTableName) . '_id';
 
-        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, fn() => $mapper->toBase());
+        $this->relationships[$name] = new Relationships\BelongsToMany($name, $foreignTableName, $foreignKey, $localKey, $entityName, $pivotTableName, $pivotForeignKey, $pivotLocalKey, fn() => $mapper->newQuery());
     }
 
     /**
@@ -752,7 +704,7 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes()->toBase());
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes());
     }
 
     /**
@@ -809,17 +761,17 @@ abstract class Mapper
     /**
      * Get the value indicating whether the IDs are incrementing.
      */
-    public function getIsAutoIncrementing() : bool
+    public function getIncrementing() : bool
     {
-        return $this->isAutoIncrementing;
+        return $this->incrementing;
     }
 
     /**
      * Set whether IDs are incrementing.
      */
-    public function setIsAutoIncrementing(bool $value) : void
+    public function setIncrementing(bool $value) : void
     {
-        $this->isAutoIncrementing = $value;
+        $this->incrementing = $value;
     }
 
     /**
@@ -827,7 +779,7 @@ abstract class Mapper
      */
     public function getQueueableId() : string
     {
-        return $this->primaryKeyName;
+        return $this->primaryKey;
     }
 
     /**
@@ -837,7 +789,7 @@ abstract class Mapper
     {
         $entityClassName = $this->getEntityClassName();
 
-        return Str::snake(class_basename($entityClassName)) . '_' . $this->primaryKeyName;
+        return Str::snake(class_basename($entityClassName)) . '_' . $this->primaryKey;
     }
 
     /**
@@ -877,39 +829,39 @@ abstract class Mapper
     /**
      * Get the name of the table that's used by this mapper.
      */
-    public function getTableName() : string
+    public function getTable() : string
     {
-        if (!$this->tableName) {
+        if (!$this->table) {
             $entityClassName = $this->getEntityClassName();
 
             return str_replace('\\', '', Str::snake(Str::plural(class_basename($entityClassName))));
         }
 
-        return $this->tableName;
+        return $this->table;
     }
 
     /**
      * Set the name of the table that used by this mapper.
      */
-    public function setTableName(string $tableName) : void
+    public function setTable(string $table) : void
     {
-        $this->tableName = $tableName;
+        $this->table = $table;
     }
 
     /**
      * Get the name of the primary key column on the table used by this mapper.
      */
-    public function getPrimaryKeyName() : string
+    public function getKeyName() : string
     {
-        return $this->primaryKeyName;
+        return $this->primaryKey;
     }
 
     /**
      * Set the name of the primary key column of the table that's used by this mapper.
      */
-    public function setPrimaryKeyName(string $primaryKeyName) : void
+    public function setKeyName(string $primaryKey) : void
     {
-        $this->primaryKeyName = $primaryKeyName;
+        $this->primaryKey = $primaryKey;
     }
 
     /**
@@ -917,6 +869,6 @@ abstract class Mapper
      */
     public function getQualifiedKeyName() : string
     {
-        return $this->getTableName() . '.' . $this->primaryKeyName;
+        return $this->getTable() . '.' . $this->primaryKey;
     }
 }

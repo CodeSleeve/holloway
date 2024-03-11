@@ -20,7 +20,7 @@ class HasOneTest extends TestCase
 
         $collarMapper = new CollarMapper;
         $records = collect([(object) ['id' => 1, 'pack_id' => 1, 'first_name' => 'Tobias', 'last_name' => 'Bennett']]);
-        $relationship = new HasOne('collar', 'collars', 'pup_id', 'id', Collar::class, fn() => $collarMapper->toBase());
+        $relationship = new HasOne('collar', 'collars', 'pup_id', 'id', Collar::class, fn() => $collarMapper->newQuery());
 
         // when
         $relationship->load($records, function() {});

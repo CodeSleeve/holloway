@@ -67,10 +67,6 @@ class Builder
      */
     protected array $removedScopes = [];
 
-    /**
-     * @param  \Illuminate\Database\Query\Builder $query
-     * @return void
-     */
     public function __construct(QueryBuilder $query)
     {
         $this->query = $query;
@@ -166,7 +162,7 @@ class Builder
     {
         $this->mapper = $mapper;
 
-        $this->query->from($mapper->getTableName());
+        $this->query->from($mapper->getTable());
 
         return $this;
     }
@@ -536,7 +532,7 @@ class Builder
      */
     public function chunkById(int $count, callable $callback, ?string $column = null, ?string $alias = null) : bool
     {
-        $column = is_null($column) ? $this->getMapper()->getPrimaryKeyName() : $column;
+        $column = is_null($column) ? $this->getMapper()->getKeyName() : $column;
 
         $alias = is_null($alias) ? $column : $alias;
 
@@ -686,7 +682,7 @@ class Builder
      * Remove a registered global scope.
      */
     public function withoutGlobalScope(Scope|string $scope) : self
-    {
+    {   
         if (! is_string($scope)) {
             $scope = get_class($scope);
         }

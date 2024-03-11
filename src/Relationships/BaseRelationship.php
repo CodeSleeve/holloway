@@ -8,53 +8,18 @@ use stdClass;
 
 abstract class BaseRelationship implements Relationship
 {
-    /**
-     * @var string
-     */
-    protected $name;
+    protected string $name;
+    protected string $table;
+    protected string $foreignKeyName;
+    protected string $localKeyName;
+    protected string $entityName;
+    protected Closure $query;
+    protected ?Collection $data;
 
-    /**
-     * @var string
-     */
-    protected $tableName;
-
-    /**
-     * @var string
-     */
-    protected $foreignKeyName;
-
-    /**
-     * @var string
-     */
-    protected $localKeyName;
-
-    /**
-     *  @var string
-     */
-    protected $entityName;
-
-    /**
-     * @var Closure
-     */
-    protected $query;
-
-    /**
-     * @var Collection|null
-     */
-    protected $data;
-
-    /**
-     * @param string       $name
-     * @param string       $tableName
-     * @param string       $foreignKeyName
-     * @param string       $localKeyName
-     * @param string       $entityName
-     * @param Closure      $query
-     */
-    public function __construct(string $name, string $tableName, string $foreignKeyName, string $localKeyName, string $entityName, Closure $query)
+    public function __construct(string $name, string $table, string $foreignKeyName, string $localKeyName, string $entityName, Closure $query)
     {
         $this->name = $name;
-        $this->tableName = $tableName;
+        $this->table = $table;
         $this->foreignKeyName = $foreignKeyName;
         $this->localKeyName = $localKeyName;
         $this->entityName = $entityName;
@@ -63,11 +28,8 @@ abstract class BaseRelationship implements Relationship
 
     /**
      * Fetch and store the related records for this relationship.
-     *
-     * @param  Collection    $records
-     * @param  Closure|null  $constraints
      */
-    abstract public function load(Collection $records, ?Closure $constraints = null);
+    abstract public function load(Collection $records, ?Closure $constraints = null) : void;
 
     /**
      * Generate the related entities for a given record.

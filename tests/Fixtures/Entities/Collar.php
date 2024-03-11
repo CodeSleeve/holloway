@@ -10,31 +10,19 @@ class Collar extends Entity
     protected int $pup_id;
     protected string $color;
 
-    /**
-     * @param Pup $pup
-     * @param string $color
-     */
     public function __construct(Pup $pup, string $color)
     {
         $this->setPup($pup);
         $this->color = $color;
     }
 
-    /**
-     * @param Pup $pup
-     * @return void
-     */
-    public function setPup(Pup $pup)
+    public function setPup(Pup $pup) : void
     {
         $this->pup_id = $pup->id;
         $this->pup = $pup;
     }
 
-    /**
-     * @param string $color
-     * @return void
-     */
-    public function setColor(string $color)
+    public function setColor(string $color) : void
     {
         $this->color = $color;
     }
