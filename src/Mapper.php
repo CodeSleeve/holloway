@@ -391,6 +391,15 @@ abstract class Mapper
     }
 
     /**
+     * Allows for a child mapper to override the $now that is set on 
+     * created_at and updated_at timestamps
+     */
+    protected function currentTime() : DateTime
+    {
+	return new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
+    }
+
+    /**
      * Persist a single entity into storage.
      */
     protected function storeEntity($entity) : bool
@@ -417,7 +426,7 @@ abstract class Mapper
 
                     if ($this->hasTimestamps === true) {
                         $attributes = \Illuminate\Support\Arr::except($attributes, [self::UPDATED_AT, self::CREATED_AT]);
-                        $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
+                        $now = $this->currentTime();
                         $attributes[static::UPDATED_AT] = $now->format($this->timestampFormat);
 
                         if (method_exists($this, 'setUpdatedAtTimestampOnEntity')) {
@@ -442,7 +451,7 @@ abstract class Mapper
                 $attributes = $this->dehydrate($entity);
 
                 if ($this->hasTimestamps === true) {
-                    $now = new DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
+                    $now = $this->currentTime();
                     $attributes[static::CREATED_AT] = $now->format($this->timestampFormat);
                     $attributes[static::UPDATED_AT] = $now->format($this->timestampFormat);
 

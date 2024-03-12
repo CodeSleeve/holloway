@@ -28,13 +28,18 @@ $container->bind('db.schema', function ($app) {
     return $app['db']->connection()->getSchemaBuilder();
 });
 
-// Setup a postgres connection
+if (file_exists(__DIR__ . '/../.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+    $dotenv->load();
+}
+
+// Setup a postgres connection by default, but can be overriden easily with .env
 $capsule->addConnection([
-    'driver'    => 'pgsql',
-    'host'      => 'localhost',
-    'database'  => 'holloway_test',
-    'username'  => 'postgres',
-    'password'  => 'password',
+    'driver'    => $_ENV['DB_DRIVER'] ?? 'pgsql',
+    'host'      => $_ENV['DB_HOST'] ?? 'localhost',
+    'database'  => $_ENV['DB_DATABASE'] ?? 'holloway_test',
+    'username'  => $_ENV['DB_USERNAME'] ?? 'postgres',
+    'password'  => $_ENV['DB_PASSWORD'] ?? 'password',
     'charset'   => 'utf8',
     'prefix'    => '',
     'prefix_indexes' => true,
@@ -42,18 +47,6 @@ $capsule->addConnection([
     'sslmode' => 'prefer',
 ]);
 
-// set up a mysql connection
-// $capsule->addConnection([
-//     'driver'    => 'mysql',
-//     'host'      => 'localhost',
-//     'database'  => 'holloway_test',
-//     'username'  => 'root',
-//     'password'  => 'password',
-//     'charset'   => 'utf8',
-//     'collation' => 'utf8_unicode_ci',
-//     'prefix'    => '',
-//     'schema'    => 'public',
-// ]);
 
 // Make this Capsule instance available globally via static methods
 $capsule->setAsGlobal();
