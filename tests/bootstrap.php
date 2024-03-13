@@ -1,14 +1,14 @@
 <?php
 
-use CodeSleeve\Holloway\{Mapper, SoftDeletingScope};
-use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper;
-use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper;
-use Illuminate\Container\Container;
-use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Events\Dispatcher;
+use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Database\Capsule\Manager as Capsule;
+use CodeSleeve\Holloway\{Mapper, SoftDeletingScope};
 use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper;
 use CodeSleeve\Holloway\Tests\Helpers\MigrateFixtureTables;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper;
 
 date_default_timezone_set('UTC');
 
@@ -34,19 +34,42 @@ if (file_exists(__DIR__ . '/../.env')) {
 }
 
 // Setup a postgres connection by default, but can be overriden easily with .env
-$capsule->addConnection([
-    'driver'    => $_ENV['DB_DRIVER'] ?? 'pgsql',
-    'host'      => $_ENV['DB_HOST'] ?? 'localhost',
-    'database'  => $_ENV['DB_DATABASE'] ?? 'holloway_test',
-    'username'  => $_ENV['DB_USERNAME'] ?? 'postgres',
-    'password'  => $_ENV['DB_PASSWORD'] ?? 'password',
-    'charset'   => 'utf8',
-    'prefix'    => '',
-    'prefix_indexes' => true,
-    'search_path' => 'public',
-    'sslmode' => 'prefer',
-]);
-
+if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'mysql') {
+    $capsule->addConnection([
+        'driver'    => $_ENV['DB_DRIVER'] ?? 'mysql',
+        'host'      => $_ENV['DB_HOST'] ?? 'localhost',
+        'database'  => $_ENV['DB_DATABASE'] ?? 'holloway_test',
+        'username'  => $_ENV['DB_USERNAME'] ?? 'root',
+        'password'  => $_ENV['DB_PASSWORD'] ?? 'password',
+        'charset'   => 'utf8',
+        'collation' => 'utf8_unicode_ci',
+        'prefix'    => '',
+        'schema'    => 'public',
+    ]);
+} else if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'pgsql') {
+    $capsule->addConnection([
+        'driver'    => $_ENV['DB_DRIVER'] ?? 'pgsql',
+        'host'      => $_ENV['DB_HOST'] ?? 'localhost',
+        'database'  => $_ENV['DB_DATABASE'] ?? 'holloway_test',
+        'username'  => $_ENV['DB_USERNAME'] ?? 'postgres',
+        'password'  => $_ENV['DB_PASSWORD'] ?? 'password',
+        'charset'   => 'utf8',
+        'prefix'    => '',
+        'prefix_indexes' => true,
+        'search_path' => 'public',
+        'sslmode' => 'prefer',
+    ]);
+}
+// sqlite
+else if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'sqlite') {
+    $capsule->addConnection([
+        'driver'    => $_ENV['DB_DRIVER'] ?? 'sqlite',
+        'database'  => $_ENV['DB_DATABASE'] ?? ':memory:',
+        'prefix'    => '',
+    ]);
+} else {
+    throw new Exception('No suitable database driver specified in .env file');
+}
 
 // Make this Capsule instance available globally via static methods
 $capsule->setAsGlobal();
