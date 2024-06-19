@@ -500,7 +500,7 @@ abstract class Mapper
             $this->getConnection()
                 ->table($this->getTable())
                 ->where($this->getKeyName(), $identifier)
-                ->update([$this->getQualifiedDeletedAtColumn() => new DateTime]);
+                ->update([$this->getQualifiedDeletedAtColumn() => $this->currentTime()]);
         } else {
             $this->getConnection()
                 ->table($this->getTable())
