@@ -703,6 +703,23 @@ class MapperTest extends TestCase
     }
 
     /** @test */
+    public function it_can_soft_delete_entities_with_current_time()
+    {
+        // given
+        $this->buildFixtures();
+        $mapper = Holloway::instance()->getMapper(Pup::class);    // The pup mapper fixture uses soft deletes
+        $tobi = $mapper->find(1);
+
+        // when
+        $mapper->remove($tobi);
+
+        // then
+        $deletedAt = $mapper->withTrashed()->find(1)->deleted_at;
+        $this->assertNotNull($deletedAt);
+        $this->assertGreaterThanOrEqual((string) $deletedAt, (string) CarbonImmutable::now());
+    }
+
+    /** @test */
     function it_doesnt_load_soft_deleted_entities_when_querying_relationships()
     {
         // given
