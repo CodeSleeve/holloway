@@ -73,7 +73,7 @@ final class Holloway
 
 ### 2. Mapper Base Class
 
-Mappers handle all database operations and entity lifecycle:
+Mappers handle all database operations and entity lifecycle. As of vX.X.X, you can override the `currentTime()` method on your mapper to control how timestamps (such as `created_at`, `updated_at`, and `deleted_at`) are set. This is useful for custom time zones, deterministic testing, or advanced use cases.
 
 ```php
 abstract class Mapper
@@ -83,6 +83,14 @@ abstract class Mapper
     protected string $table = '';
     protected string $primaryKey = 'id';
     protected bool $hasTimestamps = true;
+    /**
+     * Override this to control how Holloway sets timestamps (created_at, updated_at, deleted_at).
+     * By default, returns the current UTC time.
+     */
+    protected function currentTime(): \DateTime
+    {
+        return new \DateTime('now', new \DateTimeZone(static::DEFAULT_TIME_ZONE));
+    }
     
     // Core functionality
     abstract public function defineRelations(): void;
@@ -262,7 +270,8 @@ class UserMapper extends Mapper
 
 ### Soft Deletes
 
-Implemented as a trait with automatic scope application:
+Implemented as a trait with automatic scope application. The timestamp for `deleted_at` is now set using the mapper's `currentTime()` method, so you can override this for custom time handling:
+
 
 ```php
 use CodeSleeve\Holloway\SoftDeletes;
@@ -272,6 +281,13 @@ class UserMapper extends Mapper
     use SoftDeletes;
     
     protected string $deletedAt = 'deleted_at';
+
+    // Optionally override to control soft delete timestamp
+    protected function currentTime(): \DateTime
+    {
+        // e.g. always use a fixed time for tests
+        return new \DateTime('2020-01-01 00:00:00', new \DateTimeZone('UTC'));
+    }
 }
 ```
 

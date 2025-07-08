@@ -1,4 +1,8 @@
 # Persistence Operations
+## Timestamp Handling
+
+When persisting entities, Holloway uses the `currentTime()` method on your mapper to set `created_at`, `updated_at`, and (if using soft deletes) `deleted_at` columns. You can override this method to control how timestamps are generated (e.g., for custom time zones or deterministic tests).
+
 
 Persistence operations in Holloway handle the storage, updating, and removal of entities through mappers. Unlike Active Record patterns, persistence is explicit and controlled through the mapper, providing clear separation between domain logic and data access.
 
@@ -7,6 +11,15 @@ Persistence operations in Holloway handle the storage, updating, and removal of 
 ### Store Operations
 
 The `store()` method handles both INSERT and UPDATE operations automatically:
+// Example: Customizing timestamp behavior
+class MyMapper extends Mapper
+{
+    protected function currentTime(): \DateTime
+    {
+        // Always use a fixed time for tests
+        return new \DateTime('2020-01-01 00:00:00', new \DateTimeZone('UTC'));
+    }
+}
 
 ```php
 $userMapper = Holloway::instance()->getMapper(User::class);

@@ -9,6 +9,9 @@
 
 Holloway is a sophisticated implementation of the datamapper pattern (Fowler), built on top of the `illuminate/database` package that powers Laravel's Eloquent ORM. While maintaining the familiar query builder syntax you know and love, Holloway provides complete separation between your domain entities and database persistence, enabling truly unbreakable domain objects.
 
+> **Now supports recent versions of `illuminate/database`**
+> Holloway is compatible with Laravel 8, 9, 10, and newer releases of the `illuminate/database` package. See the [installation instructions](#installation) for version details.
+
 ## Why Holloway?
 
 **Unbreakable Domain Objects:** Create entities that are never allowed to exist in an invalid state, with complete control over their construction and behavior.

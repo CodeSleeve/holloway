@@ -1,4 +1,5 @@
 # Soft Deletes
+> **Note:** The timestamp for `deleted_at` is set using your mapper's `currentTime()` method. You can override this method to control how soft delete times are generated (e.g., for custom time zones or deterministic tests).
 
 Holloway provides comprehensive soft delete functionality that allows you to "delete" entities without actually removing them from the database. This is essential for maintaining data integrity, audit trails, and providing "undo" functionality in applications.
 
