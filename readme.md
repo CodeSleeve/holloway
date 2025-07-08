@@ -109,9 +109,12 @@ $this->customMany('stickyNotes', function ($query, Collection $clientServices) {
 }, StickyNote::class);
 ```
 
+
 ## Contributing
 
-Contributions are welcome! Please see our [contributing guide](./CONTRIBUTING.md) for details.
+Thank you for your interest in improving this project!
+Currently, we are not accepting pull requests, as we are focused on maintaining a high standard of code quality and consistency.
+If you encounter bugs or have ideas for improvement, please open an issue—your feedback is always welcome and appreciated.
 
 ## License
 
