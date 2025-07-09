@@ -72,6 +72,9 @@ class PostMapper extends Mapper
         return $this->query()
             ->withoutGlobalScope(PublishedScope::class)
             ->get();
+
+        // Or alternatively, use the newQueryWithoutScope() shortcut
+        // return $this->newQueryWithoutScope(PublishedScope::class)->get();
     }
 
     public function findIncludingInactive(): Collection
@@ -86,6 +89,9 @@ class PostMapper extends Mapper
         return $this->query()
             ->withoutGlobalScopes()
             ->get();
+
+        // Or alternatively, use the newQueryWithoutScopes() shortcut
+        // return $this->newQueryWithoutScopes()->get();
     }
 }
 ```

@@ -377,14 +377,15 @@ Holloway integrates with Laravel-style factories:
 ```php
 $userMapper = Holloway::instance()->getMapper(User::class);
 
+// Using legacy factory syntax (pre-Laravel 8)
 // Create single entity
-$user = UserFactory::new()->create();
+$user = factory(User::class)->create();
 
 // Create multiple entities
-$users = UserFactory::new()->count(10)->create();
+$users = factory(User::class, 10)->create();
 
 // Create with specific attributes
-$admin = UserFactory::new()->admin()->create();
+$admin = factory(User::class)->state('admin')->create();
 ```
 
 ### Factory Implementation

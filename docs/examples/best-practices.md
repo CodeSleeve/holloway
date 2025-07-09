@@ -105,84 +105,26 @@ class Money
 
 ### Mapper Organization
 
+
 #### Single Responsibility
 ```php
-// Good - Focused mapper
 class UserMapper extends Mapper
 {
     public function findByEmail(string $email): ?User
     {
         return $this->query()->where('email', $email)->first();
     }
-
-    public function findActiveUsers(): Collection
-    {
-        return $this->query()->where('active', true)->get();
-    }
-}
-
-// Consider separate specialized mappers for complex queries
-class UserAnalyticsMapper extends Mapper
-{
-    protected string $table = 'users';
-
-    public function getUserEngagementStats(DateTime $from, DateTime $to): array
-    {
-        return $this->query()
-            ->selectRaw('
-                COUNT(*) as total_users,
-                AVG(login_count) as avg_logins,
-                SUM(time_spent) as total_time
-            ')
-            ->whereBetween('last_active_at', [$from, $to])
-            ->first();
-    }
 }
 ```
+> For more complex queries, simply add additional methods to your mapper as needed.
 
-#### Repository Pattern Integration
+
+#### Persistence
+To persist an entity, simply call:
 ```php
-interface UserRepositoryInterface
-{
-    public function findById(int $id): ?User;
-    public function findByEmail(string $email): ?User;
-    public function save(User $user): void;
-    public function delete(User $user): void;
-}
-
-class UserRepository implements UserRepositoryInterface
-{
-    public function __construct(private UserMapper $mapper) {}
-
-    public function findById(int $id): ?User
-    {
-        return $this->mapper->find($id);
-    }
-
-    public function findByEmail(string $email): ?User
-    {
-        return $this->mapper->findByEmail($email);
-    }
-
-    public function save(User $user): void
-    {
-        $this->mapper->save($user);
-    }
-
-    public function delete(User $user): void
-    {
-        $this->mapper->delete($user);
-    }
-
-    public function findActiveUsersWithProfile(): Collection
-    {
-        return $this->mapper->query()
-            ->where('active', true)
-            ->with('profile')
-            ->get();
-    }
-}
+$mapper->store($entity);
 ```
+Holloway handles all persistence logic for you. No repository or service layer is required unless you want to add additional business logic.
 
 ## Performance Optimization
 
@@ -434,88 +376,17 @@ class PostMapper extends Mapper
 
 ## Testing Strategies
 
-### Factory Organization
-```php
-class UserFactory extends Factory
-{
-    protected function definition(): array
-    {
-        return [
-            'name' => $this->faker->name,
-            'email' => $this->faker->unique()->safeEmail,
-            'role' => UserRole::Member,
-            'active' => true,
-            'created_at' => now(),
-        ];
-    }
 
-    public function admin(): self
-    {
-        return $this->state(['role' => UserRole::Admin]);
-    }
+### Testing Patterns
+// Using legacy factory syntax (pre-Laravel 8)
+$user = factory(User::class)->create();
+$post = factory(Post::class)->create();
+> Define your factories in `database/factories/*.php` as per Laravel legacy conventions.
 
-    public function inactive(): self
-    {
-        return $this->state(['active' => false]);
-    }
-
-    public function withProfile(): self
-    {
-        return $this->afterCreating(function(User $user) {
-            UserProfileFactory::new()->for($user)->create();
-        });
-    }
-
-    public function withPosts(int $count = 3): self
-    {
-        return $this->afterCreating(function(User $user) use ($count) {
-            PostFactory::new()->for($user)->count($count)->create();
-        });
-    }
-}
-```
 
 ### Comprehensive Testing
-```php
-class PostMapperTest extends TestCase
-{
-    public function testFindWithRelationships(): void
-    {
-        // Arrange
-        $post = PostFactory::new()
-            ->withAuthor()
-            ->withCategory()
-            ->withComments(3)
-            ->create();
-
-        // Act
-        $loadedPost = app(PostMapper::class)->findWithRelationships($post->getId());
-
-        // Assert
-        $this->assertNotNull($loadedPost);
-        $this->assertInstanceOf(User::class, $loadedPost->getAuthor());
-        $this->assertInstanceOf(Category::class, $loadedPost->getCategory());
-        $this->assertCount(3, $loadedPost->getComments());
-    }
-
-    public function testCachingBehavior(): void
-    {
-        // Arrange
-        $post = PostFactory::new()->create();
-        cache()->flush();
-
-        // Act - First call should hit database
-        $first = app(PostMapper::class)->findCached($post->getId());
-        
-        // Act - Second call should hit cache
-        $second = app(PostMapper::class)->findCached($post->getId());
-
-        // Assert
-        $this->assertEquals($first->getId(), $second->getId());
-        $this->assertTrue(cache()->has("post.{$post->getId()}"));
-    }
-}
-```
+// Using legacy factory syntax (pre-Laravel 8)
+$post = factory(Post::class)->create();
 
 ## Security Best Practices
 
@@ -718,7 +589,8 @@ class PerformanceTest extends TestCase
     public function testQueryPerformance(): void
     {
         // Arrange
-        UserFactory::new()->count(10000)->create();
+        // Using legacy factory syntax (pre-Laravel 8)
+        factory(User::class, 10000)->create();
         
         // Act & Assert
         $this->assertQueryCountLessThan(5, function() {
@@ -746,29 +618,8 @@ class PerformanceTest extends TestCase
 
 ## Production Deployment
 
-### Configuration Management
-```php
-// config/holloway.php
-return [
-    'cache' => [
-        'enabled' => env('HOLLOWAY_CACHE_ENABLED', true),
-        'ttl' => env('HOLLOWAY_CACHE_TTL', 3600),
-        'prefix' => env('HOLLOWAY_CACHE_PREFIX', 'holloway:'),
-    ],
-    
-    'performance' => [
-        'log_slow_queries' => env('HOLLOWAY_LOG_SLOW_QUERIES', true),
-        'slow_query_threshold' => env('HOLLOWAY_SLOW_QUERY_THRESHOLD', 1000), // ms
-        'chunk_size' => env('HOLLOWAY_CHUNK_SIZE', 1000),
-    ],
-    
-    'features' => [
-        'soft_deletes' => env('HOLLOWAY_SOFT_DELETES', true),
-        'timestamps' => env('HOLLOWAY_TIMESTAMPS', true),
-        'uuid_primary_keys' => env('HOLLOWAY_UUID_PRIMARY_KEYS', false),
-    ],
-];
-```
+
+<!-- Configuration management section removed: Holloway does not currently support a config/holloway.php file or related environment variables. If configuration becomes available in the future, document it here. -->
 
 These best practices provide a foundation for building maintainable, performant, and robust applications with Holloway. Adapt them to your specific use case and requirements.
 

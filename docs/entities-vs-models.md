@@ -215,7 +215,7 @@ foreach ($users as $user) {
 public function testUserPromotion()
 {
     // Requires database for model testing
-    $user = User::factory()->create(['role' => 'member']);
+    $user = factory(User::class)->create(['role' => 'member']);
     
     $user->promote();
     
@@ -410,21 +410,6 @@ class UserService
     }
 }
 ```
-
-## When to Use Each Approach
-
-### Use Eloquent When:
-- **Rapid prototyping** - Quick CRUD operations
-- **Simple applications** - Minimal business logic
-- **Existing Laravel applications** - Large existing codebase
-- **Team familiarity** - Team is experienced with Active Record
-
-### Use Holloway When:
-- **Domain-driven design** - Complex business logic
-- **Enterprise applications** - Long-term maintainability
-- **High test coverage** - Pure unit testing requirements
-- **Performance critical** - Predictable query patterns
-- **Unbreakable entities** - Data integrity is paramount
 
 ## Best Practices for Entities
 

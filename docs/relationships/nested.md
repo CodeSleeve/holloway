@@ -460,33 +460,17 @@ class ProjectMapper extends Mapper
 ### Factory Setup for Complex Structures
 
 ```php
-class BlogPostFactory extends Factory
-{
-    public function withCompleteStructure(): self
-    {
-        return $this->afterCreating(function(Post $post) {
-            // Create author with profile
-            $author = UserFactory::new()->withProfile()->create();
-            $post->setAuthor($author);
-
-            // Create category with parent
-            $parentCategory = CategoryFactory::new()->create();
-            $category = CategoryFactory::new()->create(['parent_id' => $parentCategory->getId()]);
-            $post->setCategory($category);
-
-            // Create comments with replies
-            CommentFactory::new()
-                ->count(3)
-                ->withReplies(2)
-                ->for($post)
-                ->create();
-
-            // Create tags
-            $tags = TagFactory::new()->count(5)->create();
-            $post->setTags($tags);
-        });
-    }
-}
+// Using legacy factory syntax (pre-Laravel 8)
+// Define your factories in database/factories/*.php
+// Example:
+// $factory->define(Post::class, function (Faker $faker) {
+//     return [
+//         'title' => $faker->sentence,
+//         'content' => $faker->paragraphs(3, true),
+//         'author_id' => factory(User::class)->create()->id,
+//         'category_id' => factory(Category::class)->create()->id,
+//     ];
+// });
 ```
 
 ### Testing Nested Loading
@@ -497,7 +481,8 @@ class NestedRelationshipTest extends TestCase
     public function testDeepNestedLoading(): void
     {
         // Arrange
-        $post = BlogPostFactory::new()->withCompleteStructure()->create();
+        // Using legacy factory syntax (pre-Laravel 8)
+        $post = factory(Post::class)->create();
 
         // Act
         $loadedPost = app(PostMapper::class)->findWithNestedData($post->getId());

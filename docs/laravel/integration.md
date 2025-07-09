@@ -364,7 +364,7 @@ class PostMapper extends Mapper
     public function publishPost(Post $post): void
     {
         $post->publish();
-        $this->save($post);
+        $this->store($post);
         
         // Queue heavy operations
         ProcessPostImages::dispatch($post);
@@ -415,7 +415,7 @@ class PostMapper extends Mapper
             $post->setCategory($category);
         }
 
-        return $this->save($post);
+        return $this->store($post);
     }
 }
 ```
@@ -461,7 +461,7 @@ class PostController extends Controller
             $post->scheduleFor($request->date('schedule_at'));
         }
         
-        return $posts->save($post);
+        return $posts->store($post);
     }
 }
 ```
@@ -486,7 +486,7 @@ class PostController extends Controller
         $post = new Post($request->title, $request->content);
         $post->setAuthor(auth()->user());
         
-        return $posts->save($post);
+        return $posts->store($post);
     }
 }
 ```
@@ -526,17 +526,17 @@ class PostTest extends TestCase
 
     public function testCreatePost(): void
     {
-        // Arrange
-        $user = User::factory()->create();
+        // Given
+        $user = factory(User::class)->create();
         $this->actingAs($user);
 
-        // Act
+        // When
         $response = $this->post('/posts', [
             'title' => 'Test Post',
             'content' => 'This is test content',
         ]);
 
-        // Assert
+        // Then
         $response->assertCreated();
         
         $post = app(PostMapper::class)->findByTitle('Test Post');
@@ -546,13 +546,14 @@ class PostTest extends TestCase
 
     public function testPostPagination(): void
     {
-        // Arrange
-        Post::factory()->count(25)->create();
+        // Given
+        // Using legacy factory syntax (pre-Laravel 8)
+        factory(Post::class, 25)->create();
 
-        // Act
+        // When
         $response = $this->get('/posts?page=2');
 
-        // Assert
+        // Then
         $response->assertOk();
         $response->assertJsonStructure([
             'data',
@@ -580,8 +581,8 @@ class PostFactory extends Factory
             'content' => $this->faker->paragraphs(3, true),
             'published' => true,
             'published_at' => now(),
-            'author_id' => User::factory(),
-            'category_id' => Category::factory(),
+            'author_id' => factory(User::class)->create()->id,
+            'category_id' => factory(Category::class)->create()->id,
         ];
     }
 
@@ -596,53 +597,10 @@ class PostFactory extends Factory
     public function withComments(int $count = 3): self
     {
         return $this->afterCreating(function(Post $post) use ($count) {
-            Comment::factory()->count($count)->for($post)->create();
+            factory(Comment::class, $count)->create(['post_id' => $post->id]);
         });
     }
 }
-```
-
-## Deployment Considerations
-
-### Optimization Commands
-
-Add optimization commands to your deployment script:
-
-```bash
-# Clear and optimize caches
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan holloway:cache:clear
-
-# Run database optimizations
-php artisan migrate --force
-php artisan db:seed --class=ProductionSeeder
-```
-
-### Configuration Optimization
-
-Optimize configuration for production:
-
-```php
-// config/holloway.php (production)
-return [
-    'cache' => [
-        'enabled' => true,
-        'store' => 'redis',
-        'ttl' => 7200, // Longer TTL in production
-    ],
-    
-    'performance' => [
-        'log_queries' => false, // Disable in production
-        'chunk_size' => 5000, // Larger chunks
-    ],
-    
-    'debug' => [
-        'enabled' => false,
-        'log_level' => 'error',
-    ],
-];
 ```
 
 ## Next Steps
