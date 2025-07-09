@@ -247,6 +247,14 @@ abstract class Mapper
     }
 
     /**
+     * More explicity way to start a new query builder for the mapper.
+     */
+    public function query() : Builder
+    {
+        return $this->newQuery();
+    }
+
+    /**
      * Get a new query builder for the mapper's table.
      */
     public function newQuery() : Builder
