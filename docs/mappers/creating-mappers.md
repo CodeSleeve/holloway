@@ -106,72 +106,97 @@ class UserMapper extends Mapper
 
 ### Dehydration: Entity → Database
 
-The `dehydrate()` method converts an entity instance into an array suitable for database storage:
+The `dehydrate()` method converts an entity instance into an array suitable for database storage.
+
+**Simple manual approach:**
 
 ```php
 public function dehydrate($entity): array
 {
     return [
-        'id' => $entity->getId(),
-        'name' => $entity->getName(),
-        'email' => $entity->getEmail(),
-        'role' => $entity->getRole()->value, // Enum to string
-        'settings' => json_encode($entity->getSettings()), // Object to JSON
-        'is_active' => $entity->isActive(),
+        'id' => $entity->id,
+        'name' => $entity->name,
+        'email' => $entity->email,
+        'is_active' => $entity->is_active,
     ];
 }
 ```
 
-**Best Practices:**
-- Handle type conversions (objects to strings, enums to values)
-- Exclude computed properties
-- Include only persistable data
-- Handle null values gracefully
+**Magic Accessor Pattern (recommended):**
+
+```php
+// Base mapper handles this automatically!
+// Entity provides toArray(), mapper removes relationships and transforms types
+public function dehydrate($entity): array
+{
+    $attributes = $entity->toArray();
+    
+    // Remove relationships
+    $attributes = Arr::except($attributes, ['posts', 'company']);
+    
+    // Remove null id for inserts
+    if (!$attributes['id']) {
+        unset($attributes['id']);
+    }
+    
+    // Transformations applied automatically via mappings
+    return $attributes;
+}
+```
+
+**Key Principles:**
+- ❌ **DON'T** put validation in dehydrate - validation belongs in entity constructor
+- ❌ **DON'T** put business logic in dehydrate - mappers handle persistence only
+- ✅ **DO** handle type conversions (objects to strings, enums to values)
+- ✅ **DO** exclude computed properties and relationships
+- ✅ **DO** delegate to type transformation system when possible
 
 ### Hydration: Database → Entity
 
-The `hydrate()` method converts a database record into an entity instance:
+The `hydrate()` method converts a database record into an entity instance.
+
+**Simple manual approach:**
 
 ```php
 public function hydrate($record, $relations = null)
 {
-    // Create entity using constructor
-    $entity = new User(
-        $record->name,
-        $record->email,
-        UserRole::from($record->role)
-    );
+    $user = new User();
+    $user->id = $record->id;
+    $user->name = $record->name;
+    $user->email = $record->email;
     
-    // Set internal properties
-    if (isset($record->id)) {
-        $entity->setId($record->id);
-    }
-    
-    if (isset($record->created_at)) {
-        $entity->setCreatedAt(new \DateTime($record->created_at));
-    }
-    
-    // Handle JSON fields
-    if (isset($record->settings)) {
-        $settings = json_decode($record->settings, true);
-        $entity->setSettings($settings);
-    }
-    
-    // Attach relationships
-    if ($relations && isset($relations['profile'])) {
-        $entity->setProfile($relations['profile']);
-    }
-    
-    return $entity;
+    return $user;
 }
 ```
 
-**Best Practices:**
-- Use entity constructor for required properties
-- Use setter methods for optional/internal properties
-- Handle type conversions (strings to objects, JSON to arrays)
-- Validate data integrity where appropriate
-- Attach loaded relationships
+**Magic Accessor Pattern (recommended):**
+
+```php
+use Doctrine\Instantiator\Instantiator;
+
+public function hydrate($record, $relations)
+{
+    // Prepare attributes with type transformations
+    $attributes = $this->mapValueObjects($record, $relations);
+    
+    // Instantiate WITHOUT calling constructor (bypasses validation)
+    $entity = $this->instantiator->instantiate($this->entityClassName);
+    
+    // Fill properties directly
+    return $entity->mapperFill($attributes);
+}
+```
+
+**Key Principles:**
+- ❌ **DON'T** call entity constructor during hydration - it runs validation meant for NEW entities
+- ❌ **DON'T** put validation in hydration - database data is already trusted
+- ❌ **DON'T** put business logic in hydration - keep it in entities
+- ✅ **DO** use Instantiator to bypass constructor
+- ✅ **DO** delegate to type transformation system
+- ✅ **DO** trust database data (it was validated when created)
+
+**Why bypass constructor?**
+See [Entity Lifecycle](../core-concepts/entity-lifecycle.md) for the full explanation of creation vs hydration lifecycles.
 
 ### Relationship Definition
 
@@ -340,82 +365,283 @@ class UserMapper extends Mapper
 $allUsers = $userMapper->newQueryWithoutScope('active')->get();
 ```
 
-## Entity Cache Configuration
+## What NOT to Put in Mappers
 
-Control how entities are cached for performance:
+Mappers should handle **persistence only**. Here are common anti-patterns to avoid:
 
-```php
-class UserMapper extends Mapper
-{
-    public function __construct()
-    {
-        parent::__construct();
-        
-        // Custom cache key (default uses primary key)
-        $this->entityCache = new EntityCache('id');
-    }
-    
-    /**
-     * Custom entity instantiation
-     */
-    public function instantiateEntity(array $attributes)
-    {
-        // Use custom instantiation logic if needed
-        return $this->instantiator->instantiate($this->entityClassName);
-    }
-    
-    /**
-     * Clear cache after bulk operations
-     */
-    protected function afterBulkOperation(): void
-    {
-        $this->clearEntityCache();
-    }
-}
-```
-
-## Validation and Business Rules
-
-Implement validation within your mapper:
+### ❌ Anti-Pattern: Validation in Mapper
 
 ```php
+// DON'T DO THIS!
 class UserMapper extends Mapper
 {
-    protected function validateEntity($entity): void
-    {
-        if (empty($entity->getName())) {
-            throw new InvalidArgumentException('User name is required');
-        }
-        
-        if (!filter_var($entity->getEmail(), FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('Invalid email format');
-        }
-        
-        // Check for unique email
-        if ($this->emailExists($entity->getEmail(), $entity->getId())) {
-            throw new InvalidArgumentException('Email already exists');
-        }
-    }
-    
-    private function emailExists(string $email, ?int $excludeId = null): bool
-    {
-        $query = $this->where('email', $email);
-        
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-        
-        return $query->exists();
-    }
-    
     protected function storeEntity($entity): bool
     {
-        $this->validateEntity($entity);
+        // This is WRONG - validation belongs in entity constructor
+        if (empty($entity->name)) {
+            throw new InvalidArgumentException('Name required');
+        }
         
         return parent::storeEntity($entity);
     }
 }
 ```
+
+**✅ Correct: Validation in Entity**
+
+```php
+class User extends Entity
+{
+    public function __construct(string $name, Email $email)
+    {
+        // Validation happens at CREATION time
+        if (empty($name)) {
+            throw new InvalidArgumentException('Name required');
+        }
+        
+        $this->name = $name;
+        $this->email = $email;
+    }
+}
+```
+
+### ❌ Anti-Pattern: Business Logic in Mapper
+
+```php
+// DON'T DO THIS!
+class OrderMapper extends Mapper
+{
+    public function save($entity): bool
+    {
+        // This is WRONG - business logic belongs in entity
+        if ($entity->getTotal() > 1000) {
+            $entity->setStatus('requires_approval');
+        }
+        
+        return parent::save($entity);
+    }
+}
+```
+
+**✅ Correct: Business Logic in Entity**
+
+```php
+class Order extends Entity
+{
+    public function setTotal(Money $total): void
+    {
+        $this->total = $total;
+        
+        // Business logic stays in entity
+        if ($total->greaterThan(Money::USD(1000))) {
+            $this->status = OrderStatus::RequiresApproval;
+        }
+    }
+}
+```
+
+### ❌ Anti-Pattern: Cache Manipulation in Mapper
+
+```php
+// DON'T DO THIS!
+class UserMapper extends Mapper
+{
+    public function save($entity): bool
+    {
+        $result = parent::save($entity);
+        
+        // This is WRONG - cache concerns don't belong here
+        Cache::forget("user.{$entity->id}");
+        Cache::put("user.{$entity->id}", $entity, 3600);
+        
+        return $result;
+    }
+}
+```
+
+**✅ Correct: Use Events or Observers**
+
+```php
+// In a service provider or observer
+Event::listen(EntitySaved::class, function($event) {
+    if ($event->entity instanceof User) {
+        Cache::forget("user.{$event->entity->id}");
+    }
+});
+```
+
+**Mapper Responsibilities:**
+- ✅ Database queries
+- ✅ Hydration/dehydration
+- ✅ Relationship loading
+- ✅ Type transformations
+- ✅ Scopes
+
+**NOT Mapper Responsibilities:**
+- ❌ Validation
+- ❌ Business logic
+- ❌ Cache management
+- ❌ Event dispatching
+- ❌ Authorization
+- ❌ Notifications
+
+## Magic Accessor Pattern Base Mapper
+
+The reference implementation provides a sophisticated base mapper that handles hydration, dehydration, and type transformations automatically. This is the **recommended pattern** for complex applications:
+
+```php
+<?php
+
+namespace App\Mappers;
+
+use stdClass;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Doctrine\Instantiator\Instantiator;
+use CodeSleeve\Holloway\Mapper as HollowayMapper;
+
+abstract class Mapper extends HollowayMapper
+{
+    /** @var array Type transformation registry */
+    protected static array $maps = [];
+
+    /** @var array Property-to-transformation mappings */
+    protected array $mappings = [];
+
+    /**
+     * @param Instantiator|null $instantiator
+     */
+    public function __construct(?Instantiator $instantiator = null)
+    {
+        parent::__construct();
+        $this->instantiator = $instantiator ?: new Instantiator();
+    }
+
+    /**
+     * Register a type transformation
+     */
+    public static function addMapp(string $name, callable $hydrate, callable $dehydrate): void
+    {
+        static::$maps[$name] = compact('hydrate', 'dehydrate');
+    }
+
+    /**
+     * Set all type transformations at once
+     */
+    public static function setMaps(array $maps): void
+    {
+        static::$maps = $maps;
+    }
+
+    /**
+     * Hydrate: Database → Entity
+     */
+    public function hydrate(stdClass $record, Collection $relations)
+    {
+        $attributes = $this->mapValueObjects($record, $relations);
+        
+        // Instantiate WITHOUT calling constructor
+        $entity = $this->instantiator->instantiate($this->entityClassName);
+        
+        // Fill properties directly
+        return $entity->mapperFill($attributes);
+    }
+
+    /**
+     * Dehydrate: Entity → Database
+     */
+    public function dehydrate($entity): array
+    {
+        $attributes = $entity->toArray();
+        
+        // Remove relationships
+        $attributes = Arr::except($attributes, 
+            array_map(fn($relationship) => $relationship->getName(), $this->relationships)
+        );
+        
+        // Remove null id for inserts
+        if (!$attributes['id']) {
+            unset($attributes['id']);
+        }
+        
+        // Apply dehydration transformations
+        foreach($this->mappings as $propertyName => $map) {
+            if (isset(static::$maps[$map])) {
+                $attributes[$propertyName] = call_user_func_array(
+                    static::$maps[$map]['dehydrate'], 
+                    [$attributes[$propertyName]]
+                );
+            }
+        }
+        
+        return $attributes;
+    }
+
+    /**
+     * Apply hydration transformations
+     */
+    protected function mapValueObjects(stdClass $record, Collection $relations): array
+    {
+        $attributes = array_merge((array) $record, $relations->all());
+        
+        // Apply transformations
+        foreach($this->mappings as $propertyName => $map) {
+            if (isset(static::$maps[$map])) {
+                try {
+                    $attributes[$propertyName] = call_user_func_array(
+                        static::$maps[$map]['hydrate'], 
+                        [$attributes[$propertyName]]
+                    );
+                } catch (\Throwable $th) {
+                    throw new \Exception(
+                        static::class . ": Unable to hydrate property $propertyName: " 
+                        . $th->getMessage()
+                    );
+                }
+            }
+        }
+        
+        return $attributes;
+    }
+}
+```
+
+**Using the base mapper:**
+
+```php
+class UserMapper extends Mapper
+{
+    protected string $table = 'users';
+    protected string $entityClassName = User::class;
+    
+    // Declare type transformations
+    protected array $mappings = [
+        'email' => 'email',
+        'profile_image' => 'url',
+        'settings' => 'json',
+        'created_at' => 'date_time',
+    ];
+    
+    public function defineRelations(): void
+    {
+        $this->hasMany('posts', Post::class);
+        $this->belongsTo('company', Company::class);
+    }
+    
+    // That's it! No need for manual hydrate/dehydrate
+}
+```
+
+**Benefits:**
+- ✅ Automatic type transformations
+- ✅ DRY - no repetitive hydration code
+- ✅ Consistent across all mappers
+- ✅ Scales to complex entities
+- ✅ Separates creation from hydration (see [Entity Lifecycle](../core-concepts/entity-lifecycle.md))
+
+For more details, see:
+- **[Type Transformations](../core-concepts/type-transformations.md)** - How the mappings system works
+- **[Entity Hydration](../core-concepts/entity-hydration.md)** - Different hydration patterns
 
 ## Testing Your Mappers
 
@@ -458,31 +684,6 @@ class UserMapper extends Mapper
 }
 ```
 
-### Audit Logging
-
-```php
-class UserMapper extends Mapper
-{
-    protected function storeEntity($entity): bool
-    {
-        $isUpdate = $this->getIdentifier($entity) !== null;
-        
-        $result = parent::storeEntity($entity);
-        
-        if ($result) {
-            $this->logAuditEvent($isUpdate ? 'updated' : 'created', $entity);
-        }
-        
-        return $result;
-    }
-    
-    private function logAuditEvent(string $action, $entity): void
-    {
-        // Log the action for audit purposes
-    }
-}
-```
-
 ### Multi-Database Support
 
 ```php
@@ -500,6 +701,67 @@ class UserMapper extends Mapper
 // Usage
 $userMapper->useConnection('replica_db')->all();
 ```
+
+### Multi-Tenant Support
+
+```php
+// Using a trait for tenant-aware queries
+class UserMapper extends Mapper
+{
+    public function __construct()
+    {
+        parent::__construct();
+        
+        // Global scope ensures all queries are tenant-specific
+        static::addGlobalScope('tenant', function($builder) {
+            if ($tenantId = auth()->user()?->tenant_id) {
+                $builder->where('tenant_id', $tenantId);
+            }
+        });
+    }
+}
+```
+
+### Custom Helper Methods
+
+Mappers can have helper methods for common queries:
+
+```php
+class UserMapper extends Mapper
+{
+    /**
+     * Find user by email
+     */
+    public function findByEmail(string $email): ?User
+    {
+        return $this->where('email', $email)->first();
+    }
+    
+    /**
+     * Find active users
+     */
+    public function findActive(): Collection
+    {
+        return $this->where('is_active', true)->get();
+    }
+    
+    /**
+     * Get users created in date range
+     */
+    public function createdBetween(DateTime $start, DateTime $end): Collection
+    {
+        return $this->whereBetween('created_at', [
+            $start->format('Y-m-d'),
+            $end->format('Y-m-d')
+        ])->get();
+    }
+}
+```
+
+**These are fine because they:**
+- ✅ Only handle queries
+- ✅ Don't contain business logic
+- ✅ Make your API more expressive
 
 ## Next Steps
 

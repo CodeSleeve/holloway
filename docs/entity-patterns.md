@@ -2,6 +2,611 @@
 
 Holloway's datamapper architecture provides complete decoupling between your entities and persistence logic. This means you have full freedom in how you design your entities. This guide showcases different approaches to entity design and how to configure mappers to work with each pattern.
 
+## Pattern Comparison
+
+| Pattern | PHP Version | Best For | Complexity |
+|---------|-------------|----------|------------|
+| **Magic Accessor Pattern** | 8.0+ | Complex apps, value objects, DRY | Medium |
+| **Property Hooks Pattern** | 8.4+ | Modern apps, clean syntax | Low |
+| **Array-Based Entities** | Any | Dynamic schemas, flexibility | Low |
+| **Public Properties** | Any | Simple apps, quick prototypes | Very Low |
+| **Getters/Setters** | Any | Strict encapsulation | High |
+| **Immutable Entities** | 8.1+ | Functional programming, thread-safety | High |
+
+## Magic Accessor Pattern (Recommended for PHP 8.0-8.3)
+
+This pattern combines protected properties with magic `__get()` accessor and a `mapperFill()` method for hydration. Used in production by a multi-tenant SaaS application, this pattern scales exceptionally well for complex domains.
+
+### Base Entity Class
+
+```php
+<?php
+
+namespace App\Entities;
+
+abstract class Entity
+{
+    protected int|string|null $id = null;
+    
+    /**
+     * Fill entity properties from an array.
+     * Used ONLY by mappers during hydration from database.
+     */
+    public function mapperFill(array $properties): self
+    {
+        foreach($properties as $propertyName => $propertyValue) {
+            $this->$propertyName = $propertyValue;
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * Convert entity to array for persistence.
+     */
+    public function toArray(): array
+    {
+        return get_object_vars($this);
+    }
+    
+    /**
+     * Magic accessor for read-only property access.
+     */
+    public function __get(string $name)
+    {
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        }
+    }
+    
+    /**
+     * Check if property exists.
+     */
+    public function __isset(string $name): bool
+    {
+        return property_exists($this, $name);
+    }
+}
+```
+
+### Concrete Entity Example
+
+```php
+<?php
+
+namespace App\Entities;
+
+use App\ValueObjects\Email;
+use App\ValueObjects\Address;
+use Money\Money;
+
+class Client extends Entity
+{
+    // Protected properties - not directly accessible from outside
+    protected string $tenant_id;
+    protected string $first_name;
+    protected string $last_name;
+    protected Email $email;
+    protected ?Address $billing_address = null;
+    protected Money $total_revenue;
+    protected Money $outstanding_balance;
+    protected ClientStatus $status;
+    
+    /**
+     * Constructor for CREATING new clients (validation here)
+     */
+    public function __construct(
+        ClientCompany $company,
+        string $first_name,
+        string $last_name,
+        string $job_title,
+        Email $email
+    ) {
+        // Validation for NEW clients
+        if (empty($first_name)) {
+            throw new InvalidArgumentException('First name is required');
+        }
+        
+        if (empty($last_name)) {
+            throw new InvalidArgumentException('Last name is required');
+        }
+        
+        // Initialize from domain objects
+        $this->tenant_id = $company->tenant_id;
+        $this->company_id = $company->id;
+        $this->first_name = $first_name;
+        $this->last_name = $last_name;
+        $this->job_title = $job_title;
+        $this->email = $email;
+        
+        // Sensible defaults
+        $this->total_revenue = Money::USD(0);
+        $this->outstanding_balance = Money::USD(0);
+        $this->status = ClientStatus::Active;
+    }
+    
+    /**
+     * Domain methods for business logic
+     */
+    public function changeName(string $first, string $last): void
+    {
+        if (empty($first) || empty($last)) {
+            throw new InvalidArgumentException('Names cannot be empty');
+        }
+        
+        $this->first_name = $first;
+        $this->last_name = $last;
+    }
+    
+    public function changeEmail(Email $newEmail): void
+    {
+        $this->email = $newEmail;
+    }
+    
+    public function updateBillingAddress(Address $address): void
+    {
+        $this->billing_address = $address;
+    }
+    
+    public function addRevenue(Money $amount): void
+    {
+        $this->total_revenue = $this->total_revenue->add($amount);
+    }
+    
+    public function addOutstandingBalance(Money $amount): void
+    {
+        $this->outstanding_balance = $this->outstanding_balance->add($amount);
+    }
+    
+    public function getFullName(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+    
+    public function activate(): void
+    {
+        $this->status = ClientStatus::Active;
+    }
+    
+    public function deactivate(): void
+    {
+        $this->status = ClientStatus::Inactive;
+    }
+}
+```
+
+### Mapper for Magic Accessor Pattern
+
+```php
+<?php
+
+namespace App\Mappers;
+
+use App\Entities\Client;
+
+class ClientMapper extends Mapper
+{
+    protected string $table = 'clients';
+    protected string $entityClassName = Client::class;
+    
+    // Declare type transformations
+    protected array $mappings = [
+        'email' => 'email',
+        'billing_address' => 'address',
+        'total_revenue' => 'money',
+        'outstanding_balance' => 'money',
+        'status' => 'client_status_enum',
+    ];
+    
+    public function defineRelations(): void
+    {
+        $this->belongsTo('company', ClientCompany::class);
+        $this->hasMany('invoices', ClientInvoice::class);
+        $this->hasMany('services', Service::class);
+    }
+    
+    // That's it! Base mapper handles hydrate/dehydrate automatically
+}
+```
+
+### Usage in Application
+
+```php
+// Creating a NEW client (uses constructor with validation)
+$client = new Client(
+    company: $company,
+    first_name: 'John',
+    last_name: 'Doe',
+    job_title: 'CEO',
+    email: new Email('john@example.com')
+);
+
+$clientMapper->save($client);
+
+// Loading EXISTING client (bypasses constructor, uses mapperFill)
+$client = $clientMapper->find(1);
+
+// Accessing properties via magic __get
+echo $client->first_name;        // "John"
+echo $client->email->value;      // "john@example.com"
+echo $client->total_revenue;     // Money object
+
+// Modifying via domain methods
+$client->changeName('Jane', 'Smith');
+$client->changeEmail(new Email('jane@example.com'));
+$client->addRevenue(Money::USD(10000));
+
+$clientMapper->save($client);
+```
+
+### Common Traits
+
+This pattern works well with traits for cross-cutting concerns:
+
+```php
+// HasTenant.php
+trait HasTenant
+{
+    protected string $tenant_id;
+    
+    public function setTenantId(string $tenantId): void
+    {
+        $this->tenant_id = $tenantId;
+    }
+}
+
+// HasTimestamps.php
+trait HasTimestamps
+{
+    protected ?Chronos $created_at = null;
+    protected ?Chronos $updated_at = null;
+    
+    public function setCreatedAt(Chronos $createdAt): void
+    {
+        $this->created_at = $createdAt;
+    }
+    
+    public function setUpdatedAt(Chronos $updatedAt): void
+    {
+        $this->updated_at = $updatedAt;
+    }
+}
+
+// Usage in entity
+class Client extends Entity
+{
+    use HasTenant, HasTimestamps;
+    
+    // ... rest of entity
+}
+```
+
+### Benefits of This Pattern
+
+**✅ Scales to complex entities**
+- Define properties once, use everywhere
+- No verbose getter/setter methods
+- Works seamlessly with value objects
+
+**✅ Clean separation of concerns**
+- Constructor for creation (with validation)
+- mapperFill() for hydration (no validation)
+- Domain methods for business logic
+
+**✅ Type safety**
+- Protected properties with type declarations
+- IDE autocomplete works
+- Static analysis tools work
+
+**✅ DRY (Don't Repeat Yourself)**
+- toArray() works automatically
+- No manual property mapping in mapper
+- Type transformations handled declaratively
+
+**✅ Read-only by default**
+- Properties accessible via __get but not __set
+- Forces use of domain methods
+- Prevents accidental mutations
+
+**✅ Flexible**
+- Can add custom getters when needed
+- Can add validation in domain methods
+- Works with traits for cross-cutting concerns
+
+### When to Use Magic Accessor Pattern
+
+**Best for:**
+- ✅ PHP 8.0-8.3 projects (pre-property hooks)
+- ✅ Complex applications with many entities
+- ✅ Heavy use of value objects (Email, Money, Address)
+- ✅ Want clean separation of creation vs hydration
+- ✅ Building reusable, scalable architecture
+- ✅ Team prefers less boilerplate
+
+**Avoid when:**
+- ❌ Using PHP 8.4+ (use Property Hooks Pattern instead)
+- ❌ Simple CRUD applications
+- ❌ Team unfamiliar with magic methods
+
+**See also:**
+- **[Entity Hydration](./core-concepts/entity-hydration.md)** - How mapperFill() works
+- **[Entity Lifecycle](./core-concepts/entity-lifecycle.md)** - Creation vs hydration
+- **[Type Transformations](./core-concepts/type-transformations.md)** - The mappings system
+- **[Value Objects](./core-concepts/value-objects.md)** - Email, Money, Address patterns
+
+## Property Hooks Pattern (Recommended for PHP 8.4+)
+
+PHP 8.4 introduces property hooks, eliminating the need for magic methods while providing clean, declarative property behavior. This is the **modern recommended approach** for new projects on PHP 8.4+.
+
+### Base Entity with Property Hooks
+
+```php
+<?php
+
+namespace App\Entities;
+
+abstract class Entity
+{
+    public int|string|null $id {
+        get => $this->id;
+        set => $this->id = $value;
+    }
+    
+    /**
+     * Fill entity properties from an array.
+     * Used ONLY by mappers during hydration from database.
+     */
+    public function mapperFill(array $properties): self
+    {
+        foreach($properties as $propertyName => $propertyValue) {
+            $this->$propertyName = $propertyValue;
+        }
+        
+        return $this;
+    }
+    
+    /**
+     * Convert entity to array for persistence.
+     */
+    public function toArray(): array
+    {
+        return get_object_vars($this);
+    }
+}
+```
+
+### Concrete Entity with Property Hooks
+
+```php
+<?php
+
+namespace App\Entities;
+
+use App\ValueObjects\Email;
+use App\ValueObjects\Address;
+use Money\Money;
+
+class Client extends Entity
+{
+    // Property hooks for validation and transformation
+    public string $tenant_id {
+        get => $this->tenant_id;
+        set {
+            if (empty($value)) {
+                throw new \InvalidArgumentException('Tenant ID required');
+            }
+            $this->tenant_id = $value;
+        }
+    }
+    
+    public string $first_name {
+        get => $this->first_name;
+        set => $this->first_name = trim($value);
+    }
+    
+    public string $last_name {
+        get => $this->last_name;
+        set => $this->last_name = trim($value);
+    }
+    
+    // Value object with automatic conversion
+    public Email $email {
+        get => $this->email;
+        set {
+            // Set hook can transform primitives to value objects
+            $this->email = $value instanceof Email ? $value : new Email($value);
+        }
+    }
+    
+    public ?Address $billing_address {
+        get => $this->billing_address ?? null;
+        set => $this->billing_address = $value;
+    }
+    
+    public Money $total_revenue {
+        get => $this->total_revenue;
+        set => $this->total_revenue = $value;
+    }
+    
+    public Money $outstanding_balance {
+        get => $this->outstanding_balance;
+        set => $this->outstanding_balance = $value;
+    }
+    
+    public ClientStatus $status {
+        get => $this->status;
+        set => $this->status = $value;
+    }
+    
+    // Computed property (get-only hook)
+    public string $full_name {
+        get => "{$this->first_name} {$this->last_name}";
+    }
+    
+    /**
+     * Constructor for CREATING new clients (validation here)
+     */
+    public function __construct(
+        string $tenant_id,
+        string $first_name,
+        string $last_name,
+        Email|string $email
+    ) {
+        $this->tenant_id = $tenant_id;
+        $this->first_name = $first_name;
+        $this->last_name = $last_name;
+        $this->email = $email; // Set hook converts string to Email if needed
+        
+        // Sensible defaults
+        $this->total_revenue = Money::USD(0);
+        $this->outstanding_balance = Money::USD(0);
+        $this->status = ClientStatus::Active;
+    }
+    
+    /**
+     * Domain methods for business logic
+     */
+    public function changeName(string $first, string $last): void
+    {
+        $this->first_name = $first; // Trimmed via set hook
+        $this->last_name = $last;   // Trimmed via set hook
+    }
+    
+    public function changeEmail(Email|string $newEmail): void
+    {
+        $this->email = $newEmail; // Converted via set hook
+    }
+    
+    public function addRevenue(Money $amount): void
+    {
+        $this->total_revenue = $this->total_revenue->add($amount);
+    }
+    
+    public function activate(): void
+    {
+        $this->status = ClientStatus::Active;
+    }
+    
+    public function deactivate(): void
+    {
+        $this->status = ClientStatus::Inactive;
+    }
+}
+```
+
+### Mapper for Property Hooks Pattern
+
+```php
+<?php
+
+namespace App\Mappers;
+
+use App\Entities\Client;
+
+class ClientMapper extends Mapper
+{
+    protected string $table = 'clients';
+    protected string $entityClassName = Client::class;
+    
+    // Declare type transformations
+    protected array $mappings = [
+        'email' => 'email',
+        'billing_address' => 'address',
+        'total_revenue' => 'money',
+        'outstanding_balance' => 'money',
+        'status' => 'client_status_enum',
+    ];
+    
+    public function defineRelations(): void
+    {
+        $this->belongsTo('company', ClientCompany::class);
+        $this->hasMany('invoices', ClientInvoice::class);
+        $this->hasMany('services', Service::class);
+    }
+}
+```
+
+### Usage with Property Hooks
+
+```php
+// Creating a NEW client
+$client = new Client(
+    tenant_id: 'tenant-123',
+    first_name: '  John  ', // Trimmed via set hook
+    last_name: 'Doe',
+    email: 'john@example.com' // Converted to Email via set hook
+);
+
+$clientMapper->save($client);
+
+// Loading EXISTING client
+$client = $clientMapper->find(1);
+
+// Direct property access (hooks execute automatically)
+echo $client->first_name;        // "John" (trimmed)
+echo $client->email->value;      // Email object (converted via hook)
+echo $client->full_name;         // "John Doe" (computed property)
+
+// Modifying (set hooks execute)
+$client->first_name = '  Jane  '; // Automatically trimmed
+$client->email = 'jane@example.com'; // Automatically converted to Email
+
+$clientMapper->save($client);
+```
+
+### Benefits of Property Hooks Pattern
+
+**✅ Modern PHP syntax**
+- No magic methods needed
+- Cleaner, more explicit code
+- Better static analysis support
+
+**✅ Computed properties**
+- `get`-only hooks for derived values
+- No separate getter method needed
+- Accessed like regular properties
+
+**✅ Validation at assignment**
+- Set hooks validate on write
+- Fail fast on invalid data
+- No separate validation layer needed
+
+**✅ Automatic type coercion**
+- Convert strings to value objects
+- Transform data on assignment
+- Cleaner API for consumers
+
+**✅ IDE support**
+- Full autocomplete
+- Better refactoring tools
+- Type hints work perfectly
+
+**✅ Less boilerplate**
+- No `__get()` magic method
+- No separate accessor methods
+- Properties are self-documenting
+
+### When to Use Property Hooks Pattern
+
+**Best for:**
+- ✅ PHP 8.4+ projects
+- ✅ New projects starting fresh
+- ✅ Teams wanting modern PHP features
+- ✅ Complex validation requirements
+- ✅ Value object transformations
+- ✅ Computed properties
+
+**Avoid when:**
+- ❌ Must support PHP < 8.4
+- ❌ Team unfamiliar with property hooks
+- ❌ Migrating large legacy codebase
+
+**See also:**
+- **[PHP 8.4 Property Hooks Documentation](https://www.php.net/manual/en/language.oop5.property-hooks.php)**
+- **[Entity Hydration](./core-concepts/entity-hydration.md)** - How mapperFill() works with hooks
+- **[Type Transformations](./core-concepts/type-transformations.md)** - The mappings system
+- **[Value Objects](./core-concepts/value-objects.md)** - Using with property hooks
+
 ## Array-Based Entities
 
 Some developers prefer using arrays or array-like structures for maximum flexibility.
@@ -255,42 +860,6 @@ class User
     public function getCreatedAt(): DateTime
     {
         return $this->createdAt;
-    }
-}
-```
-
-## PHP 8.4 Property Hooks (Future)
-
-PHP 8.4 introduces property hooks for cleaner property access patterns.
-
-```php
-class User
-{
-    public ?int $id = null;
-    
-    public string $name {
-        set {
-            $this->name = trim($value);
-        }
-    }
-    
-    public string $email {
-        set {
-            if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                throw new InvalidArgumentException('Invalid email format');
-            }
-            $this->email = strtolower($value);
-        }
-    }
-    
-    public bool $active = true;
-    public DateTime $createdAt;
-
-    public function __construct(string $name, string $email)
-    {
-        $this->name = $name;
-        $this->email = $email;
-        $this->createdAt = new DateTime();
     }
 }
 ```

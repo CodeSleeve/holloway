@@ -676,41 +676,50 @@ $this->customMany('safeRelationship', function($query, $entities) {
 ```
 
 Custom relationships provide unlimited flexibility for complex data loading scenarios while maintaining Holloway's performance characteristics and entity caching benefits.
-## Polymorphic Relationships (Custom)
+## Polymorphic Relationships from Production Application
 
-Polymorphic relationships allow a model to belong to more than one other model on a single association. For example, an `Image` might belong to either a `Post` or a `User`. Holloway's custom relationships make it possible to implement polymorphic associations with full flexibility.
+This example demonstrates real-world polymorphic relationship patterns using Laravel's notification system. These examples show how to handle `notifiable_type` and `notifiable_id` columns effectively.
 
-### Example: Images Belonging to Multiple Entity Types
+### Polymorphic MorphMany Pattern
 
-Suppose you have `posts`, `users`, and `images` tables. Each image can belong to either a post or a user, using `imageable_id` and `imageable_type` columns:
-
-```php
-// Migration example (for reference)
-Schema::create('images', function (Blueprint $table) {
-    $table->id();
-    $table->string('url');
-    $table->unsignedBigInteger('imageable_id');
-    $table->string('imageable_type');
-    $table->timestamps();
-});
-```
-
-#### Defining the Polymorphic Relationship in a Mapper
+Both `ClientMapper` and `UserMapper` implement polymorphic notification relationships:
 
 ```php
-class PostMapper extends Mapper
+class ClientMapper extends Mapper
 {
     public function defineRelations(): void
     {
-        // Load images for posts (polymorphic)
-        $this->customMany('images', function($query, $posts) {
-            return $query->from('images')
-                ->where('imageable_type', Post::class)
-                ->whereIn('imageable_id', $posts->pluck('id'))
+        // All notifications (polymorphic morphMany)
+        $this->customMany('notifications', function ($query, Collection $clients) {
+            return $query->from('notifications')
+                ->where('notifiable_type', Entities\Client::class)
+                ->whereIn('notifications.notifiable_id', $clients->pluck('id'))
                 ->get();
-        }, function($post, $image) {
-            return $post->id == $image->imageable_id && $image->imageable_type === Post::class;
-        }, Image::class);
+        }, fn(stdClass $client, stdClass $notification) => 
+            $client->id === $notification->notifiable_id, 
+        Entities\Notification::class);
+
+        // Read notifications only (polymorphic with constraint)
+        $this->customMany('readNotifications', function ($query, Collection $clients) {
+            return $query->from('notifications')
+                ->where('notifiable_type', Entities\Client::class)
+                ->whereIn('notifications.notifiable_id', $clients->pluck('id'))
+                ->whereNotNull('notifications.read_at')
+                ->get();
+        }, fn(stdClass $client, stdClass $notification) => 
+            $client->id === $notification->notifiable_id, 
+        Entities\Notification::class);
+
+        // Unread notifications only (polymorphic with constraint)
+        $this->customMany('unreadNotifications', function ($query, Collection $clients) {
+            return $query->from('notifications')
+                ->where('notifiable_type', Entities\Client::class)
+                ->whereIn('notifications.notifiable_id', $clients->pluck('id'))
+                ->whereNull('notifications.read_at')
+                ->get();
+        }, fn(stdClass $client, stdClass $notification) => 
+            $client->id === $notification->notifiable_id, 
+        Entities\Notification::class);
     }
 }
 
@@ -718,47 +727,263 @@ class UserMapper extends Mapper
 {
     public function defineRelations(): void
     {
-        // Load images for users (polymorphic)
-        $this->customMany('images', function($query, $users) {
-            return $query->from('images')
-                ->where('imageable_type', User::class)
-                ->whereIn('imageable_id', $users->pluck('id'))
+        // Same pattern for User entities
+        $this->customMany('notifications', function ($query, Collection $users) {
+            return $query->from('notifications')
+                ->where('notifiable_type', Entities\User::class)
+                ->whereIn('notifications.notifiable_id', $users->pluck('id'))
                 ->get();
-        }, function($user, $image) {
-            return $user->id == $image->imageable_id && $image->imageable_type === User::class;
-        }, Image::class);
+        }, fn(stdClass $user, stdClass $notification) => 
+            $user->id === $notification->notifiable_id, 
+        Entities\Notification::class);
+
+        $this->customMany('readNotifications', function ($query, Collection $users) {
+            return $query->from('notifications')
+                ->where('notifiable_type', Entities\User::class)
+                ->whereIn('notifications.notifiable_id', $users->pluck('id'))
+                ->whereNotNull('notifications.read_at')
+                ->get();
+        }, fn(stdClass $user, stdClass $notification) => 
+            $user->id === $notification->notifiable_id, 
+        Entities\Notification::class);
+
+        $this->customMany('unreadNotifications', function ($query, Collection $users) {
+            return $query->from('notifications')
+                ->where('notifiable_type', Entities\User::class)
+                ->whereIn('notifications.notifiable_id', $users->pluck('id'))
+                ->whereNull('notifications.read_at')
+                ->get();
+        }, fn(stdClass $user, stdClass $notification) => 
+            $user->id === $notification->notifiable_id, 
+        Entities\Notification::class);
     }
 }
 ```
 
-#### Defining the Inverse (MorphTo) Relationship
+**Key patterns:**
+- **Type checking**: `where('notifiable_type', EntityClass::class)` filters by fully-qualified class name
+- **ID matching**: `whereIn('notifiable_id', $entities->pluck('id'))` for N+1 prevention
+- **Additional constraints**: `whereNotNull('read_at')` or `whereNull('read_at')` for filtered relationships
+- **Arrow functions**: Short, readable `for` functions using `fn()` syntax
+- **Table qualification**: `notifications.notifiable_id` prevents ambiguity
 
-You can also define a custom relationship on the `ImageMapper` to resolve the parent entity:
+### Multi-Condition Matching Pattern
+
+This pattern uses complex pivot relationships with multiple conditions:
 
 ```php
-class ImageMapper extends Mapper
+class UserMapper extends Mapper
 {
     public function defineRelations(): void
     {
-        // Polymorphic parent (morphTo)
-        $this->customOne('imageable', function($query, $images) {
-            // Group images by type
-            $byType = $images->groupBy('imageable_type');
-            $results = collect();
-            foreach ($byType as $type => $group) {
-                $ids = $group->pluck('imageable_id');
-                $entities = Holloway::instance()->getMapper($type)->findMany($ids);
-                $results = $results->merge($entities);
-            }
-            return $results;
-        }, function($image, $parent) {
-            return get_class($parent) === $image->imageable_type && $parent->id == $image->imageable_id;
-        });
+        // Custom relationship with multi-column matching
+        $this->customOne('role', function($query, Collection $users) {
+            return $query->from('roles')
+                ->select('roles.*', 'tenants_users.user_id', 'tenants_users.tenant_id')
+                ->join('tenants_users', 'roles.id', '=', 'tenants_users.role_id')
+                ->whereIn('tenants_users.user_id', $users->pluck('id'))
+                ->whereIn('tenants_users.tenant_id', $users->pluck('current_tenant_id'))
+                ->get();
+        }, fn(stdClass $user, stdClass $role) => 
+            $user->id === $role->user_id && $user->current_tenant_id === $role->tenant_id, 
+        Entities\Role::class);
     }
 }
 ```
 
-This approach gives you full control over how polymorphic relationships are loaded and matched, and can be extended to support additional constraints, eager loading, or custom mapping logic.
+**Key patterns:**
+- **Multi-table joins**: Select pivot columns for matching logic
+- **Multiple whereIn clauses**: Filter by multiple parent entity properties
+- **Complex for function**: Match on TWO conditions (user_id AND tenant_id)
+- **Context-aware loading**: Uses `current_tenant_id` for multi-tenant isolation
+
+### Polymorphic Relationship Variations
+
+Here are common polymorphic patterns from Production Application:
+
+#### Pattern 1: Basic Polymorphic (All Records)
+
+```php
+$this->customMany('notifications', function ($query, Collection $entities) {
+    return $query->from('notifications')
+        ->where('notifiable_type', static::$entityClass)
+        ->whereIn('notifiable_id', $entities->pluck('id'))
+        ->get();
+}, fn($entity, $notification) => $entity->id === $notification->notifiable_id, Notification::class);
+```
+
+#### Pattern 2: Filtered Polymorphic (With Constraint)
+
+```php
+$this->customMany('unreadNotifications', function ($query, Collection $entities) {
+    return $query->from('notifications')
+        ->where('notifiable_type', static::$entityClass)
+        ->whereIn('notifiable_id', $entities->pluck('id'))
+        ->whereNull('read_at')              // Additional constraint
+        ->orderBy('created_at', 'desc')      // Optional ordering
+        ->get();
+}, fn($entity, $notification) => $entity->id === $notification->notifiable_id, Notification::class);
+```
+
+#### Pattern 3: Polymorphic with Pivot Data
+
+```php
+$this->customMany('activities', function ($query, Collection $entities) {
+    return $query->from('activities')
+        ->select('activities.*', 'activity_log.properties')
+        ->join('activity_log', 'activities.id', '=', 'activity_log.activity_id')
+        ->where('activity_log.subject_type', static::$entityClass)
+        ->whereIn('activity_log.subject_id', $entities->pluck('id'))
+        ->get();
+}, fn($entity, $activity) => $entity->id === $activity->subject_id, Activity::class);
+```
+
+### Complex Pivot Queries
+
+This example demonstrates sophisticated many-to-many relationships:
+
+```php
+class ClientMapper extends Mapper
+{
+    public function defineRelations(): void
+    {
+        // Complex pivot with DB facade
+        $this->customMany('locations', function($query, Collection $clients) {
+            $locationIds = DB::table('clients_locations')
+                ->whereIn('client_id', $clients->pluck('id'))
+                ->pluck('location_id')
+                ->unique();
+            
+            return $query->from('locations')
+                ->whereIn('id', $locationIds)
+                ->get();
+        }, function(stdClass $client, stdClass $location) {
+            // Check pivot table for relationship
+            return DB::table('clients_locations')
+                ->where('client_id', $client->id)
+                ->where('location_id', $location->id)
+                ->exists();
+        }, Entities\Location::class);
+    }
+}
+```
+
+**Trade-offs:**
+- ✅ Full control over pivot logic
+- ✅ Can handle complex pivot conditions
+- ❌ For function hits database (N+1 concern)
+- ⚠️ Consider using `belongsToMany` for simple pivots
+
+**Better approach** for simple pivots:
+
+```php
+// Use built-in belongsToMany when possible
+$this->belongsToMany('locations', Entities\Location::class, 'clients_locations');
+```
+
+**Use customMany for pivots when:**
+- Pivot has complex constraints (status, dates, etc.)
+- Need to include pivot data in results
+- Relationship involves more than two tables
+
+### Polymorphic Relationship Testing
+
+```php
+class NotificationRelationshipTest extends TestCase
+{
+    public function testClientNotifications(): void
+    {
+        // Arrange
+        $client = ClientFactory::new()->create();
+        $user = UserFactory::new()->create();
+        
+        // Create notifications for both
+        NotificationFactory::new()->for($client)->count(3)->create();
+        NotificationFactory::new()->for($user)->count(2)->create();
+        
+        // Act
+        $clientMapper = app(ClientMapper::class);
+        $clientWithNotifications = $clientMapper->with('notifications')->find($client->id);
+        
+        // Assert - only client notifications loaded
+        $this->assertCount(3, $clientWithNotifications->notifications);
+        foreach ($clientWithNotifications->notifications as $notification) {
+            $this->assertEquals(Client::class, $notification->notifiable_type);
+            $this->assertEquals($client->id, $notification->notifiable_id);
+        }
+    }
+    
+    public function testUnreadNotificationsFilter(): void
+    {
+        // Arrange
+        $client = ClientFactory::new()->create();
+        NotificationFactory::new()->for($client)->read()->count(2)->create();
+        NotificationFactory::new()->for($client)->unread()->count(3)->create();
+        
+        // Act
+        $clientMapper = app(ClientMapper::class);
+        $clientWithUnread = $clientMapper->with('unreadNotifications')->find($client->id);
+        
+        // Assert
+        $this->assertCount(3, $clientWithUnread->unreadNotifications);
+        foreach ($clientWithUnread->unreadNotifications as $notification) {
+            $this->assertNull($notification->read_at);
+        }
+    }
+}
+```
+
+### Best Practices for Polymorphic Relationships
+
+1. **Use Fully-Qualified Class Names**
+   ```php
+   // Good
+   ->where('notifiable_type', Entities\Client::class)
+   
+   // Bad - fragile to refactoring
+   ->where('notifiable_type', 'Client')
+   ```
+
+2. **Qualify Column Names in Joins**
+   ```php
+   // Good
+   ->whereIn('notifications.notifiable_id', $clients->pluck('id'))
+   
+   // Can be ambiguous
+   ->whereIn('notifiable_id', $clients->pluck('id'))
+   ```
+
+3. **Create Separate Relationships for Filtered Views**
+   ```php
+   // Don't do this
+   $client->notifications->filter(fn($n) => $n->read_at === null)
+   
+   // Do this
+   $client->unreadNotifications
+   ```
+
+4. **Keep For Functions Simple**
+   ```php
+   // Good - simple equality check
+   fn($entity, $related) => $entity->id === $related->entity_id
+   
+   // Avoid - database queries
+   fn($entity, $related) => DB::table('pivot')->where(...)->exists()
+   ```
+
+5. **Handle Empty Collections Gracefully**
+   ```php
+   $this->customMany('notifications', function($query, Collection $entities) {
+       if ($entities->isEmpty()) {
+           return collect();
+       }
+       
+       return $query->from('notifications')
+           ->where('notifiable_type', static::$entityClass)
+           ->whereIn('notifiable_id', $entities->pluck('id'))
+           ->get();
+   }, $forFunction, Notification::class);
+   ```
 
 ## Next Steps
 

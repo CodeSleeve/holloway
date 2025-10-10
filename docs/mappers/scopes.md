@@ -527,6 +527,294 @@ class PostMapper extends Mapper
 }
 ```
 
+## Real-World Patterns from Production Application
+
+A production multi-tenant SaaS application provides production-tested examples of advanced scope patterns. These demonstrate best practices for complex filtering, joins, and database-specific features.
+
+### Complex Search Scopes with `when()` Helper
+
+The `when()` helper applies constraints conditionally, making scopes clean and flexible:
+
+```php
+class ClientMapper extends Mapper
+{
+    /**
+     * Comprehensive search scope with multiple optional filters
+     */
+    public function scopeSearch($query, array $filters)
+    {
+        $sortBy = $filters['sort_by'] ?? 'updated_at';
+        $sortDirection = $filters['sort_direction'] ?? 'desc';
+        $locationId = $filters['location_id'] ?? null;
+        $clientCompanyId = $filters['client_company_id'] ?? null;
+        $statuses = $filters['statuses'] ?? [];
+        $isDecisionMaker = $filters['is_decision_maker'] ?? null;
+        $search = $filters['search'] ?? '';
+
+        return $query
+            // Text search across multiple columns
+            ->when($search, function($query, $search) {
+                $search = strtolower($search);
+
+                $query->where(function($query) use ($search) {
+                    $query->whereRaw('LOWER(clients.first_name) LIKE ?', ["%$search%"])
+                        ->orWhereRaw('LOWER(clients.last_name) LIKE ?', ["%$search%"])
+                        ->orWhereRaw('LOWER(clients.email) LIKE ?', ["%$search%"]);
+                });
+            })
+            // Join-based filtering
+            ->when($locationId, function($query, $locationId) {
+                $clientIds = DB::table('clients_locations')
+                    ->where('location_id', $locationId)
+                    ->pluck('client_id');
+                $query->whereIn('clients.id', $clientIds);
+            })
+            // Simple where clause
+            ->when($clientCompanyId, function($query, $clientCompanyId) {
+                $query->where('clients.client_company_id', $clientCompanyId);
+            })
+            // Array-based filtering
+            ->when($statuses, fn($query) => $query->whereIn('clients.status', $statuses))
+            // Boolean filtering with null check
+            ->when($isDecisionMaker !== null && $isDecisionMaker !== '', function($query) use ($isDecisionMaker) {
+                $query->where('clients.is_decision_maker', (bool) $isDecisionMaker);
+            })
+            ->orderBy($sortBy, $sortDirection);
+    }
+}
+```
+
+**Key patterns:**
+- Extract all filter values with defaults at the top
+- Use `when()` for conditional constraints - cleaner than if/else
+- Wrap text searches in nested `where()` for proper grouping
+- Use `whereRaw()` with parameter binding for case-insensitive search
+- Validate booleans before applying (`!== null && !== ''`)
+
+### Multi-Table Joins with Complex Filtering
+
+When searching across relationships, use joins for better performance:
+
+```php
+class ServiceJobMapper extends Mapper
+{
+    public function scopeSearch($query, array $filters)
+    {
+        $sortBy = $filters['sort_by'] ?? 'updated_at';
+        $sortDirection = $filters['sort_direction'] ?? 'desc';
+        $search = $filters['search'] ?? '';
+        $startDate = $filters['start_date'] ?? null;
+        $endDate = $filters['end_date'] ?? null;
+        $locationId = $filters['location_id'] ?? null;
+        $clientId = $filters['client_id'] ?? null;
+        $serviceId = $filters['service_id'] ?? null;
+        $unbilled = $filters['unbilled'] ?? null;
+        $types = $filters['types'] ?? [];
+        $statuses = $filters['statuses'] ?? [];
+
+        return $query
+            // Establish joins once
+            ->join('services', 'service_jobs.service_id', '=', 'services.id')
+            ->join('clients', 'services.client_id', '=', 'clients.id')
+            ->leftJoin('locations', 'services.location_id', '=', 'locations.id')
+            ->select('service_jobs.*')
+            // Date range filtering
+            ->when($startDate && $endDate, fn($query) => 
+                $query->whereBetween('service_jobs.scheduled_start_date', [
+                    $startDate->toDateTimeString(), 
+                    $endDate->toDateTimeString()
+                ]))
+            // Simple foreign key filters
+            ->when($clientId, fn($query) => $query->where('services.client_id', '=', $clientId))
+            ->when($serviceId, fn($query) => $query->where('services.id', '=', $serviceId))
+            ->when($locationId, fn($query) => $query->where('services.location_id', '=', $locationId))
+            // Null check filter
+            ->when($unbilled, fn($query) => $query->whereNull('service_jobs.billed_on'))
+            // Array extraction with filtering
+            ->when(count($types), function($query) use ($types) {
+                $query->whereIn('services.service_type_id', array_map(fn($type) => $type['id'], $types));
+            })
+            // Simple array filter
+            ->when(count($statuses), function($query) use ($statuses) {
+                $query->whereIn('service_jobs.status', $statuses);
+            })
+            // Search across joined tables
+            ->when($search, function($query, $search) {
+                $search = strtolower($search);
+
+                $query->where(function($query) use ($search) {
+                    $query->whereRaw('LOWER(services.name) LIKE ?', ["%$search%"])
+                        ->orWhereRaw('LOWER(services.description) LIKE ?', ["%$search%"])
+                        ->orWhereRaw('LOWER(services.name) = ?', [$search])
+                        ->orWhereRaw('LOWER(locations.name) LIKE ?', ["%$search%"])
+                        ->orWhereRaw('LOWER(clients.first_name) LIKE ?', ["%$search%"])
+                        ->orWhereRaw('LOWER(clients.last_name) LIKE ?', ["%$search%"]);
+                });
+            })
+            ->orderBy($sortBy, $sortDirection);
+    }
+}
+```
+
+**Key patterns:**
+- Establish all joins at the beginning
+- Use `select('service_jobs.*')` to avoid ambiguous column names
+- Fully qualify column names in joins (`service_jobs.service_id`)
+- Use `leftJoin` when the relationship is optional
+- Check array count before applying `whereIn` for efficiency
+
+### Subqueries for Complex Matching
+
+Use subqueries when filtering by many-to-many relationships:
+
+```php
+class UserMapper extends Mapper
+{
+    public function scopeSearch($query, array $filters)
+    {
+        $roleIds = $filters['role_ids'] ?? [];
+        $scheduledStartDate = $filters['scheduled_start_date'] ?? null;
+        $estimatedCompletionDate = $filters['estimated_completion_date'] ?? null;
+
+        return $query
+            // Subquery for many-to-many filtering
+            ->when($roleIds, function($query, $roleIds) {
+                $query->whereIn('users.id', function($query) use ($roleIds) {
+                    $query->select('user_id')
+                        ->from('tenants_users')
+                        ->whereIn('role_id', $roleIds);
+                });
+            })
+            // Combine with other scopes
+            ->when($scheduledStartDate && $estimatedCompletionDate, function($query) use ($scheduledStartDate, $estimatedCompletionDate) {
+                $query->availableForDateRange($scheduledStartDate, $estimatedCompletionDate);
+            })
+            ->orderBy('updated_at', 'desc');
+    }
+}
+```
+
+### PostgreSQL-Specific Features
+
+This example leverages PostgreSQL's advanced features:
+
+```php
+class UserMapper extends Mapper
+{
+    /**
+     * Check availability using PostgreSQL tsrange (timestamp range) overlap
+     */
+    public function scopeAvailableForDateRange($query, string $startDate, string $endDate)
+    {
+        return $query->whereNotExists(function($query) use ($startDate, $endDate) {
+            $query->from('service_jobs_users')
+                ->whereColumn('service_jobs_users.user_id', 'users.id')
+                ->whereRaw("tsrange(?, ?) && tsrange(scheduled_start_date, estimated_completion_date)", [
+                    $startDate,
+                    $endDate
+                ]);
+        });
+    }
+}
+```
+
+**PostgreSQL features:**
+- `tsrange()` - Timestamp range type
+- `&&` operator - Range overlap detection
+- `whereNotExists()` - Efficient "not in" queries
+
+### Simple Status Scopes
+
+Not all scopes need to be complex:
+
+```php
+class ServiceJobMapper extends Mapper
+{
+    public function scopeCompleted($query): Builder
+    {
+        return $query->where('status', '=', ServiceJob::STATUS_COMPLETED);
+    }
+
+    public function scopeUnbilled($query): Builder
+    {
+        return $query->whereNull('billed_on');
+    }
+}
+
+class UserMapper extends Mapper
+{
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeTechnicians($query)
+    {
+        return $query->select('users.*')
+            ->join('tenants_users', 'users.id', '=', 'tenants_users.user_id')
+            ->join('roles', 'tenants_users.role_id', '=', 'roles.id')
+            ->where('roles.name', 'technician');
+    }
+}
+```
+
+### Using DB Facade for Pivot Queries
+
+When dealing with many-to-many relationships, the DB facade is often cleaner:
+
+```php
+use Illuminate\Support\Facades\DB;
+
+class ClientMapper extends Mapper
+{
+    public function scopeByLocation($query, int $locationId)
+    {
+        $clientIds = DB::table('clients_locations')
+            ->where('location_id', $locationId)
+            ->pluck('client_id');
+            
+        return $query->whereIn('clients.id', $clientIds);
+    }
+}
+```
+
+**When to use DB facade:**
+- Simple pivot table queries
+- Need only IDs for a `whereIn()`
+- Avoiding complex relationship loading overhead
+
+### Combining Scopes in Practice
+
+```php
+// In a controller or service
+$serviceJobMapper = app(ServiceJobMapper::class);
+
+// Simple scope chaining
+$completedJobs = $serviceJobMapper->completed()
+    ->unbilled()
+    ->get();
+
+// Complex search scope
+$filteredJobs = $serviceJobMapper->search([
+    'search' => 'lawn mowing',
+    'start_date' => now()->subDays(30),
+    'end_date' => now(),
+    'statuses' => ['scheduled', 'in_progress'],
+    'client_id' => 123,
+    'unbilled' => true,
+    'sort_by' => 'scheduled_start_date',
+    'sort_direction' => 'asc'
+])->with('service', 'assignedTechnicians')->get();
+
+// User filtering with role and availability
+$userMapper = app(UserMapper::class);
+$availableTechs = $userMapper->search([
+    'role_ids' => [2], // Technician role
+    'scheduled_start_date' => $jobStart,
+    'estimated_completion_date' => $jobEnd
+])->active()->get();
+```
+
 ## Best Practices
 
 1. **Keep Scopes Focused** - Each scope should have a single responsibility
@@ -535,6 +823,10 @@ class PostMapper extends Mapper
 4. **Consider Performance** - Be mindful of indexes and query optimization
 5. **Test Thoroughly** - Scopes are reused, so bugs affect multiple areas
 6. **Avoid State Dependencies** - Scopes should be stateless and predictable
+7. **Use `when()` for Conditionals** - Cleaner than if/else for optional filters
+8. **Qualify Column Names** - Always use `table.column` in joins
+9. **Validate Before Filtering** - Check for null/empty before applying constraints
+10. **Extract Filter Defaults** - Make filter values and defaults explicit at the top
 
 ## Common Patterns
 
