@@ -4,6 +4,22 @@ In the datamapper pattern, entities are your **domain models** - they contain bu
 
 This guide shows how to build entities that truly model your business domain.
 
+## Table of Contents
+
+- [What Makes a Domain Model "Rich"?](#what-makes-a-domain-model-rich)
+- [Anemic vs Rich Domain Models](#anemic-vs-rich-domain-models)
+- [Real-World Example: ServiceJob Entity](#real-world-example-servicejob-entity)
+- [Key Patterns for Rich Domain Models](#key-patterns-for-rich-domain-models)
+  - [Pattern 1: State Transitions with Validation](#pattern-1-state-transitions-with-validation)
+  - [Pattern 2: Business Rules as Methods](#pattern-2-business-rules-as-methods)
+  - [Pattern 3: Collections as Domain Concepts](#pattern-3-collections-as-domain-concepts)
+  - [Pattern 4: Domain Exceptions](#pattern-4-domain-exceptions)
+  - [Pattern 5: Domain Events](#pattern-5-domain-events)
+  - [Pattern 6: Specification Pattern](#pattern-6-specification-pattern)
+- [Separation of Concerns](#separation-of-concerns)
+- [Testing Rich Domain Models](#testing-rich-domain-models)
+- [Summary](#summary)
+
 ## What Makes a Domain Model "Rich"?
 
 A rich domain model:

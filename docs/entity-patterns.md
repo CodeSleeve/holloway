@@ -2,6 +2,29 @@
 
 Holloway's datamapper architecture provides complete decoupling between your entities and persistence logic. This means you have full freedom in how you design your entities. This guide showcases different approaches to entity design and how to configure mappers to work with each pattern.
 
+## Table of Contents
+
+- [Pattern Comparison](#pattern-comparison)
+- [Magic Accessor Pattern (PHP 8.0-8.3)](#magic-accessor-pattern-recommended-for-php-80-83)
+  - [Base Entity Class](#base-entity-class)
+  - [Concrete Entity Example](#concrete-entity-example)
+  - [Mapper Configuration](#mapper-for-magic-accessor-pattern)
+  - [Usage Examples](#usage-in-application)
+  - [Common Traits](#common-traits)
+  - [Benefits](#benefits-of-this-pattern)
+  - [When to Use](#when-to-use-magic-accessor-pattern)
+- [Property Hooks Pattern (PHP 8.4+)](#property-hooks-pattern-recommended-for-php-84)
+  - [Base Entity](#base-entity-with-property-hooks)
+  - [Concrete Entity](#concrete-entity-with-property-hooks)
+  - [Mapper Configuration](#mapper-for-property-hooks-pattern)
+  - [Usage](#usage-with-property-hooks)
+  - [Benefits](#benefits-of-property-hooks-pattern)
+  - [When to Use](#when-to-use-property-hooks-pattern)
+- [Array-Based Entities](#array-based-entities)
+- [Public Properties Pattern](#public-properties-pattern)
+- [Getters/Setters Pattern](#getterssetters-pattern)
+- [Immutable Entities](#immutable-entities)
+
 ## Pattern Comparison
 
 | Pattern | PHP Version | Best For | Complexity |

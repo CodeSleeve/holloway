@@ -2,6 +2,25 @@
 
 While Holloway's standard relationships (HasOne, HasMany, BelongsTo, BelongsToMany) cover most use cases, complex business requirements often demand more flexibility. Custom relationships provide unlimited power to define sophisticated data loading patterns.
 
+## Table of Contents
+
+- [Understanding Custom Relationships](#understanding-custom-relationships)
+- [Custom Relationship Types](#custom-relationship-types)
+- [Advanced Custom Relationship Examples](#advanced-custom-relationship-examples)
+- [Geographic and Spatial Relationships](#geographic-and-spatial-relationships)
+- [Complex Business Logic Relationships](#complex-business-logic-relationships)
+- [Custom Relationships with Constraints](#custom-relationships-with-constraints)
+- [Error Handling in Custom Relationships](#error-handling-in-custom-relationships)
+- [Performance Optimization](#performance-optimization-for-custom-relationships)
+- [Testing Custom Relationships](#testing-custom-relationships)
+- [Best Practices](#best-practices)
+- [Polymorphic Relationships from Production](#polymorphic-relationships-from-production-application)
+  - [Polymorphic MorphMany Pattern](#polymorphic-morphmany-pattern)
+  - [Multi-Condition Matching](#multi-condition-matching-pattern)
+  - [Polymorphic Variations](#polymorphic-relationship-variations)
+  - [Complex Pivot Queries](#complex-pivot-queries)
+  - [Testing Polymorphic Relationships](#polymorphic-relationship-testing)
+
 ## Understanding Custom Relationships
 
 Custom relationships allow you to define arbitrary loading logic using three key components:

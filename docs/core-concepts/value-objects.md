@@ -2,6 +2,22 @@
 
 Value Objects are small,immutable objects that represent a conceptual whole defined by their values rather than an identity. In domain-driven design, they're fundamental building blocks that make your domain model more expressive and type-safe.
 
+## Table of Contents
+
+- [What is a Value Object?](#what-is-a-value-object)
+- [Why Use Value Objects?](#why-use-value-objects)
+- [Reference Implementation Value Objects](#reference-implementation-value-objects)
+  - [Email Value Object](#email-value-object)
+  - [Money Value Object](#money-value-object-using-moneyphpmoney)
+  - [Address Value Object](#address-value-object)
+  - [Date/DateTime Value Objects](#datetime-value-objects)
+  - [Custom Notification Settings](#custom-notification-settings)
+- [Integrating with Holloway](#integrating-with-holloway)
+- [Common Patterns](#common-patterns)
+- [Testing Value Objects](#testing-value-objects)
+- [Benefits Summary](#benefits-summary)
+- [Common Value Objects](#common-value-objects)
+
 ## What is a Value Object?
 
 Consider the difference:

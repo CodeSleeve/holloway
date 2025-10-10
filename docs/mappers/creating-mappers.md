@@ -2,6 +2,31 @@
 
 Mappers are the core component of Holloway's datamapper pattern. They handle all database operations, entity hydration/dehydration, and relationship management. This guide covers everything you need to know about creating and configuring mappers.
 
+## Table of Contents
+
+- [Basic Mapper Structure](#basic-mapper-structure)
+- [Configuration Properties](#configuration-properties)
+  - [Essential Configuration](#essential-configuration)
+  - [Timestamp Configuration](#timestamp-configuration)
+  - [Database Configuration](#database-configuration)
+- [Required Methods](#required-methods)
+  - [Dehydration: Entity → Database](#dehydration-entity--database)
+  - [Hydration: Database → Entity](#hydration-database--entity)
+  - [Relationship Definition](#relationship-definition)
+- [Advanced Configuration](#advanced-configuration)
+  - [Table Name Convention Override](#table-name-convention-override)
+  - [Primary Key Configuration](#primary-key-configuration)
+  - [Custom Timestamps](#custom-timestamps)
+- [Mapper Scopes](#mapper-scopes)
+- [Global Scopes](#global-scopes)
+- [What NOT to Put in Mappers](#what-not-to-put-in-mappers)
+- [Magic Accessor Pattern Base Mapper](#magic-accessor-pattern-base-mapper)
+- [Testing Your Mappers](#testing-your-mappers)
+- [Common Patterns](#common-patterns)
+  - [Multi-Database Support](#multi-database-support)
+  - [Multi-Tenant Support](#multi-tenant-support)
+  - [Custom Helper Methods](#custom-helper-methods)
+
 ## Basic Mapper Structure
 
 Every mapper extends the base `Mapper` class and must implement specific abstract methods:

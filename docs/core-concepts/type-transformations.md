@@ -4,6 +4,24 @@ One of the biggest challenges in the datamapper pattern is the **impedance misma
 
 Holloway gives you complete control over these transformations through the hydrate/dehydrate cycle. The reference implementation provides a reusable mapping system that makes this transformation declarative and consistent.
 
+## Table of Contents
+
+- [The Problem](#the-problem)
+- [Solution: The Mappings System](#solution-the-mappings-system)
+- [Reference Implementation](#reference-implementation)
+- [Real-World Examples](#real-world-examples)
+  - [Example 1: Email Value Object](#example-1-email-value-object)
+  - [Example 2: Money Value Object](#example-2-money-value-object)
+  - [Example 3: Address Value Object](#example-3-address-value-object)
+  - [Example 4: Date Transformations](#example-4-date-transformations)
+  - [Example 5: PHP 8.1+ Enum Support](#example-5-php-81-enum-support)
+  - [Example 6: Collection Transformations](#example-6-collection-transformations)
+- [Custom Complex Transformations](#custom-complex-transformations)
+- [Error Handling](#error-handling)
+- [Benefits of This Pattern](#benefits-of-this-pattern)
+- [Alternative: Manual Transformation](#alternative-manual-transformation)
+- [Key Principles](#key-principles)
+
 ## The Problem
 
 Your database stores primitive types:

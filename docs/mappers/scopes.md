@@ -2,6 +2,25 @@
 
 Query scopes in Holloway provide a clean, reusable way to encapsulate common query constraints and logic. They promote code reuse, improve readability, and maintain consistency across your application.
 
+## Table of Contents
+
+- [Understanding Scopes](#understanding-scopes)
+- [Global Scopes](#global-scopes)
+- [Local Scopes](#local-scopes)
+- [Advanced Scope Patterns](#advanced-scope-patterns)
+- [Scope Composition](#scope-composition)
+- [Parameterized Global Scopes](#parameterized-global-scopes)
+- [Soft Delete Scopes](#soft-delete-scopes)
+- [Testing Scopes](#testing-scopes)
+- [Performance Considerations](#performance-considerations)
+- [Real-World Patterns from Production](#real-world-patterns-from-production-application)
+  - [Complex Search Scopes with when()](#complex-search-scopes-with-when-helper)
+  - [Multi-Table Joins](#multi-table-joins-with-complex-filtering)
+  - [Subqueries for Complex Matching](#subqueries-for-complex-matching)
+  - [PostgreSQL-Specific Features](#postgresql-specific-features)
+- [Best Practices](#best-practices)
+- [Common Patterns](#common-patterns)
+
 ## Understanding Scopes
 
 Scopes are predefined query modifications that can be applied to any query builder instance. They encapsulate common filtering, ordering, and constraint logic that you use repeatedly throughout your application.
