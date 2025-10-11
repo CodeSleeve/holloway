@@ -10,15 +10,35 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: holloway_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: holloway_test
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    
     strategy:
       matrix:
         php: ['8.1', '8.2', '8.3', '8.4']
         laravel: ['^10.0', '^11.0']
+        db: ['mysql', 'pgsql']
         exclude:
           - php: '8.1'
             laravel: '^11.0'
     
-    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} - ${{ matrix.db }}
     
     steps:
       - name: Checkout code
@@ -37,4 +57,10 @@ jobs:
           composer update --prefer-dist --no-interaction --no-progress
       
       - name: Execute tests
+        env:
+          DB_DRIVER: ${{ matrix.db }}
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: holloway_test
+          DB_USERNAME: ${{ matrix.db == 'mysql' && 'root' || 'postgres' }}
+          DB_PASSWORD: password
         run: vendor/bin/phpunit
