@@ -12,7 +12,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
 [![PHP Version](https://img.shields.io/packagist/php-v/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
 [![Total Downloads](https://img.shields.io/packagist/dt/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
-[![License](https://img.shields.io/github/license/CodeSleeve/holloway.svg)](https://github.com/CodeSleeve/holloway/LICENSE)
+[![License](https://img.shields.io/github/license/CodeSleeve/holloway.svg)](https://github.com/CodeSleeve/holloway/blob/develop/LICENSE)
 
 Holloway is an ORM toolkit for Laravel that let's you create your own custom datamappers on top of Laravel's `illuminate/database` package. It offers you the query builder you know and love, but at the same time gives you complete control over how your ORM records (Entities) are mapped to and from your database. You can create unbreakable domain models (Entities that are never allowed to exist in an invalid state), with complete control over their construction and behavior throughout the entire application request lifecycle.
 
