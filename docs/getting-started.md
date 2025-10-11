@@ -1,98 +1,253 @@
 # Getting Started with Holloway
 
-Holloway is a datamapper pattern implementation that provides complete separation between your domain entities and database persistence. This guide will get you up and running quickly.
+This quick tour shows how to install Holloway in a fresh Laravel project, register your first mapper, and perform real CRUD using rich domain entities. Follow the steps in order—each one builds on the last.
 
-## Installation
+## Prerequisites
 
-Install Holloway via Composer:
+- Laravel 10 or 11 project with a working database connection.
+- PHP 8.1 or higher (Holloway itself supports 8.1+, though some advanced patterns assume 8.2+).
+- Familiarity with basic Laravel concepts (service providers, artisan commands, configuration).
+
+## 1. Install the package
 
 ```bash
 composer require codesleeve/holloway
 ```
 
-## Basic Concepts
+If your application does not use package auto-discovery, add the service provider to `config/app.php`:
 
-### The Datamapper Pattern
+```php
+'providers' => [
+    // ...
+    CodeSleeve\Holloway\HollowayServiceProvider::class,
+],
+```
 
-Unlike Active Record (used by Eloquent), the datamapper pattern separates your domain objects (entities) from database logic (mappers):
+## 2. Create a Holloway service provider
 
-- **Entities** - Pure domain objects with business logic, no database knowledge
-- **Mappers** - Handle all database operations and entity hydration/dehydration
+You need one place to register your mappers and any shared configuration.
 
-### Key Benefits
+```bash
+php artisan make:provider DataMapperServiceProvider
+```
 
-- **Domain-driven design** - Entities focus purely on business logic
-- **Unbreakable entities** - Complete control over entity construction and validation
-- **Testability** - Entities can be tested without database dependencies
-- **Performance** - Built-in entity caching and optimized relationship loading
+Update the generated provider:
 
-## Your First Entity
+```php
+<?php
 
-Create a simple entity class:
+namespace App\Providers;
+
+use App\Mappers;
+use App\Entities;
+use Illuminate\Support\ServiceProvider;
+use CodeSleeve\Holloway\Holloway;
+use Doctrine\Instantiator\Instantiator;
+
+class DataMapperServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->instance(Holloway::class, Holloway::instance());
+        $this->app->singleton(Instantiator::class);
+
+        $this->registerEntities();
+    }
+
+    protected function registerEntities(): void
+    {
+        $mappers = [
+            Entities\User::class => Mappers\UserMapper::class,
+        ];
+
+        $holloway = Holloway::instance();
+        $holloway->register(array_values($mappers));
+
+        foreach ($mappers as $entity => $mapper) {
+            $this->app->instance($mapper, $holloway->getMapper($entity));
+        }
+    }
+}
+```
+
+Finally, register the new provider in `config/app.php` (or rely on Laravel package discovery if you publish it as a package):
+
+```php
+'providers' => [
+    // ...
+    App\Providers\DataMapperServiceProvider::class,
+],
+```
+
+> **Alternative: Inline registration**
+> Don't want (or need) a dedicated provider? You can always just register mappers directly in `AppServiceProvider` or another existing provider:
+>
+> ```php
+> // app/Providers/AppServiceProvider.php
+> 
+> use App\Entities\User;
+> use App\Mappers\UserMapper;
+> use CodeSleeve\Holloway\Holloway;
+> 
+> public function register(): void
+> {
+>     $holloway = Holloway::instance();
+>     $holloway->register([UserMapper::class]);
+> 
+>     $this->app->instance(UserMapper::class, $holloway->getMapper(User::class));
+> }
+> ```
+
+## 3. Add base classes for entities and mappers
+
+Holloway gives you complete control over hydration. Most applications start with reusable base classes to keep mappers small.
+
+`app/Entities/Entity.php`
 
 ```php
 <?php
 
 namespace App\Entities;
 
-class User
+abstract class Entity
 {
-    private int $id;
-    private string $name;
-    private string $email;
-    private \DateTime $createdAt;
+    protected int|string|null $id = null;
 
-    public function __construct(string $name, string $email)
+    public function mapperFill(array $properties): static
     {
-        if (empty($name) || empty($email)) {
-            throw new \InvalidArgumentException('Name and email are required');
+        foreach ($properties as $name => $value) {
+            $this->$name = $value;
         }
-        
-        $this->name = $name;
-        $this->email = $email;
-        $this->createdAt = new \DateTime();
+
+        return $this;
     }
 
-    public function getId(): int
+    public function toArray(): array
     {
-        return $this->id;
+        return get_object_vars($this);
     }
 
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function getEmail(): string
-    {
-        return $this->email;
-    }
-
-    public function updateEmail(string $email): void
-    {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('Invalid email format');
-        }
-        
-        $this->email = $email;
-    }
-
-    // Internal methods for mapper use
-    public function setId(int $id): void
+    public function setId(int|string $id): void
     {
         $this->id = $id;
     }
 
-    public function setCreatedAt(\DateTime $createdAt): void
+    public function getId(): int|string|null
     {
-        $this->createdAt = $createdAt;
+        return $this->id;
     }
 }
 ```
 
-## Your First Mapper
+`app/Mappers/Mapper.php`
 
-Create a corresponding mapper:
+```php
+<?php
+
+namespace App\Mappers;
+
+use stdClass;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use CodeSleeve\Holloway\Mapper as BaseMapper;
+
+abstract class Mapper extends BaseMapper
+{
+    protected string $entityClassName = '';
+
+    public function getEntityClassName(): string
+    {
+        return $this->entityClassName;
+    }
+
+    public function getIdentifier($entity)
+    {
+        return $entity->getId();
+    }
+
+    public function setIdentifier($entity, $value): void
+    {
+        $entity->setId($value);
+    }
+
+    public function hydrate(stdClass $record, Collection $relations)
+    {
+        $entity = $this->instantiator->instantiate($this->entityClassName);
+
+        return $entity->mapperFill(array_merge((array) $record, $relations->all()));
+    }
+
+    public function dehydrate($entity): array
+    {
+        $attributes = Arr::except(
+            $entity->toArray(),
+            array_map(fn ($relationship) => $relationship->getName(), $this->relationships)
+        );
+
+        if (empty($attributes['id'])) {
+            unset($attributes['id']);
+        }
+
+        return $attributes;
+    }
+}
+```
+
+> **Optional:** If you want automatic casting of value objects (email, money, enums, etc.), plug in the mapping registry pattern described in [Type Transformations](./core-concepts/type-transformations.md). Skip it for now—you can layer it in later.
+
+## 4. Build your first entity and mapper
+
+Create a rich domain entity that owns business rules and let the mapper handle persistence.
+
+`app/Entities/User.php`
+
+```php
+<?php
+
+namespace App\Entities;
+
+use InvalidArgumentException;
+
+class User extends Entity
+{
+    protected string $name;
+    protected string $email;
+
+    public function __construct(string $name, string $email)
+    {
+        if ($name === '') {
+            throw new InvalidArgumentException('Name is required.');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Email address is invalid.');
+        }
+
+        $this->name = $name;
+        $this->email = $email;
+    }
+
+    public function rename(string $name): void
+    {
+        if ($name === '') {
+            throw new InvalidArgumentException('Name is required.');
+        }
+
+        $this->name = $name;
+    }
+
+    public function changeEmail(string $email): void
+    {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Email address is invalid.');
+        }
+
+        $this->email = $email;
+    }
+}
+```
+
+`app/Mappers/UserMapper.php`
 
 ```php
 <?php
@@ -100,239 +255,81 @@ Create a corresponding mapper:
 namespace App\Mappers;
 
 use App\Entities\User;
-use CodeSleeve\Holloway\Mapper;
 
 class UserMapper extends Mapper
 {
     protected string $table = 'users';
     protected string $entityClassName = User::class;
-    protected string $primaryKey = 'id';
-    protected bool $hasTimestamps = true;
 
-    /**
-     * Define relationships for this mapper
-     */
     public function defineRelations(): void
     {
-        // We'll add relationships later
-    }
-
-    /**
-     * Convert database record to entity attributes
-     */
-    public function dehydrate($entity): array
-    {
-        return [
-            'id' => $entity->getId(),
-            'name' => $entity->getName(),
-            'email' => $entity->getEmail(),
-        ];
-    }
-
-    /**
-     * Convert entity attributes to domain entity
-     */
-    public function hydrate($record, $relations = null)
-    {
-        $entity = new User($record->name, $record->email);
-        
-        if (isset($record->id)) {
-            $entity->setId($record->id);
-        }
-        
-        if (isset($record->created_at)) {
-            $entity->setCreatedAt(new \DateTime($record->created_at));
-        }
-
-        return $entity;
+        // Add relationships later (hasMany, belongsTo, custom relationships, etc.).
     }
 }
 ```
 
-## Registration and Usage
+## 5. Wire it into Laravel
 
-### Register Your Mappers
-
-In your Laravel service provider or bootstrap file:
+Run the database migration that creates a `users` table (any schema that has `id`, `name`, and `email` columns will work). Then resolve the mapper anywhere in your application:
 
 ```php
-use CodeSleeve\Holloway\Holloway;
+use App\Entities\User;
 use App\Mappers\UserMapper;
 
-// Register mappers with Holloway
-Holloway::instance()->register([
-    UserMapper::class,
-]);
+Route::get('/users-demo', function (UserMapper $users) {
+    $user = new User('Jean-Luc Picard', 'captain@enterprise.test');
+    $users->store($user); // INSERT
+
+    $loaded = $users->find($user->getId());
+    $loaded->rename('Jean-Luc Picard Sr.');
+    $users->store($loaded); // UPDATE
+
+    return $users->all()->map(fn (User $u) => $u->toArray());
+});
 ```
 
-### Basic Operations
+Laravel automatically injects the mapper because the service provider registered it in the container.
+
+You can also resolve mappers directly through Holloway's registry:
 
 ```php
 use CodeSleeve\Holloway\Holloway;
 use App\Entities\User;
 
-// Get a mapper instance
-$userMapper = Holloway::instance()->getMapper(User::class);
-
-// Create a new user
-$user = new User('John Doe', 'john@example.com');
-
-// Persist to database
-$userMapper->store($user);
-
-// Query users
-$users = $userMapper->all();
-$user = $userMapper->find(1);
-$users = $userMapper->where('name', 'John Doe')->get();
-
-// Update user
-$user->updateEmail('newemail@example.com');
-$userMapper->store($user); // Will perform UPDATE
-
-// Remove user
-$userMapper->remove($user);
+$users = Holloway::instance()
+    ->getMapper(User::class)
+    ->where('active', true)
+    ->get();
 ```
 
-## Laravel Integration
+## 6. Smoke-test the setup
 
-If you're using Laravel, Holloway integrates seamlessly:
+Open Tinker or run a feature test to confirm everything is wired correctly.
 
-### Service Provider
-
-Holloway includes a service provider that auto-registers with Laravel:
+```bash
+php artisan tinker
+```
 
 ```php
-// config/app.php (if not using auto-discovery)
-'providers' => [
-    // ...
-    CodeSleeve\Holloway\HollowayServiceProvider::class,
-],
+>>> $users = app(\App\Mappers\UserMapper::class);
+>>> $entity = new \App\Entities\User('Beverly Crusher', 'doctor@example.com');
+>>> $users->store($entity);
+>>> $users->find($entity->getId())->toArray();
 ```
 
-### Database Configuration
+You should see the hydrated entity array containing the new record.
 
-Holloway uses Laravel's database configuration automatically:
+## Troubleshooting
 
-```php
-// Uses default connection
-$userMapper = Holloway::instance()->getMapper(User::class);
+| Symptom | Likely Cause | Fix |
+| --- | --- | --- |
+| `Call to a member function getMapper()` on null | Service provider not registered or not running in the current environment. | Confirm `DataMapperServiceProvider` is listed in `config/app.php` and clear config cache. |
+| `ArgumentCountError` from `Mapper::hydrate()` | Your mapper overrides `hydrate` with the wrong signature. | Ensure it accepts `(stdClass $record, Collection $relations)` exactly. |
+| Entities keep losing relationships | Remember to remove relationship names from `dehydrate()` and use `$this->relationships` to avoid persisting loaded relations. | Double-check that your entity’s `toArray()` is not re-introducing relationship properties. |
+| Value objects aren’t being converted | The base mapper only copies attributes. Configure mappings as shown in [Type Transformations](./core-concepts/type-transformations.md) or handle conversions manually. | Register hydrate/dehydrate callbacks in your service provider or override `hydrate`/`dehydrate` per mapper. |
 
-// Use specific connection
-$userMapper->setConnection('tenant_db');
-```
+## Where next?
 
-## Configuration
-
-### Mapper Configuration Options
-
-```php
-class UserMapper extends Mapper
-{
-    // Database table name
-    protected string $table = 'users';
-    
-    // Entity class this mapper handles
-    protected string $entityClassName = User::class;
-    
-    // Primary key column name
-    protected string $primaryKey = 'id';
-    
-    // Primary key type
-    protected string $keyType = 'int';
-    
-    // Whether primary key auto-increments
-    protected bool $incrementing = true;
-    
-    // Whether to manage created_at/updated_at timestamps
-    protected bool $hasTimestamps = true;
-    
-    // Timestamp format
-    protected string $timestampFormat = 'Y-m-d H:i:s';
-    
-    // Database connection name
-    protected string $connection = '';
-    
-    // Default pagination size
-    protected int $perPage = 15;
-    
-    // Relationships to eager load by default
-    protected array $with = [];
-}
-```
-
-## Next Steps
-
-Now that you have the basics:
-
-1. **[Learn about Architecture](./architecture.md)** - Understand Holloway's design patterns
-2. **[Explore Relationships](./relationships/overview.md)** - Connect your entities together
-3. **[Master Query Building](./mappers/query-building.md)** - Advanced querying techniques
-4. **[Set Up Testing](./advanced/factories.md)** - Create test factories for your entities
-
-## Common Patterns
-
-### Entity Validation
-
-```php
-class User
-{
-    public function updateEmail(string $email): void
-    {
-        if (!$this->isValidEmail($email)) {
-            throw new \InvalidArgumentException('Invalid email format');
-        }
-        
-        $this->email = $email;
-    }
-
-    private function isValidEmail(string $email): bool
-    {
-        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-    }
-}
-```
-
-### Mapper Scopes
-
-```php
-class UserMapper extends Mapper
-{
-    public function scopeActive($query)
-    {
-        return $query->where('active', true);
-    }
-
-    public function scopeByRole($query, string $role)
-    {
-        return $query->where('role', $role);
-    }
-}
-
-// Usage
-$activeUsers = $userMapper->active()->get();
-$admins = $userMapper->byRole('admin')->get();
-```
-
-### Repository Pattern
-
-```php
-class UserRepository
-{
-    private UserMapper $mapper;
-
-    public function __construct()
-    {
-        $this->mapper = Holloway::instance()->getMapper(User::class);
-    }
-
-    public function findByEmail(string $email): ?User
-    {
-        return $this->mapper->where('email', $email)->first();
-    }
-
-    public function findActiveUsers(): Collection
-    {
-        return $this->mapper->active()->get();
-    }
-}
-```
+- Read the [Laravel Integration Guide](./laravel/integration.md) for queues, events, pagination, and testing.
+- Explore [Mapper Query Building](./mappers/query-building.md) and [Relationships Overview](./relationships/overview.md) to load related aggregates.
+- When you want to understand Holloway internals, jump to the [Architecture Overview](./architecture.md).

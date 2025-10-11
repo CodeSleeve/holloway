@@ -2,7 +2,17 @@
 
 One of the biggest challenges in the datamapper pattern is the **impedance mismatch** between your database schema (strings, integers, JSON) and your domain model (Email objects, Money objects, Dates).
 
-Holloway gives you complete control over these transformations through the hydrate/dehydrate cycle. The reference implementation provides a reusable mapping system that makes this transformation declarative and consistent.
+Holloway gives you complete control over these transformations through the hydrate/dehydrate cycle. You can handle this in two ways:
+
+1. **Shared mapping registry (optional)** – centralise hydrate/dehydrate callbacks and reference them from each mapper. This mirrors the approach many production teams use and the examples below demonstrate.
+2. **Manual mapper transformations** – keep casting logic inside the `hydrate`/`dehydrate` methods of each mapper. Lightweight projects often start here.
+
+Both approaches are valid. Pick the one that matches your team’s appetite for abstraction, and remember you can migrate from manual casts to the registry later without breaking your entities.
+
+| Use this approach… | When it shines | Trade-offs |
+| --- | --- | --- |
+| **Shared mapping registry** | Large codebases, lots of shared value objects, teams that favour DRY abstractions. | Slight upfront setup, centralised defaults may feel opaque to new team members. |
+| **Manual mapper transformations** | Small or experimental projects, unique casting rules per entity, teams that prefer explicit code. | Repetition across mappers, easier to forget an edge-case or new value object. |
 
 ## Table of Contents
 
@@ -703,7 +713,7 @@ protected function mapValueObjects(stdClass $record, Collection $relations): arr
 
 This gives helpful errors:
 
-```
+```text
 ClientMapper: Unable to hydrate property email: Invalid email format
 ```
 

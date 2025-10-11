@@ -1,13 +1,12 @@
-# Holloway 
-
-<!-- ![image of a Holloway in nature](./annie-spratt-holloway-unsplash-small.jpg?raw=true) -->
-<img
-  src="./annie-spratt-holloway-unsplash-small.jpg"
-  alt="image of a Holloway in nature"
-  title="A Holloway in nature"
-  style="display: block; margin: 0 auto; max-width: 320px">
-
 # Holloway
+
+<p align="center">
+  <img
+    src="./annie-spratt-holloway-unsplash-small.jpg"
+    alt="A Holloway in nature"
+    width="400"
+    style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+</p>
 
 [![Build Status](https://github.com/CodeSleeve/holloway/workflows/tests/badge.svg)](https://github.com/CodeSleeve/holloway/actions)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
@@ -15,54 +14,10 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
 [![License](https://img.shields.io/github/license/CodeSleeve/holloway.svg)](https://github.com/CodeSleeve/holloway/blob/main/LICENSE)
 
-Holloway is a datamapper ORM for Laravel that separates your domain entities from database persistence. Built on Laravel's `illuminate/database`, it gives you the familiar query builder you know while enabling rich domain modeling with value objects, type transformations, and flexible entity patterns.
+Holloway is an ORM toolkit for Laravel that let's you create your own custom datamappers on top of Laravel's `illuminate/database` package. It offers you the query builder you know and love, but at the same time gives you complete control over how your ORM records (Entities) are mapped to and from your database. You can create unbreakable domain models (Entities that are never allowed to exist in an invalid state), with complete control over their construction and behavior throughout the entire application request lifecycle.
 
-## Why Holloway?
-
-**Unbreakable Domain Objects:** Create entities that are never allowed to exist in an invalid state, with complete control over their construction and behavior.
-
-**Familiar Syntax:** Query using the same elegant syntax as Laravel's Eloquent, but with datamapper architecture benefits.
-
-**Performance Optimized:** Built-in entity caching, optimized relationship loading, and efficient batch operations.
-
-**Enterprise Ready:** Global scopes, soft deletes, event hooks, and transaction support for production applications.
-
-## Quick Start
-
-```php
-use Codesleeve\Holloway\Entity;
-use Codesleeve\Holloway\Mapper;
-
-// Define your entity
-class User extends Entity
-{
-    protected int $id;
-    protected string $name;
-    protected string $email;
-}
-
-// Create a mapper
-class UserMapper extends Mapper
-{
-    protected string $table = 'users';
-}
-
-// Register and use
-Holloway::instance()->register([UserMapper::class]);
-
-$users = Holloway::instance()
-    ->getMapper(User::class)
-    ->where('active', true)
-    ->get();
-```
-
-See the [Getting Started guide](./docs/getting-started.md) for installation and complete examples.
-
-## Installation
 
 ```bash
-composer require codesleeve/holloway
-```
 
 ## Documentation
 
@@ -98,16 +53,9 @@ composer require codesleeve/holloway
 - [Events & Hooks](./docs/advanced/events.md) - Lifecycle events
 - [Factories & Testing](./docs/advanced/factories.md) - Test data creation
 
-
-## Testing
-
-```bash
-composer test
-```
-
 ## Contributing
 
-Thank you for your interest in improving Holloway! We're currently focused on maintaining high code quality and consistency. If you encounter bugs or have suggestions, please open an issue.
+Thank you for your interest in improving Holloway! We're currently not accepting PRs at the moment. If you find a bug or have a proposal, please open an issue.
 
 ## License
 

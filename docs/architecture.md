@@ -1,5 +1,18 @@
 # Architecture Overview
 
+This document explains how Holloway works under the hood: the design patterns, lifecycle hooks, and infrastructure that power the data mapper. You do **not** need any of this to ship your first feature—treat it as the engineering manual once you’re comfortable with the basics.
+
+> **Audience:** framework contributors, senior engineers integrating Holloway deeply, or anyone debugging advanced scenarios.  
+> **Prerequisites:** you’ve completed the [Getting Started](./getting-started.md) tutorial and shipped at least one mapper in your application.
+
+## Before you dive in
+
+- Looking for setup instructions? Head back to [Using Holloway](./README.md#using-holloway-start-here).
+- Need to wire a mapper or relationship? Start with [Mapper Query Building](./mappers/query-building.md) and [Relationships Overview](./relationships/overview.md).
+- If you’re exploring internals to extend Holloway, keep this page handy—but skim the section summaries first so you can jump straight to what you need.
+
+---
+
 Understanding Holloway's architecture is key to leveraging its full potential. This guide explores the core design patterns and how they work together to provide a robust datamapper implementation.
 
 ## The Datamapper Pattern
@@ -8,7 +21,7 @@ Holloway implements Martin Fowler's **Datamapper Pattern**, which provides compl
 
 ### Pattern Components
 
-```
+```text
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │                 │    │                 │    │                 │
 │    ENTITIES     │    │     MAPPERS     │    │    DATABASE     │
@@ -67,6 +80,7 @@ final class Holloway
 ```
 
 **Key Features:**
+
 - **Singleton pattern** ensures single mapper instance per entity type
 - **Entity-based lookup** - get mappers by entity class, not mapper class
 - **Automatic relationship resolution** during registration
@@ -113,6 +127,7 @@ abstract class Mapper
 ```
 
 **Responsibilities:**
+
 - **Entity hydration/dehydration** - converting between database records and entities
 - **Query building** - providing fluent query interface
 - **Relationship definition** - declaring entity relationships
@@ -140,6 +155,7 @@ class Builder
 ```
 
 **Features:**
+
 - **Fluent interface** similar to Eloquent
 - **Relationship loading** through Tree component
 - **Scope application** (global and local scopes)
@@ -164,6 +180,7 @@ class EntityCache
 ```
 
 **Benefits:**
+
 - **Prevents duplicate entity creation** for same record
 - **Tracks dirty attributes** for efficient updates
 - **Automatic cache invalidation** on entity changes
@@ -172,7 +189,7 @@ class EntityCache
 
 Handles complex entity relationships with multiple strategies:
 
-```
+```text
 BaseRelationship (Abstract)
 ├── HasOneOrMany (Abstract)
 │   ├── HasOne
@@ -208,7 +225,8 @@ class Tree
 ```
 
 **Process Flow:**
-```
+
+```text
 'posts.comments.author' → Tree Structure → Optimized Queries → Entity Attachment
 ```
 
@@ -216,7 +234,7 @@ class Tree
 
 ### Entity Creation Flow
 
-```
+```text
 1. Database Query
    ↓
 2. Raw stdClass Records
@@ -230,11 +248,12 @@ class Tree
 6. Relationship Loading (if requested)
    ↓
 7. Complete Entity Graph
+
 ```
 
 ### Entity Persistence Flow
 
-```
+```text
 1. Domain Entity
    ↓
 2. Dirty Checking (via cache)
@@ -331,6 +350,7 @@ $factory->state(User::class, 'inactive', [
 ```
 
 **Usage with Holloway:**
+
 ```php
 // Create single entity
 $user = factory(User::class)->create();
@@ -349,11 +369,11 @@ $user = factory(User::class)->make();
 ```
 
 **Integration Points:**
+
 - Extends Laravel's legacy `EloquentFactory` for compatibility
 - Uses `FactoryBuilder` that works with Holloway mappers
 - Calls `mapper->instantiateEntity()` and `mapperFill()` on entities
 - Persists through `mapper->factoryInsert()` method
-```
 
 ## Performance Considerations
 
