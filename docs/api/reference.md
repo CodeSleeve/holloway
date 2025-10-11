@@ -742,4 +742,3 @@ This API reference provides comprehensive documentation for all public interface
 
 - **[Examples](../examples/complete-examples.md)** - Practical usage examples
 - **[Best Practices](../examples/best-practices.md)** - Recommended patterns
-- **[Migration Guide](../advanced/migration.md)** - Migrating from other ORMs

@@ -522,4 +522,3 @@ class NestedRelationshipTest extends TestCase
 
 - **[Eager Loading](./eager-loading.md)** - Optimizing relationship loading
 - **[Custom Relationships](./custom.md)** - Building specialized relationship logic
-- **[Performance Guide](../advanced/performance.md)** - Advanced optimization techniques

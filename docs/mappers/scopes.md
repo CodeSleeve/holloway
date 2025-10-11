@@ -897,4 +897,3 @@ class ProductMapper extends Mapper
 
 - **[Query Building](./query-building.md)** - Advanced query construction
 - **[Relationships](../relationships/overview.md)** - Working with related data
-- **[Performance](../advanced/performance.md)** - Optimization techniques

@@ -1203,6 +1203,4 @@ These patterns provide a solid foundation for building maintainable, testable ap
 
 ## Next Steps
 
-- **[Migration Guide](./migration-guide.md)** - Moving from Eloquent to Holloway
 - **[Best Practices](./best-practices.md)** - Advanced patterns and optimizations
-- **[Testing Guide](../advanced/factories.md)** - Comprehensive testing strategies

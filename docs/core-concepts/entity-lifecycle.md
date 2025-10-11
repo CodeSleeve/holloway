@@ -605,7 +605,6 @@ class User
 - **[Entity Hydration Patterns](./entity-hydration.md)** - Implementation patterns for hydration
 - **[Type Transformations](./type-transformations.md)** - Transform database types to value objects
 - **[Value Objects](./value-objects.md)** - Email, Money, Address patterns
-- **[Rich Domain Models](../entities/rich-domain-models.md)** - Where to put domain logic
 
 ## Further Reading
 

@@ -606,6 +606,3 @@ class PostFactory extends Factory
 ## Next Steps
 
 - **[Service Provider Configuration](./service-provider.md)** - Detailed service provider setup
-- **[Database Connections](./connections.md)** - Advanced connection management  
-- **[Pagination Strategies](./pagination.md)** - Pagination patterns and optimization
-- **[Artisan Commands](./commands.md)** - Custom command development

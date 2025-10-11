@@ -625,6 +625,4 @@ These best practices provide a foundation for building maintainable, performant,
 
 ## Next Steps
 
-- **[Migration Guide](./migration-guide.md)** - Moving from other ORMs
-- **[Testing Guide](../advanced/testing.md)** - Comprehensive testing strategies  
-- **[Performance Guide](../advanced/performance.md)** - Advanced optimization techniques
+- **[Complete Examples](./complete-examples.md)** - Practical implementation examples

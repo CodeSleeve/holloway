@@ -88,5 +88,4 @@ class CustomHollowayProvider extends BaseProvider
 
 ## Next Steps
 
-- **[Database Connections](./connections.md)** - Working with multiple databases
 - **[Integration Guide](./integration.md)** - Complete Laravel integration patterns

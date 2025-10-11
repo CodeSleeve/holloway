@@ -830,7 +830,6 @@ Here's a starter list of common value objects:
 
 - **[Type Transformations](./type-transformations.md)** - Integrate value objects with mappers
 - **[Entity Hydration](./entity-hydration.md)** - How value objects fit into hydration
-- **[Rich Domain Models](../entities/rich-domain-models.md)** - Using value objects in domain logic
 
 ## Further Reading
 
