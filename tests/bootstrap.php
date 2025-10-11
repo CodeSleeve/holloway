@@ -29,30 +29,37 @@ $container->bind('db.schema', function ($app) {
 });
 
 if (file_exists(__DIR__ . '/../.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+    $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__ . '/../');
     $dotenv->load();
 }
 
-// Setup a postgres connection by default, but can be overriden easily with .env
-if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'mysql') {
+// Get database configuration from environment
+$dbDriver = getenv('DB_DRIVER');
+$dbHost = getenv('DB_HOST') ?: 'localhost';
+$dbDatabase = getenv('DB_DATABASE') ?: 'holloway_test';
+$dbUsername = getenv('DB_USERNAME');
+$dbPassword = getenv('DB_PASSWORD') ?: 'password';
+
+// Setup database connection based on driver
+if ($dbDriver === 'mysql') {
     $capsule->addConnection([
-        'driver'    => $_ENV['DB_DRIVER'] ?? 'mysql',
-        'host'      => $_ENV['DB_HOST'] ?? 'localhost',
-        'database'  => $_ENV['DB_DATABASE'] ?? 'holloway_test',
-        'username'  => $_ENV['DB_USERNAME'] ?? 'root',
-        'password'  => $_ENV['DB_PASSWORD'] ?? 'password',
+        'driver'    => 'mysql',
+        'host'      => $dbHost,
+        'database'  => $dbDatabase,
+        'username'  => $dbUsername ?: 'root',
+        'password'  => $dbPassword,
         'charset'   => 'utf8',
         'collation' => 'utf8_unicode_ci',
         'prefix'    => '',
         'schema'    => 'public',
     ]);
-} else if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'pgsql') {
+} else if ($dbDriver === 'pgsql') {
     $capsule->addConnection([
-        'driver'    => $_ENV['DB_DRIVER'] ?? 'pgsql',
-        'host'      => $_ENV['DB_HOST'] ?? 'localhost',
-        'database'  => $_ENV['DB_DATABASE'] ?? 'holloway_test',
-        'username'  => $_ENV['DB_USERNAME'] ?? 'postgres',
-        'password'  => $_ENV['DB_PASSWORD'] ?? 'password',
+        'driver'    => 'pgsql',
+        'host'      => $dbHost,
+        'database'  => $dbDatabase,
+        'username'  => $dbUsername ?: 'postgres',
+        'password'  => $dbPassword,
         'charset'   => 'utf8',
         'prefix'    => '',
         'prefix_indexes' => true,
@@ -61,14 +68,14 @@ if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'mysql') {
     ]);
 }
 // sqlite
-else if (isset($_ENV['DB_DRIVER']) && $_ENV['DB_DRIVER'] === 'sqlite') {
+else if ($dbDriver === 'sqlite') {
     $capsule->addConnection([
-        'driver'    => $_ENV['DB_DRIVER'] ?? 'sqlite',
-        'database'  => $_ENV['DB_DATABASE'] ?? ':memory:',
+        'driver'    => 'sqlite',
+        'database'  => $dbDatabase ?: ':memory:',
         'prefix'    => '',
     ]);
 } else {
-    throw new Exception('No suitable database driver specified in .env file');
+    throw new Exception('No suitable database driver specified. Set DB_DRIVER environment variable to mysql, pgsql, or sqlite.');
 }
 
 // Make this Capsule instance available globally via static methods
