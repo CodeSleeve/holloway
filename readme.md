@@ -23,7 +23,6 @@ Holloway is an ORM toolkit for Laravel that let's you create your own custom dat
 
 - [Getting Started](./docs/getting-started.md) - Installation, basic setup, and your first mapper
 - [Architecture Overview](./docs/architecture.md) - Understanding the datamapper pattern
-- [Entities vs Models](./docs/entities-vs-models.md) - Key differences from Active Record
 - [Entity Patterns](./docs/entity-patterns.md) - Choose the pattern that fits your PHP version
 - [Entity Hydration](./docs/core-concepts/entity-hydration.md) - How entities are loaded from the database
 - [Type Transformations](./docs/core-concepts/type-transformations.md) - Automatic value object conversion
@@ -45,7 +44,6 @@ Holloway is an ORM toolkit for Laravel that let's you create your own custom dat
 
 ### Advanced Topics
 
-- [Rich Domain Models](./docs/entities/rich-domain-models.md) - Business logic in entities
 - [Entity Caching](./docs/advanced/caching.md) - Performance optimization
 - [Soft Deletes](./docs/advanced/soft-deletes.md) - Soft deletion support
 - [Events & Hooks](./docs/advanced/events.md) - Lifecycle events
