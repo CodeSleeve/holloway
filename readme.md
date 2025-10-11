@@ -17,8 +17,6 @@
 Holloway is an ORM toolkit for Laravel that let's you create your own custom datamappers on top of Laravel's `illuminate/database` package. It offers you the query builder you know and love, but at the same time gives you complete control over how your ORM records (Entities) are mapped to and from your database. You can create unbreakable domain models (Entities that are never allowed to exist in an invalid state), with complete control over their construction and behavior throughout the entire application request lifecycle.
 
 
-```bash
-
 ## Documentation
 
 ### Core Concepts
