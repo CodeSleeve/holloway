@@ -1,0 +1,1 @@
+Refer to the instructions located in @~/.agent-os/prompts/documenter-data.md

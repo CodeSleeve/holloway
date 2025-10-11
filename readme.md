@@ -8,7 +8,7 @@
     style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
 </p>
 
-[![Build Status](https://github.com/CodeSleeve/holloway/workflows/tests/badge.svg)](https://github.com/CodeSleeve/holloway/actions)
+[![Tests](https://github.com/CodeSleeve/holloway/workflows/tests/badge.svg)](https://github.com/CodeSleeve/holloway/actions)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
 [![PHP Version](https://img.shields.io/packagist/php-v/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
 [![Total Downloads](https://img.shields.io/packagist/dt/codesleeve/holloway.svg)](https://packagist.org/packages/codesleeve/holloway)
