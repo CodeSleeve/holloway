@@ -52,6 +52,8 @@ if ($dbDriver === 'mysql') {
         'collation' => 'utf8_unicode_ci',
         'prefix'    => '',
         'schema'    => 'public',
+        'engine'    => 'InnoDB',
+        'strict'    => true,
     ]);
 } else if ($dbDriver === 'pgsql') {
     $capsule->addConnection([

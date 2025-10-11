@@ -122,5 +122,17 @@ trait CanBuildTestFixtures
             ['pup_id' => 6, 'pup_food_id' => 1],    // Duchess eats 4Health
             ['pup_id' => 6, 'pup_food_id' => 2]     // Duchess eats Taste of the Wild
         ]);
+        
+        // Reset PostgreSQL sequences after manually inserting records with explicit IDs
+        // PostgreSQL sequences don't auto-update when you insert with explicit IDs,
+        // causing duplicate key errors on subsequent auto-increment inserts
+        if (Capsule::connection()->getDriverName() === 'pgsql') {
+            Capsule::statement("SELECT setval('companies_id_seq', (SELECT MAX(id) FROM companies))");
+            Capsule::statement("SELECT setval('pup_foods_id_seq', (SELECT MAX(id) FROM pup_foods))");
+            Capsule::statement("SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))");
+            Capsule::statement("SELECT setval('packs_id_seq', (SELECT MAX(id) FROM packs))");
+            Capsule::statement("SELECT setval('pups_id_seq', (SELECT MAX(id) FROM pups))");
+            Capsule::statement("SELECT setval('collars_id_seq', (SELECT MAX(id) FROM collars))");
+        }
     }
 }
