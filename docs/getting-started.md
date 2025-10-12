@@ -319,6 +319,67 @@ php artisan tinker
 
 You should see the hydrated entity array containing the new record.
 
+## Laravel integration tips
+
+Holloway works seamlessly with Laravel's existing features. Here are a few common patterns:
+
+### Multiple database connections
+
+Override the `$connection` property in your mapper to use different databases:
+
+```php
+class AnalyticsMapper extends Mapper
+{
+    protected string $connection = 'analytics'; // Must be defined in config/database.php
+    protected string $table = 'events';
+}
+```
+
+### Using with validation
+
+Validate input in your controllers or form requests before creating entities:
+
+```php
+class PostController extends Controller
+{
+    public function store(Request $request, PostMapper $posts)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+        ]);
+
+        $post = new Post($validated['title'], $validated['content']);
+        $posts->store($post);
+
+        return response()->json($post->toArray(), 201);
+    }
+}
+```
+
+### Using with queues and events
+
+Dispatch jobs and events just like you normally would:
+
+```php
+class PostMapper extends Mapper
+{
+    public function publish(Post $post): void
+    {
+        $post->publish();
+        $this->store($post);
+
+        // Dispatch Laravel events
+        event(new PostPublished($post));
+
+        // Queue jobs
+        ProcessPostImages::dispatch($post);
+    }
+}
+```
+
+Holloway entities work with Laravel's job serialization automatically as long as your entities have public getters or implement serialization methods.
+
 ## Troubleshooting
 
 | Symptom | Likely Cause | Fix |
@@ -330,6 +391,6 @@ You should see the hydrated entity array containing the new record.
 
 ## Where next?
 
-- Read the [Laravel Integration Guide](./laravel/integration.md) for queues, events, pagination, and testing.
 - Explore [Mapper Query Building](./mappers/query-building.md) and [Relationships Overview](./relationships/overview.md) to load related aggregates.
+- Learn about [Caching](./advanced/caching.md) and [Events](./advanced/events.md) for advanced features.
 - When you want to understand Holloway internals, jump to the [Architecture Overview](./architecture.md).
