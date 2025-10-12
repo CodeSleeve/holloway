@@ -1,4 +1,20 @@
 # Persistence Operations
+
+## Table of Contents
+
+- [Timestamp Handling](#timestamp-handling)
+- [Core Persistence Methods](#core-persistence-methods)
+- [Persistence Lifecycle](#persistence-lifecycle)
+- [Implementing Persistence Methods](#implementing-persistence-methods)
+- [Timestamp Management](#timestamp-management)
+- [Transaction Support](#transaction-support)
+- [Factory Integration](#factory-integration)
+- [Advanced Persistence Patterns](#advanced-persistence-patterns)
+- [Persistence Events](#persistence-events)
+- [Error Handling](#error-handling)
+- [Best Practices](#best-practices)
+- [Next Steps](#next-steps)
+
 ## Timestamp Handling
 
 When persisting entities, Holloway uses the `currentTime()` method on your mapper to set `created_at`, `updated_at`, and (if using soft deletes) `deleted_at` columns. You can override this method to control how timestamps are generated (e.g., for custom time zones or deterministic tests).

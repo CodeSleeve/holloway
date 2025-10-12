@@ -2,6 +2,22 @@
 
 Holloway's query builder provides a fluent, Laravel-compatible interface for constructing database queries while maintaining the datamapper pattern's benefits. This guide covers everything from basic queries to advanced optimization techniques.
 
+## Table of Contents
+
+- [Basic Query Operations](#basic-query-operations)
+- [Ordering and Limiting](#ordering-and-limiting)
+- [Aggregates and Calculations](#aggregates-and-calculations)
+- [Pagination](#pagination)
+- [Chunking Large Datasets](#chunking-large-datasets)
+- [Query Scopes](#query-scopes)
+- [Global Scopes](#global-scopes)
+- [Raw Queries and Advanced Operations](#raw-queries-and-advanced-operations)
+- [Performance Optimization](#performance-optimization)
+- [Query Builder with Relationships](#query-builder-with-relationships)
+- [Error Handling and Debugging](#error-handling-and-debugging)
+- [Best Practices](#best-practices)
+- [Next Steps](#next-steps)
+
 ## Basic Query Operations
 
 ### Simple Queries

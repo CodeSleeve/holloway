@@ -1,9 +1,21 @@
 # Architecture Overview
 
-This document explains how Holloway works under the hood: the design patterns, lifecycle hooks, and infrastructure that power the data mapper. You do **not** need any of this to ship your first feature—treat it as the engineering manual once you’re comfortable with the basics.
+This document explains how Holloway works under the hood: the design patterns, lifecycle hooks, and infrastructure that power the data mapper. You do **not** need any of this to ship your first feature—treat it as the engineering manual once you're comfortable with the basics.
 
 > **Audience:** framework contributors, senior engineers integrating Holloway deeply, or anyone debugging advanced scenarios.  
-> **Prerequisites:** you’ve completed the [Getting Started](./getting-started.md) tutorial and shipped at least one mapper in your application.
+> **Prerequisites:** you've completed the [Getting Started](./getting-started.md) tutorial and shipped at least one mapper in your application.
+
+## Table of Contents
+
+- [Before you dive in](#before-you-dive-in)
+- [The Datamapper Pattern](#the-datamapper-pattern)
+- [Core Components](#core-components)
+- [Data Flow](#data-flow)
+- [Advanced Architecture Features](#advanced-architecture-features)
+- [Performance Considerations](#performance-considerations)
+- [Laravel Integration Points](#laravel-integration-points)
+- [Design Patterns Used](#design-patterns-used)
+- [Next Steps](#next-steps)
 
 ## Before you dive in
 

@@ -2,6 +2,21 @@
 
 Holloway provides powerful support for handling complex nested relationships, allowing you to efficiently work with deeply related data structures while maintaining clean architecture and optimal performance.
 
+## Table of Contents
+
+- [Understanding Nested Relationships](#understanding-nested-relationships)
+- [Deep Loading with Constraints](#deep-loading-with-constraints)
+- [Conditional Nested Loading](#conditional-nested-loading)
+- [Polymorphic Nested Relationships](#polymorphic-nested-relationships)
+- [Tree Structures and Hierarchical Data](#tree-structures-and-hierarchical-data)
+- [Aggregation in Nested Relationships](#aggregation-in-nested-relationships)
+- [Performance Optimization for Nested Relationships](#performance-optimization-for-nested-relationships)
+- [Advanced Nested Patterns](#advanced-nested-patterns)
+- [Testing Nested Relationships](#testing-nested-relationships)
+- [Best Practices](#best-practices)
+- [Common Pitfalls](#common-pitfalls)
+- [Next Steps](#next-steps)
+
 ## Understanding Nested Relationships
 
 Nested relationships occur when entities have relationships that themselves contain relationships, creating hierarchical or interconnected data structures.

@@ -7,6 +7,19 @@ One of the most important concepts in the datamapper pattern is understanding th
 
 Understanding this distinction is critical for proper validation, initialization, and domain logic placement.
 
+## Table of Contents
+
+- [The Two Lifecycles](#the-two-lifecycles)
+- [Why Separate These?](#why-separate-these)
+- [Implementation Patterns](#implementation-patterns)
+- [Real-World Example](#real-world-example)
+- [Validation Placement](#validation-placement)
+- [Common Pitfalls](#common-pitfalls)
+- [Decision Matrix](#decision-matrix)
+- [Key Principles](#key-principles)
+- [Next Steps](#next-steps)
+- [Further Reading](#further-reading)
+
 ## The Two Lifecycles
 
 ### Creation Lifecycle

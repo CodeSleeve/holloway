@@ -2,6 +2,19 @@
 
 Holloway supports four standard relationship types that mirror common database relationship patterns. This guide provides comprehensive coverage of HasOne, HasMany, BelongsTo, and BelongsToMany relationships.
 
+## Table of Contents
+
+- [HasOne Relationships](#hasone-relationships)
+- [HasMany Relationships](#hasmany-relationships)
+- [BelongsTo Relationships](#belongsto-relationships)
+- [BelongsToMany Relationships](#belongstomany-relationships)
+- [Advanced Relationship Configurations](#advanced-relationship-configurations)
+- [Relationship Loading Patterns](#relationship-loading-patterns)
+- [Common Patterns and Use Cases](#common-patterns-and-use-cases)
+- [Troubleshooting Common Issues](#troubleshooting-common-issues)
+- [Best Practices](#best-practices)
+- [Next Steps](#next-steps)
+
 ## HasOne Relationships
 
 A HasOne relationship represents a one-to-one connection where one entity "has one" related entity.

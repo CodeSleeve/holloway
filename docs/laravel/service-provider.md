@@ -2,6 +2,15 @@
 
 Holloway includes a Laravel service provider that handles integration with Laravel's service container and database connections.
 
+## Table of Contents
+
+- [What the Service Provider Does](#what-the-service-provider-does)
+- [Registration](#registration)
+- [Database Integration](#database-integration)
+- [Event Integration](#event-integration)
+- [Extending the Service Provider](#extending-the-service-provider)
+- [Next Steps](#next-steps)
+
 ## What the Service Provider Does
 
 The `HollowayServiceProvider` performs two key functions:

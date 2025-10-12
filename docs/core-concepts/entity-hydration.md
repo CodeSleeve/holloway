@@ -2,6 +2,20 @@
 
 Entity hydration is the process of converting database records (raw data) into domain entity instances. This is one of the core responsibilities of the datamapper pattern, and Holloway gives you complete control over how this process works.
 
+## Table of Contents
+
+- [Understanding the Core Contract](#understanding-the-core-contract)
+- [The Challenge](#the-challenge)
+- [Approach 1: Simple Manual Hydration](#approach-1-simple-manual-hydration)
+- [Approach 2: Magic Accessor Pattern (Recommended for PHP 8.0-8.3)](#approach-2-magic-accessor-pattern-recommended-for-php-80-83)
+- [Approach 3: Named Constructors](#approach-3-named-constructors)
+- [Approach 4: Reflection-Based](#approach-4-reflection-based)
+- [Comparison Table](#comparison-table)
+- [Recommendations](#recommendations)
+- [Key Principles](#key-principles)
+- [Next Steps](#next-steps)
+- [Further Reading](#further-reading)
+
 ## Understanding the Core Contract
 
 At its heart, Holloway requires mappers to implement two critical methods:

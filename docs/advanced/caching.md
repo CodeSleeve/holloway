@@ -2,6 +2,20 @@
 
 Holloway's entity caching system is a critical performance optimization that implements the Identity Map pattern. It ensures that each database record creates only one entity instance per request, provides dirty tracking for efficient updates, and eliminates redundant entity creation.
 
+## Table of Contents
+
+- [How Entity Caching Works](#how-entity-caching-works)
+- [Entity Cache Architecture](#entity-cache-architecture)
+- [Cache Benefits](#cache-benefits)
+- [Cache Management](#cache-management)
+- [Cache Configuration](#cache-configuration)
+- [Performance Characteristics](#performance-characteristics)
+- [Cache in Relationships](#cache-in-relationships)
+- [Cache Debugging](#cache-debugging)
+- [Best Practices](#best-practices)
+- [Cache Limitations and Considerations](#cache-limitations-and-considerations)
+- [Next Steps](#next-steps)
+
 ## How Entity Caching Works
 
 ### The Identity Map Pattern

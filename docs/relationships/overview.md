@@ -2,6 +2,20 @@
 
 Holloway's relationship system provides powerful and flexible ways to define connections between your entities. Unlike Active Record patterns, relationships in Holloway are explicitly defined in mappers and loaded through an optimized query system.
 
+## Table of Contents
+
+- [Relationship Types](#relationship-types)
+- [How Relationships Work](#how-relationships-work)
+- [Relationship Loading Strategy](#relationship-loading-strategy)
+- [Relationship Tree System](#relationship-tree-system)
+- [Relationship Configuration](#relationship-configuration)
+- [Relationship Constraints](#relationship-constraints)
+- [Performance Characteristics](#performance-characteristics)
+- [Advanced Relationship Features](#advanced-relationship-features)
+- [Best Practices](#best-practices)
+- [Debugging Relationships](#debugging-relationships)
+- [Next Steps](#next-steps)
+
 ## Relationship Types
 
 Holloway supports all standard relationship types plus custom relationships for complex scenarios:

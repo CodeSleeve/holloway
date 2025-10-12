@@ -2,6 +2,14 @@
 
 Quick reference for defining and consuming relationships with Holloway mappers.
 
+## Table of Contents
+
+- [Defining relationships in `defineRelations()`](#defining-relationships-in-definerelations)
+- [Eager loading syntax](#eager-loading-syntax)
+- [Handling pivot data with `belongsToMany`](#handling-pivot-data-with-belongstomany)
+- [Default eager loads](#default-eager-loads)
+- [Troubleshooting](#troubleshooting)
+
 ## Defining relationships in `defineRelations()`
 
 | Relationship | Example | Notes |

@@ -4,6 +4,18 @@ This guide documents a reference implementation of base `Entity` and `Mapper` cl
 
 > **Note**: This is ONE approach to implementing Holloway entities and mappers. Holloway is flexible and doesn't require these patterns, but they represent a battle-tested approach used in a production multi-tenant SaaS application.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Base Entity Class](#base-entity-class)
+- [Base Mapper Class](#base-mapper-class)
+- [Entity Traits](#entity-traits)
+- [Example Child Mapper](#example-child-mapper)
+- [Example Child Entity](#example-child-entity)
+- [Integration Example](#integration-example)
+- [When to Use These Base Classes](#when-to-use-these-base-classes)
+- [Next Steps](#next-steps)
+
 ## Overview
 
 This reference implementation extends Holloway's base classes to provide:

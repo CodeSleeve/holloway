@@ -1,6 +1,13 @@
 # Mapper API Reference
 
-A concise summary of the methods you’ll call most often when working with Holloway mappers and their query builders. Pair this with the full guides in `docs/mappers/` when you need more context.
+A concise summary of the methods you'll call most often when working with Holloway mappers and their query builders. Pair this with the full guides in `docs/mappers/` when you need more context.
+
+## Table of Contents
+
+- [Mapper lifecycle](#mapper-lifecycle)
+- [Query builder shortcuts](#query-builder-shortcuts)
+- [Relationship helpers](#relationship-helpers)
+- [Scope conventions](#scope-conventions)
 
 ## Mapper lifecycle
 

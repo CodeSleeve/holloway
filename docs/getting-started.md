@@ -2,6 +2,19 @@
 
 This quick tour shows how to install Holloway in a fresh Laravel project, register your first mapper, and perform real CRUD using rich domain entities. Follow the steps in order—each one builds on the last.
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [1. Install the package](#1-install-the-package)
+- [2. Create a Holloway service provider](#2-create-a-holloway-service-provider)
+- [3. Add base classes for entities and mappers](#3-add-base-classes-for-entities-and-mappers)
+- [4. Build your first entity and mapper](#4-build-your-first-entity-and-mapper)
+- [5. Wire it into Laravel](#5-wire-it-into-laravel)
+- [6. Smoke-test the setup](#6-smoke-test-the-setup)
+- [Laravel integration tips](#laravel-integration-tips)
+- [Troubleshooting](#troubleshooting)
+- [Where next?](#where-next)
+
 ## Prerequisites
 
 - Laravel 10 or 11 project with a working database connection.

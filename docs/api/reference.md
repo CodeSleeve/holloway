@@ -2,6 +2,15 @@
 
 Complete reference documentation for Holloway's core classes and interfaces. This reference covers all public methods, properties, and configuration options.
 
+## Table of Contents
+
+- [Core Classes](#core-classes)
+- [Configuration Options](#configuration-options)
+- [Events](#events)
+- [Exceptions](#exceptions)
+- [Constants](#constants)
+- [Next Steps](#next-steps)
+
 ## Core Classes
 
 ### Mapper

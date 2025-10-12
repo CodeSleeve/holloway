@@ -2,6 +2,19 @@
 
 This guide covers advanced patterns, performance optimizations, and proven techniques for building robust applications with Holloway's datamapper architecture.
 
+## Table of Contents
+
+- [Architecture Best Practices](#architecture-best-practices)
+- [Performance Optimization](#performance-optimization)
+- [Error Handling](#error-handling)
+- [Testing Strategies](#testing-strategies)
+- [Security Best Practices](#security-best-practices)
+- [Monitoring and Debugging](#monitoring-and-debugging)
+- [Code Organization](#code-organization)
+- [Performance Benchmarking](#performance-benchmarking)
+- [Production Deployment](#production-deployment)
+- [Next Steps](#next-steps)
+
 ## Architecture Best Practices
 
 ### Entity Design

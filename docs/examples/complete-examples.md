@@ -2,6 +2,12 @@
 
 This guide provides comprehensive, real-world examples of Holloway datamapper implementations. Each example demonstrates best practices, proper architecture, and practical patterns you can adapt for your own projects.
 
+## Table of Contents
+
+- [Example 1: Blog Management System](#example-1-blog-management-system)
+- [Example 2: E-commerce Order Management](#example-2-e-commerce-order-management)
+- [Next Steps](#next-steps)
+
 ## Example 1: Blog Management System
 
 A complete blog system with users, posts, comments, and categories.
