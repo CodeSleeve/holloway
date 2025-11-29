@@ -97,4 +97,28 @@ class BelongsToMany extends BaseRelationship
             ->filter(fn(stdClass $relatedRecord) => in_array($relatedRecord->{$this->foreignKeyName}, $pivotRecords))
             ->values();
     }
+
+    /**
+     * @return string
+     */
+    public function getPivotTable() : string
+    {
+        return $this->pivotTable;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPivotForeignKeyName() : string
+    {
+        return $this->pivotForeignKeyName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPivotLocalKeyName() : string
+    {
+        return $this->pivotLocalKeyName;
+    }
 }
