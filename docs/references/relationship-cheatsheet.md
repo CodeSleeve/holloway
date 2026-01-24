@@ -48,6 +48,32 @@ $users = $userMapper
 - Use dot notation for nested relationships (`serviceJobs.activities`).
 - Combine with `customOne`/`customMany` names exactly as defined in the mapper.
 
+## Counting relationships
+
+Use `withCount()` to add count columns without loading the related entities:
+
+```php
+// Single count
+$users = $userMapper->withCount(‘posts’)->get();
+echo $users->first()->posts_count;
+
+// Multiple counts
+$users = $userMapper->withCount([‘posts’, ‘comments’])->get();
+
+// With constraints
+$users = $userMapper->withCount([
+    ‘posts’ => function($query) {
+        $query->where(‘published’, true);
+    }
+])->get();
+
+// With aliases
+$users = $userMapper->withCount(‘posts as total_posts’)->get();
+echo $users->first()->total_posts;
+```
+
+**Supported relationships**: HasOne, HasMany, BelongsTo, BelongsToMany. Custom relationships need a count closure to support `withCount()`.
+
 ## Default eager loads
 
 ```php

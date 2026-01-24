@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use stdClass;
 
 interface Relationship
@@ -40,4 +41,13 @@ interface Relationship
      * @return string
      */
     public function getName() : string;
+
+    /**
+     * Build a count subquery for this relationship.
+     *
+     * @param  string  $parentTable  The parent table name
+     * @param  string  $parentKey    The parent's local key column
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function toCountQuery(string $parentTable, string $parentKey) : QueryBuilder;
 }

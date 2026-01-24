@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway;
 
 use BadMethodCallException;
+use InvalidArgumentException;
 use Closure;
 use CodeSleeve\Holloway\Relationships\Tree;
 use Illuminate\Contracts\Pagination\{Paginator as PaginatorContract, LengthAwarePaginator as LengthAwarePaginatorContract};
@@ -10,7 +11,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
-use Illuminate\Support\Collection;
+use Illuminate\Support\{Collection, Str};
 use Illuminate\Database\Concerns\BuildsQueries;
 
 class Builder
@@ -482,6 +483,111 @@ class Builder
         $this->getTree()->removeLoads(is_string($relations) ? func_get_args() : $relations);
 
         return $this;
+    }
+
+    /**
+     * Add subselect queries to count the relations.
+     *
+     * @param  mixed  $relations
+     * @return self
+     */
+    public function withCount(mixed $relations) : self
+    {
+        if (is_null($this->query->columns)) {
+            $this->query->select([$this->query->from . '.*']);
+        }
+
+        $relations = is_string($relations) ? func_get_args() : $relations;
+
+        foreach ($this->parseWithRelations($relations) as $name => $constraints) {
+            $segments = explode(' as ', $name);
+            $relationName = $segments[0];
+            $alias = $segments[1] ?? Str::snake($relationName) . '_count';
+
+            $this->addCountSelect($relationName, $alias, $constraints);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Parse the with relations into a normalized array.
+     *
+     * @param  array  $relations
+     * @return array
+     */
+    protected function parseWithRelations(array $relations) : array
+    {
+        $results = [];
+
+        foreach ($relations as $name => $constraints) {
+            if (is_numeric($name)) {
+                $name = $constraints;
+                $constraints = null;
+            }
+
+            $results[$name] = $constraints;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Add a count select subquery for the given relationship.
+     *
+     * @param  string         $relationName
+     * @param  string         $alias
+     * @param  \Closure|null  $constraints
+     * @return void
+     */
+    protected function addCountSelect(string $relationName, string $alias, ?Closure $constraints) : void
+    {
+        if (!$this->mapper->hasRelationship($relationName)) {
+            throw new InvalidArgumentException("Relationship [{$relationName}] not defined on mapper.");
+        }
+
+        $relationship = $this->mapper->getRelationship($relationName);
+        $subquery = $this->buildCountSubquery($relationship, $constraints);
+
+        $this->selectSub($subquery, $alias);
+    }
+
+    /**
+     * Build a count subquery for the given relationship.
+     *
+     * This method delegates to the relationship's toCountQuery() method, which allows
+     * each relationship type to build its own count query. This ensures:
+     * 1. Global scopes (like SoftDeletingScope) are applied
+     * 2. Relationship constraints are preserved
+     * 3. Each relationship type controls its own count logic
+     *
+     * @param  \CodeSleeve\Holloway\Relationships\Relationship  $relationship
+     * @param  \Closure|null                                      $constraints
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function buildCountSubquery($relationship, ?Closure $constraints)
+    {
+        // Build the base count query through the relationship's toCountQuery() method
+        // This ensures global scopes and relationship constraints are properly applied
+        $countQuery = $relationship->toCountQuery(
+            $this->mapper->getTable(),
+            $this->mapper->getKeyName()
+        );
+
+        // If the user provided additional constraints, apply them
+        if ($constraints) {
+            // We need to apply constraints through a Holloway Builder to support
+            // advanced query methods, then convert back to base QueryBuilder
+            $relatedMapper = Holloway::instance()->getMapper($relationship->getEntityName());
+            $builder = new Builder($countQuery);
+            $builder->setMapper($relatedMapper);
+            
+            $constraints($builder);
+            
+            $countQuery = $builder->getQuery();
+        }
+
+        return $countQuery;
     }
 
     /**
