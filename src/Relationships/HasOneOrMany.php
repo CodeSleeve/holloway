@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Closure;
 
 abstract class HasOneOrMany extends BaseRelationship
@@ -30,5 +31,24 @@ abstract class HasOneOrMany extends BaseRelationship
         $this->data = $query->whereIn("{$this->table}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
             ->toBase()
             ->get();
+    }
+
+    /**
+     * Build a count subquery for HasOne/HasMany relationships.
+     *
+     * @param  string  $parentTable
+     * @param  string  $parentKey
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function toCountQuery(string $parentTable, string $parentKey) : QueryBuilder
+    {
+        $query = $this->getBaseQueryWithScopes();
+
+        return $query->selectRaw('count(*)')
+            ->whereColumn(
+                $this->table . '.' . $this->foreignKeyName,
+                '=',
+                $parentTable . '.' . $parentKey
+            );
     }
 }

@@ -3,6 +3,8 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use CodeSleeve\Holloway\Builder;
 use Closure;
 use stdClass;
 
@@ -65,5 +67,26 @@ abstract class BaseRelationship implements Relationship
     public function getName() : string
     {
         return $this->name;
+    }
+
+    /**
+     * Build a base query builder with global scopes applied.
+     * This method ensures scopes like SoftDeletingScope are respected.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function getBaseQueryWithScopes() : QueryBuilder
+    {
+        $query = ($this->query)();
+
+        // Apply global scopes if the query is a Holloway Builder
+        if ($query instanceof Builder) {
+            $query = $query->applyScopes()->toBase();
+        } else {
+            // If it's already a base query, just return it
+            $query = $query->toBase();
+        }
+
+        return $query;
     }
 }
