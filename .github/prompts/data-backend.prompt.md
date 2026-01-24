@@ -1,1 +1,0 @@
-Refer to the instructions located in @~/.agent-os/prompts/backend-dev-data.md
