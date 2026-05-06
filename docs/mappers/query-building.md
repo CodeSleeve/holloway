@@ -596,6 +596,40 @@ $usersWithManyPosts = $userMapper
     ->get();
 ```
 
+### Relationship Counting
+
+Use `withCount()` to count related records without loading them:
+
+```php
+// Count single relationship
+$users = $userMapper->withCount('posts')->get();
+echo "User has {$users->first()->posts_count} posts";
+
+// Count multiple relationships
+$users = $userMapper->withCount(['posts', 'comments', 'likes'])->get();
+
+// With constraints
+$users = $userMapper->withCount([
+    'posts' => function($query) {
+        $query->where('published', true);
+    }
+])->get();
+
+// With aliases
+$users = $userMapper->withCount([
+    'posts as total_posts',
+    'posts as published_posts' => function($query) {
+        $query->where('published', true);
+    }
+])->get();
+
+foreach ($users as $user) {
+    echo "Total: {$user->total_posts}, Published: {$user->published_posts}";
+}
+```
+
+Relationship counts work with all standard relationship types (HasOne, HasMany, BelongsTo, BelongsToMany). Count columns are automatically named using snake_case with a `_count` suffix, but can be customized using the `as` syntax.
+
 ## Error Handling and Debugging
 
 ### Query Debugging

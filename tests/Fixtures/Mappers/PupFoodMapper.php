@@ -17,7 +17,7 @@ class PupFoodMapper extends Mapper
      */
     public function defineRelations() : void
     {
-        $this->belongsTo('company', Company::class);    // A pup food belongs to a company (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
-        $this->belongsToMany('pups', Pup::class);       // A pup food belongs to many pups (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
+        $this->belongsTo('company', Company::class);                    // A pup food belongs to a company (NOTE: For testing purposes, we've intentionally left the table name, local key name, and foreign key name parameters null).
+        $this->belongsToMany('pups', Pup::class, 'pups_pup_foods');     // A pup food belongs to many pups via the pups_pup_foods pivot table.
     }
 }

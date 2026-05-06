@@ -697,8 +697,16 @@ abstract class Mapper
 
     /**
      * Define a new custom relationship
+     *
+     * @param  string           $name
+     * @param  callable         $load
+     * @param  callable         $for
+     * @param  string|callable  $mapOrEntityName
+     * @param  bool             $limitOne
+     * @param  callable|null    $count  Optional count query builder for withCount() support
+     * @return void
      */
-    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false) : void
+    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false, ?callable $count = null) : void
     {
         if (!$load instanceof Closure) {
             $load = Closure::fromCallable($load);
@@ -712,7 +720,11 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes());
+        if ($count && !$count instanceof Closure) {
+            $count = Closure::fromCallable($count);
+        }
+
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes(), $count);
     }
 
     /**
