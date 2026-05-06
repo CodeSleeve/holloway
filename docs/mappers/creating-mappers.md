@@ -56,7 +56,7 @@ class UserMapper extends Mapper
         // Convert entity to database record
     }
     
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Convert database record to entity
     }
@@ -183,7 +183,7 @@ The `hydrate()` method converts a database record into an entity instance.
 **Simple manual approach:**
 
 ```php
-public function hydrate($record, $relations = null)
+public function hydrate(stdClass $record, Collection $relations)
 {
     $user = new User();
     $user->id = $record->id;
@@ -199,7 +199,7 @@ public function hydrate($record, $relations = null)
 ```php
 use Doctrine\Instantiator\Instantiator;
 
-public function hydrate($record, $relations)
+public function hydrate(stdClass $record, Collection $relations)
 {
     // Prepare attributes with type transformations
     $attributes = $this->mapValueObjects($record, $relations);
@@ -436,14 +436,14 @@ class User extends Entity
 // DON'T DO THIS!
 class OrderMapper extends Mapper
 {
-    public function save($entity): bool
+    public function store($entity): bool
     {
         // This is WRONG - business logic belongs in entity
         if ($entity->getTotal() > 1000) {
             $entity->setStatus('requires_approval');
         }
         
-        return parent::save($entity);
+        return parent::store($entity);
     }
 }
 ```
@@ -471,9 +471,9 @@ class Order extends Entity
 // DON'T DO THIS!
 class UserMapper extends Mapper
 {
-    public function save($entity): bool
+    public function store($entity): bool
     {
-        $result = parent::save($entity);
+        $result = parent::store($entity);
         
         // This is WRONG - cache concerns don't belong here
         Cache::forget("user.{$entity->id}");

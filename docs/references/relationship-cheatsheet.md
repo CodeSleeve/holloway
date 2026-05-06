@@ -6,7 +6,6 @@ Quick reference for defining and consuming relationships with Holloway mappers.
 
 - [Defining relationships in `defineRelations()`](#defining-relationships-in-definerelations)
 - [Eager loading syntax](#eager-loading-syntax)
-- [Handling pivot data with `belongsToMany`](#handling-pivot-data-with-belongstomany)
 - [Default eager loads](#default-eager-loads)
 - [Troubleshooting](#troubleshooting)
 
@@ -49,16 +48,6 @@ $users = $userMapper
 - Use dot notation for nested relationships (`serviceJobs.activities`).
 - Combine with `customOne`/`customMany` names exactly as defined in the mapper.
 
-## Handling pivot data with `belongsToMany`
-
-```php
-$this->belongsToMany('tools', Tool::class, 'service_jobs_tools')
-    ->withPivot(['assigned_at', 'notes']);
-```
-
-- Call `withPivot()` inside `defineRelations()` when you need pivot attributes hydrated onto the related entity.
-- To persist pivot data, call the relationship helper on the mapper’s query builder before executing (`$mapper->with('tools')->get();`).
-
 ## Default eager loads
 
 ```php
@@ -75,6 +64,5 @@ protected array $with = ['tenant', 'role'];
 | Relationship returns `null` | Ensure the relationship name in `with()` matches the name defined in `defineRelations()`. |
 | Custom relationship loads wrong data | Verify the matcher compares the correct keys (e.g. `$user->id === $role->user_id`). |
 | Circular eager loading | Load only the direction you need; Holloway doesn’t guard against infinite recursion. |
-| Pivot attributes missing | Confirm you called `withPivot()` and are using the relationship via `with()` when querying. |
 
 Need more detail? Dive into `docs/relationships/overview.md` and the specialised pages in `docs/relationships/`.

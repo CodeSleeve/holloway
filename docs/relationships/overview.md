@@ -384,7 +384,7 @@ $recentPosts = $user->posts->filter(function($post) {
 
 ```php
 // In your entity hydration
-public function hydrate($record, $relations = null)
+public function hydrate(stdClass $record, Collection $relations)
 {
     $entity = new User($record->name, $record->email);
     

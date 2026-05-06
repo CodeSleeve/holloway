@@ -26,7 +26,7 @@ abstract class Mapper
     /**
      * Convert a database record into an entity instance
      */
-    abstract public function hydrate($record, $relations = null);
+    abstract public function hydrate(stdClass $record, Collection $relations);
     
     /**
      * Convert an entity instance into a database-ready array
@@ -96,7 +96,7 @@ class User
 
 class UserMapper extends Mapper
 {
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Create entity with required properties
         $user = new User($record->name, $record->email);
@@ -135,6 +135,8 @@ class UserMapper extends Mapper
 - ❌ Must update mapper when entity changes
 
 ## Approach 2: Magic Accessor Pattern (Recommended for PHP 8.0-8.3)
+
+> **User-space pattern** — `mapperFill()`, `mapValueObjects()`, and `addMapp()` are **not** provided by Holloway. They are reference implementations you define in your own base classes. The code below is a starting point, not a built-in API.
 
 This reusable pattern separates concerns and scales to complex entities. Used in production by a multi-tenant SaaS application:
 
@@ -196,7 +198,7 @@ abstract class Mapper extends HollowayMapper
     /**
      * Hydrate entity from database record
      */
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Prepare attributes (including type transformations)
         $attributes = $this->prepareAttributes($record, $relations);
@@ -391,7 +393,7 @@ class User
 
 class UserMapper extends Mapper
 {
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         return User::fromDatabase((array) $record);
     }
@@ -449,7 +451,7 @@ class ReflectionHydrator
 
 class UserMapper extends Mapper
 {
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         $data = (array) $record;
         return ReflectionHydrator::hydrate(User::class, $data);

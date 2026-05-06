@@ -247,7 +247,7 @@ class UserMapper extends Mapper
         ];
     }
 
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         $user = new User(
             $record->name,
@@ -356,7 +356,7 @@ class PostMapper extends Mapper
         ];
     }
 
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         $post = new Post(
             $record->title,
@@ -948,7 +948,7 @@ class OrderMapper extends Mapper
         ];
     }
 
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         $order = new Order($record->customer_id);
         

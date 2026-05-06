@@ -121,7 +121,7 @@ abstract class Mapper
     // Core functionality
     abstract public function defineRelations(): void;
     abstract public function dehydrate($entity): array;
-    abstract public function hydrate($record, $relations = null);
+    abstract public function hydrate(stdClass $record, Collection $relations);
     
     // Query building
     public function newQuery(): Builder

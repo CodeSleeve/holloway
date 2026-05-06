@@ -435,35 +435,6 @@ $user = $userMapper->with([
 ])->find(1);
 ```
 
-### Pivot Table Data Access
-
-For BelongsToMany relationships, you might need access to pivot table data:
-
-```php
-class UserMapper extends Mapper
-{
-    public function defineRelations(): void
-    {
-        // If your pivot table has additional columns
-        $this->belongsToMany('projects', Project::class, 'project_members');
-    }
-}
-
-// In your mapper's hydration, you can access pivot data
-public function hydrate($record, $relations = null)
-{
-    $user = new User($record->name, $record->email);
-    
-    if ($relations && isset($relations['projects'])) {
-        // The relationship system provides access to pivot data
-        // through the relationship loading process
-        $user->setProjects($relations['projects']);
-    }
-    
-    return $user;
-}
-```
-
 ## Relationship Loading Patterns
 
 ### Conditional Loading

@@ -175,7 +175,7 @@ When dehydrating (saving to database):
 
 ```php
 // Entity has: Email object
-$clientMapper->save($client);
+$clientMapper->store($client);
 
 // Mapper sees 'email' in mappings array
 // Looks up 'email' transformation
@@ -777,7 +777,7 @@ If you don't want the mappings system, you can transform manually:
 ```php
 class ClientMapper extends Mapper
 {
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         $client = $this->instantiator->instantiate(Client::class);
         

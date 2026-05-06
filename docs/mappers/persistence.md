@@ -173,7 +173,7 @@ Convert database records to entities:
 ```php
 class UserMapper extends Mapper
 {
-    public function hydrate($record, $relations = null)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Create entity with required fields
         $entity = new User($record->name, $record->email);

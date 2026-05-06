@@ -35,7 +35,7 @@ $user = new User(
 );
 
 // Mapper persists it
-$userMapper->save($user);
+$userMapper->store($user);
 ```
 
 **Characteristics:**
@@ -190,7 +190,7 @@ class Mapper extends HollowayMapper
         $this->instantiator = new Instantiator();
     }
     
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Create entity WITHOUT calling constructor
         $entity = $this->instantiator->instantiate($this->entityClassName);
@@ -230,7 +230,7 @@ class User extends Entity
 // Usage:
 // Creating new user - validation runs
 $user = new User('John Doe', 'john@example.com', 'secret123');
-$userMapper->save($user);
+$userMapper->store($user);
 
 // Loading existing user - validation bypassed
 $user = $userMapper->find(1); // No constructor called!
@@ -339,7 +339,7 @@ class ClientMapper extends Mapper
     /**
      * Hydration bypasses constructor completely
      */
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Instantiate without constructor
         $client = $this->instantiator->instantiate(Client::class);
@@ -449,7 +449,7 @@ class User
 ```php
 class UserMapper extends Mapper
 {
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // DON'T DO THIS!
         if (!filter_var($record->email, FILTER_VALIDATE_EMAIL)) {
@@ -468,7 +468,7 @@ class UserMapper extends Mapper
 ```php
 class UserMapper extends Mapper
 {
-    public function save($entity): void
+    public function store($entity): bool
     {
         // DON'T DO THIS!
         if (empty($entity->name)) {
@@ -477,7 +477,7 @@ class UserMapper extends Mapper
         
         // Validation belongs in entity constructor
         // Mapper should only handle persistence
-        parent::save($entity);
+        parent::store($entity);
     }
 }
 ```
@@ -502,7 +502,7 @@ class Order
 // Solution: Use instantiator pattern
 class OrderMapper extends Mapper
 {
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         // Bypass constructor
         $order = $this->instantiator->instantiate(Order::class);
@@ -522,7 +522,7 @@ class OrderMapper extends Mapper
 // Problem: What if data fails validation?
 class UserMapper
 {
-    public function hydrate($record, $relations)
+    public function hydrate(stdClass $record, Collection $relations)
     {
         if (!filter_var($record->email, FILTER_VALIDATE_EMAIL)) {
             // Now what? Can't load the user!
