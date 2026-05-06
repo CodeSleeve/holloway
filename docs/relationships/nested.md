@@ -117,24 +117,30 @@ class UserMapper extends Mapper
 
 ## Polymorphic Nested Relationships
 
-Handle nested relationships with polymorphic associations:
+Holloway doesn't provide a built-in polymorphic relationship type, but you can model polymorphic associations using `customMany()` or `customOne()`. Define the loading and matching logic yourself based on a type discriminator column.
 
 ```php
 class CommentMapper extends Mapper
 {
-    protected function relationships(): array
+    public function defineRelations(): void
     {
-        return [
-            'commentable' => Custom::make()
-                ->morph('commentable_type', 'commentable_id')
-                ->setTypes([
-                    'post' => PostMapper::class,
-                    'video' => VideoMapper::class,
-                    'product' => ProductMapper::class,
-                ]),
-            'replies' => HasMany::make(CommentMapper::class, 'parent_id'),
-            'author' => BelongsTo::make(UserMapper::class, 'user_id'),
-        ];
+        $this->hasMany('replies', Comment::class, 'parent_id');
+        $this->belongsTo('author', User::class, 'user_id');
+
+        // Polymorphic "commentable" — loads the parent post for each comment.
+        // Extend this pattern per commentable_type as needed.
+        $this->customOne('commentable',
+            function($query, Collection $comments) {
+                $ids = $comments
+                    ->where('commentable_type', 'post')
+                    ->pluck('commentable_id');
+
+                return $query->from('posts')->whereIn('id', $ids)->get();
+            },
+            fn(stdClass $comment, stdClass $post) =>
+                $comment->commentable_type === 'post' && $comment->commentable_id === $post->id,
+            Post::class
+        );
     }
 
     public function findWithNestedContext(int $commentId): ?Comment
@@ -162,13 +168,11 @@ Efficiently handle nested tree structures:
 ```php
 class CategoryMapper extends Mapper
 {
-    protected function relationships(): array
+    public function defineRelations(): void
     {
-        return [
-            'parent' => BelongsTo::make(CategoryMapper::class, 'parent_id'),
-            'children' => HasMany::make(CategoryMapper::class, 'parent_id'),
-            'products' => HasMany::make(ProductMapper::class, 'category_id'),
-        ];
+        $this->belongsTo('parent', Category::class, 'parent_id');
+        $this->hasMany('children', Category::class, 'parent_id');
+        $this->hasMany('products', Product::class, 'category_id');
     }
 
     public function findCategoryTree(int $rootId): ?Category
@@ -384,13 +388,11 @@ Manage entities that reference each other:
 ```php
 class UserMapper extends Mapper
 {
-    protected function relationships(): array
+    public function defineRelations(): void
     {
-        return [
-            'manager' => BelongsTo::make(UserMapper::class, 'manager_id'),
-            'directReports' => HasMany::make(UserMapper::class, 'manager_id'),
-            'department' => BelongsTo::make(DepartmentMapper::class, 'department_id'),
-        ];
+        $this->belongsTo('manager', User::class, 'manager_id');
+        $this->hasMany('directReports', User::class, 'manager_id');
+        $this->belongsTo('department', Department::class, 'department_id');
     }
 
     public function findOrganizationChart(int $userId, int $depth = 3): ?User

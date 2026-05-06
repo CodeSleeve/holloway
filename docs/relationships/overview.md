@@ -303,14 +303,21 @@ $user = $userMapper->with([
 
 ### Soft Deletes in Relationships
 
-Soft deleted entities are automatically excluded from relationships:
+When a related mapper uses `SoftDeletes` and has `SoftDeletingScope` registered, soft-deleted entities are automatically excluded from relationship queries:
 
 ```php
 use CodeSleeve\Holloway\SoftDeletes;
+use CodeSleeve\Holloway\SoftDeletingScope;
 
 class PostMapper extends Mapper
 {
     use SoftDeletes;
+
+    public function __construct()
+    {
+        parent::__construct();
+        static::addGlobalScope(new SoftDeletingScope());
+    }
 }
 
 // Soft deleted posts are excluded
@@ -322,23 +329,6 @@ $user = $userMapper->with([
         $query->withTrashed();
     }
 ])->find(1);
-```
-
-### Relationship Existence Queries
-
-Query based on relationship existence:
-
-```php
-// Users who have posts
-$usersWithPosts = $userMapper->has('posts')->get();
-
-// Users who have published posts
-$usersWithPublishedPosts = $userMapper->whereHas('posts', function($query) {
-    $query->where('status', 'published');
-})->get();
-
-// Users who don't have posts
-$usersWithoutPosts = $userMapper->doesntHave('posts')->get();
 ```
 
 ## Best Practices

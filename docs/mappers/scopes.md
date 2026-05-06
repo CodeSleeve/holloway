@@ -39,20 +39,21 @@ Global scopes are automatically applied to all queries for a mapper unless expli
 ### Defining Global Scopes
 
 ```php
-use Holloway\Scope;
-use Holloway\Builder;
+use CodeSleeve\Holloway\Scope;
+use CodeSleeve\Holloway\Builder;
+use CodeSleeve\Holloway\Mapper;
 
-class ActiveScope extends Scope
+class ActiveScope implements Scope
 {
-    public function apply(Builder $builder): void
+    public function apply(Builder $builder, Mapper $mapper): void
     {
         $builder->where('active', true);
     }
 }
 
-class PublishedScope extends Scope
+class PublishedScope implements Scope
 {
-    public function apply(Builder $builder): void
+    public function apply(Builder $builder, Mapper $mapper): void
     {
         $builder->where('published', true)
                 ->where('published_at', '<=', now());
@@ -65,15 +66,13 @@ class PublishedScope extends Scope
 ```php
 class PostMapper extends Mapper
 {
-    protected function boot(): void
+    public function __construct()
     {
-        parent::boot();
+        parent::__construct();
         
         // Apply to all queries by default
-        $this->addGlobalScope(new PublishedScope());
-        
-        // Named scope for easier removal
-        $this->addGlobalScope('active', new ActiveScope());
+        static::addGlobalScope(new PublishedScope());
+        static::addGlobalScope(new ActiveScope());
     }
 }
 
@@ -106,7 +105,7 @@ class PostMapper extends Mapper
     public function findAllUnfiltered(): Collection
     {
         return $this->query()
-            ->withoutGlobalScopes()
+            ->withoutGlobalScopes(null)
             ->get();
 
         // Or alternatively, use the newQueryWithoutScopes() shortcut
@@ -131,8 +130,8 @@ class PostMapper extends Mapper
 
     public function scopeByCategory(Builder $query, string $categorySlug): Builder
     {
-        return $query->whereHas('category', function($q) use ($categorySlug) {
-            $q->where('slug', $categorySlug);
+        return $query->whereIn('category_id', function($q) use ($categorySlug) {
+            $q->select('id')->from('categories')->where('slug', $categorySlug);
         });
     }
 
@@ -244,9 +243,16 @@ class ProductMapper extends Mapper
             return $query;
         }
 
-        return $query->whereHas('tags', function($q) use ($tags) {
-            $q->whereIn('name', $tags);
-        }, '>=', count($tags)); // Must have ALL tags
+        foreach ($tags as $tag) {
+            $query->whereIn('id', function($q) use ($tag) {
+                $q->select('product_id')
+                  ->from('product_tags')
+                  ->join('tags', 'tags.id', '=', 'product_tags.tag_id')
+                  ->where('tags.name', $tag);
+            });
+        }
+
+        return $query;
     }
 
     public function scopeAvailable(Builder $query, ?DateTime $date = null): Builder
@@ -277,11 +283,15 @@ class OrderMapper extends Mapper
     public function scopeWithItems(Builder $query, array $productIds = []): Builder
     {
         if (empty($productIds)) {
-            return $query->has('items');
+            return $query->whereIn('id', function($q) {
+                $q->select('order_id')->from('order_items');
+            });
         }
 
-        return $query->whereHas('items', function($q) use ($productIds) {
-            $q->whereIn('product_id', $productIds);
+        return $query->whereIn('id', function($q) use ($productIds) {
+            $q->select('order_id')
+              ->from('order_items')
+              ->whereIn('product_id', $productIds);
         });
     }
 
@@ -293,10 +303,11 @@ class OrderMapper extends Mapper
 
     public function scopeWithValue(Builder $query, float $minValue): Builder
     {
-        return $query->whereHas('items', function($q) use ($minValue) {
-            $q->selectRaw('SUM(quantity * price) as total_value')
+        return $query->whereIn('id', function($q) use ($minValue) {
+            $q->select('order_id')
+              ->from('order_items')
               ->groupBy('order_id')
-              ->having('total_value', '>=', $minValue);
+              ->havingRaw('SUM(quantity * price) >= ?', [$minValue]);
         });
     }
 }
@@ -351,7 +362,7 @@ class PostMapper extends Mapper
 Create global scopes that accept parameters:
 
 ```php
-class TenantScope extends Scope
+class TenantScope implements Scope
 {
     private int $tenantId;
 
@@ -360,7 +371,7 @@ class TenantScope extends Scope
         $this->tenantId = $tenantId;
     }
 
-    public function apply(Builder $builder): void
+    public function apply(Builder $builder, Mapper $mapper): void
     {
         $builder->where('tenant_id', $this->tenantId);
     }
@@ -370,7 +381,7 @@ class PostMapper extends Mapper
 {
     public function setTenant(int $tenantId): void
     {
-        $this->addGlobalScope('tenant', new TenantScope($tenantId));
+        static::addGlobalScope(new TenantScope($tenantId));
     }
 }
 
@@ -381,39 +392,28 @@ $postMapper->setTenant(auth()->user()->getTenantId());
 
 ## Soft Delete Scopes
 
-Handling soft deletes with scopes:
+Soft delete behavior requires both the `SoftDeletes` trait and explicit registration of `SoftDeletingScope` as a global scope:
 
 ```php
-class SoftDeleteScope extends Scope
-{
-    public function apply(Builder $builder): void
-    {
-        $builder->whereNull('deleted_at');
-    }
-}
+use CodeSleeve\Holloway\SoftDeletes;
+use CodeSleeve\Holloway\SoftDeletingScope;
 
 class PostMapper extends Mapper
 {
     use SoftDeletes;
 
-    protected function boot(): void
+    public function __construct()
     {
-        parent::boot();
-        $this->addGlobalScope(new SoftDeleteScope());
-    }
+        parent::__construct();
 
-    public function scopeOnlyTrashed(Builder $query): Builder
-    {
-        return $query->withoutGlobalScope(SoftDeleteScope::class)
-                     ->whereNotNull('deleted_at');
-    }
-
-    public function scopeWithTrashed(Builder $query): Builder
-    {
-        return $query->withoutGlobalScope(SoftDeleteScope::class);
+        static::addGlobalScope(new SoftDeletingScope());
     }
 }
 ```
+
+`SoftDeletingScope` adds `WHERE deleted_at IS NULL` to all queries and provides the `withTrashed()`, `onlyTrashed()`, and `withoutTrashed()` builder macros. The trait alone is not sufficient.
+
+See [Soft Deletes](../advanced/soft-deletes.md) for full documentation.
 
 ## Testing Scopes
 

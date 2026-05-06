@@ -1,96 +1,73 @@
 # API Reference
 
-Complete reference documentation for Holloway's core classes and interfaces. This reference covers all public methods, properties, and configuration options.
+Reference for Holloway's core classes and interfaces. Covers the primary public API; see source for the full list of methods.
 
 ## Table of Contents
 
-- [Core Classes](#core-classes)
-- [Configuration Options](#configuration-options)
+- [Mapper](#mapper)
+- [Builder](#builder)
+- [Scope](#scope)
+- [SoftDeletes Trait](#softdeletes-trait)
+- [EntityCache](#entitycache)
 - [Events](#events)
 - [Exceptions](#exceptions)
-- [Constants](#constants)
 - [Next Steps](#next-steps)
 
-## Core Classes
+## Mapper
 
-### Mapper
-
-The base mapper class provides the foundation for all data mapping operations.
-
-#### Class Declaration
+Base abstract class for all data mappers.
 
 ```php
-abstract class Mapper
+abstract class CodeSleeve\Holloway\Mapper
 ```
 
-#### Properties
+### Configurable Properties
 
 ```php
-protected string $table;           // Database table name
-protected string $primaryKey;      // Primary key column name  
-protected string $connection;      // Database connection name
-protected array $fillable;         // Mass-assignable attributes
-protected array $hidden;           // Hidden attributes for serialization
-protected array $casts;            // Attribute casting definitions
-protected bool $timestamps;        // Enable automatic timestamps
+protected string $entityClassName = '';  // Entity class FQCN
+protected string $table = '';            // Database table name
+protected string $primaryKey = 'id';     // Primary key column
+protected string $keyType = 'int';       // Primary key type
+protected string $connection = '';       // Database connection name
+protected bool $hasTimestamps = true;    // Enable created_at/updated_at
+protected string $timestampFormat = 'Y-m-d H:i:s';
+protected bool $incrementing = true;     // Auto-incrementing primary key
+protected int $perPage = 15;             // Default pagination page size
+protected array $with = [];              // Relationships to always eager load
 ```
 
-#### Core Methods
+### Abstract Methods
 
-##### find(int|string $id): ?object
-
-Find an entity by its primary key.
+All concrete mappers must implement these:
 
 ```php
-public function find(int|string $id): ?object
+abstract public function getEntityClassName(): string;
+
+abstract public function defineRelations(): void;
+
+abstract public function getIdentifier($entity): mixed;
+
+abstract public function setIdentifier($entity, $value): void;
+
+abstract public function hydrate(stdClass $record, Collection $relations): mixed;
+
+abstract public function dehydrate($entity): array;
 ```
 
-**Parameters:**
-- `$id` - The primary key value
+### Querying
 
-**Returns:** The entity instance or null if not found
+#### `all(): Collection`
 
-**Example:**
-```php
-$user = $userMapper->find(123);
-```
-
-##### findOrFail(int|string $id): object
-
-Find an entity by its primary key or throw an exception.
-
-```php
-public function findOrFail(int|string $id): object
-```
-
-**Parameters:**
-- `$id` - The primary key value
-
-**Returns:** The entity instance
-
-**Throws:** `EntityNotFoundException` if not found
-
-##### all(): Collection
-
-Retrieve all entities from the table.
+Retrieve all entities.
 
 ```php
-public function all(): Collection
+$users = $userMapper->all();
 ```
 
-**Returns:** Collection of all entities
+#### `query(): Builder`
 
-##### query(): Builder
+Get a new query builder with global scopes applied.
 
-Get a new query builder instance.
-
-```php
-public function query(): Builder
-```
-
-**Returns:** Query builder instance
-
-**Example:**
 ```php
 $activeUsers = $userMapper->query()
     ->where('active', true)
@@ -98,656 +75,466 @@ $activeUsers = $userMapper->query()
     ->get();
 ```
 
-##### save(object $entity): object
+#### `newQueryWithoutScope(Scope|string $scope): Builder`
 
-Save an entity to the database.
-
-```php
-public function save(object $entity): object
-```
-
-**Parameters:**
-- `$entity` - The entity to save
-
-**Returns:** The saved entity with updated attributes
-
-##### delete(object $entity): bool
-
-Delete an entity from the database.
+Get a new query builder without a specific global scope.
 
 ```php
-public function delete(object $entity): bool
+$allPosts = $postMapper->newQueryWithoutScope(PublishedScope::class)->get();
 ```
 
-**Parameters:**
-- `$entity` - The entity to delete
+#### `newQueryWithoutScopes(): Builder`
 
-**Returns:** Success boolean
+Get a new query builder with no global scopes applied.
 
-##### create(array $attributes): object
+#### `with(mixed $relations): Builder`
 
-Create and save a new entity.
+Begin a query with eager loading.
 
 ```php
-public function create(array $attributes): object
+$posts = $postMapper->with(['author', 'category'])->get();
 ```
 
-**Parameters:**
-- `$attributes` - Entity attributes
+All other query methods (`where`, `orderBy`, `limit`, `join`, etc.) are proxied via `__call` to the underlying `Illuminate\Database\Query\Builder` and return the Holloway `Builder` instance.
 
-**Returns:** The created entity
+### Persistence
 
-##### update(object $entity, array $attributes): object
+#### `store($entity): bool`
 
-Update an existing entity.
+Insert or update an entity. Fires `storing`/`creating`/`created` (for new entities) or `storing`/`updating`/`updated` (for existing entities), then `stored`.
 
 ```php
-public function update(object $entity, array $attributes): object
+$post = new Post('My Title', 'My content');
+$postMapper->store($post);
 ```
 
-**Parameters:**
-- `$entity` - The entity to update
-- `$attributes` - New attribute values
+#### `remove($entity): bool`
 
-**Returns:** The updated entity
-
-#### Query Builder Methods
-
-##### where(string $column, mixed $operator = null, mixed $value = null): Builder
-
-Add a where clause to the query.
+Delete an entity. Fires `removing` then `removed`. If the mapper uses `SoftDeletes`, sets `deleted_at` instead of removing the row.
 
 ```php
-public function where(string $column, mixed $operator = null, mixed $value = null): Builder
+$postMapper->remove($post);
 ```
 
-##### whereIn(string $column, array $values): Builder
+### Global Scopes
 
-Add a where in clause.
+#### `addGlobalScope(Scope|Closure|string $scope, ?Closure $implementation = null): void`
+
+Add a global scope that applies to all queries from this mapper.
 
 ```php
-public function whereIn(string $column, array $values): Builder
+// Register a Scope instance (anonymous, identified by class name)
+static::addGlobalScope(new PublishedScope());
+
+// Register a closure scope with a name
+static::addGlobalScope('active', function(Builder $builder) {
+    $builder->where('active', true);
+});
+
+// Register an anonymous closure scope
+static::addGlobalScope(function(Builder $builder) {
+    $builder->where('active', true);
+});
 ```
 
-##### orderBy(string $column, string $direction = 'asc'): Builder
+> **Note:** Calling `addGlobalScope('name', new ScopeInstance())` is invalid — the second argument must be a `Closure`, not a `Scope` instance. Use `addGlobalScope(new ScopeInstance())` to register an instance.
 
-Add an order by clause.
+Global scopes are registered in `__construct()`:
 
 ```php
-public function orderBy(string $column, string $direction = 'asc'): Builder
+class PostMapper extends Mapper
+{
+    public function __construct()
+    {
+        parent::__construct();
+
+        static::addGlobalScope(new PublishedScope());
+    }
+}
 ```
 
-##### limit(int $limit): Builder
+#### `removeGlobalScope(Scope|string $scope): void`
 
-Limit the number of results.
+Remove a registered global scope by class instance or string name.
 
 ```php
-public function limit(int $limit): Builder
+PostMapper::removeGlobalScope(PublishedScope::class);
+PostMapper::removeGlobalScope('active');
 ```
 
-##### offset(int $offset): Builder
+#### `hasGlobalScope(Scope|string $scope): bool`
 
-Set the query offset.
+Check whether a global scope is registered.
+
+#### `getGlobalScope(Scope|string $scope): Scope|Closure|string|null`
+
+Retrieve a registered global scope by class or name.
+
+### Events
+
+#### `registerPersistenceEvent(string $eventName, callable $callback): void`
+
+Register a listener for a named persistence event. See [Events](#events) for available event names.
 
 ```php
-public function offset(int $offset): Builder
+$this->registerPersistenceEvent('created', function(Post $post) {
+    Cache::tags(['posts'])->flush();
+});
 ```
 
-#### Relationship Methods
+### Entity Cache
 
-##### with(array|string $relations): Builder
+#### `clearEntityCache(): void`
+
+Flush the mapper's internal entity cache. Called automatically by `chunk()` and `chunkById()` between batches.
+
+#### `flushEntityCache(): void`
+
+Alias for `clearEntityCache()`.
+
+#### `getNumberOfCachedEntities(): int`
+
+Return the number of entities currently in the cache.
+
+---
+
+## Builder
+
+Fluent query builder wrapping `Illuminate\Database\Query\Builder`.
+
+```php
+class CodeSleeve\Holloway\Builder
+```
+
+### Result Retrieval
+
+#### `get(): Collection`
+
+Execute the query and return hydrated entities.
+
+```php
+$posts = $postMapper->where('published', true)->get();
+```
+
+#### `first(): mixed|null`
+
+Return the first result or null.
+
+#### `firstOrFail(): mixed`
+
+Return the first result or throw `ModelNotFoundException`.
+
+#### `find(int|string|array $id): mixed`
+
+Find by primary key. Returns a single entity, a Collection (for array input), or null.
+
+```php
+$post = $postMapper->find(1);
+$posts = $postMapper->find([1, 2, 3]);
+```
+
+#### `findOrFail(int|string $id): mixed`
+
+Find by primary key or throw `ModelNotFoundException`.
+
+### Eager Loading
+
+#### `with(mixed $relations): self`
 
 Eager load relationships.
 
 ```php
-public function with(array|string $relations): Builder
-```
-
-**Parameters:**
-- `$relations` - Relationship names or associative array with constraints
-
-**Example:**
-```php
-$posts = $postMapper->with(['author', 'comments' => function($query) {
+$postMapper->with(['author', 'comments' => function($query) {
     $query->where('approved', true);
 }])->get();
 ```
 
-##### has(string $relation, string $operator = '>=', int $count = 1): Builder
+#### `without(mixed $relations): self`
 
-Add a relationship existence constraint.
+Remove relationships from the eager load list (useful for overriding `$with`).
+
+#### `withCount(mixed $relations): self`
+
+Add subselect count queries for relationships.
 
 ```php
-public function has(string $relation, string $operator = '>=', int $count = 1): Builder
+$users = $userMapper->withCount(['posts', 'posts as published_posts' => function($query) {
+    $query->where('published', true);
+}])->get();
+
+echo $users->first()->posts_count;
+echo $users->first()->published_posts;
 ```
 
-##### whereHas(string $relation, callable $callback): Builder
+The count attribute is the relationship name in `snake_case` with a `_count` suffix, or the alias if specified with `as`.
 
-Add a relationship constraint with callback.
+### Pagination
+
+#### `paginate(int $perPage = null): LengthAwarePaginator`
+
+Paginate results with a total count.
 
 ```php
-public function whereHas(string $relation, callable $callback): Builder
+$posts = $postMapper->where('published', true)->paginate(20);
 ```
 
-#### Scope Methods
+#### `simplePaginate(int $perPage = null): Paginator`
 
-##### addGlobalScope(string|Scope $identifier, Scope $scope = null): void
+Paginate results without a total count (more efficient for large tables).
 
-Add a global scope to the mapper.
+### Chunking
+
+#### `chunk(int $count, callable $callback): bool`
+
+Process results in chunks to reduce memory usage. Clears the entity cache between batches.
 
 ```php
-public function addGlobalScope(string|Scope $identifier, Scope $scope = null): void
+$postMapper->with('author')->chunk(100, function(Collection $posts) {
+    foreach ($posts as $post) {
+        processPost($post);
+    }
+});
 ```
 
-##### removeGlobalScope(string|Scope $identifier): void
+#### `chunkById(int $count, callable $callback, ?string $column = null, ?string $alias = null): bool`
 
-Remove a global scope.
+Chunk using cursor-based pagination by ID (avoids offset issues on large tables).
+
+### Global Scopes on Builder
+
+#### `withGlobalScope(string $identifier, Scope|Closure $scope): self`
+
+Register a global scope on this builder instance (called internally by `newQuery()`). If the scope has an `extend()` method it is called immediately to register builder macros.
+
+#### `withoutGlobalScope(Scope|string $scope): Builder`
+
+Remove a specific global scope from the query.
 
 ```php
-public function removeGlobalScope(string|Scope $identifier): void
+$postMapper->query()->withoutGlobalScope(PublishedScope::class)->get();
+$postMapper->query()->withoutGlobalScope('active')->get();
 ```
 
-##### withoutGlobalScope(string|Scope $identifier): Builder
+#### `withoutGlobalScopes(?array $scopes): Builder`
 
-Create a query without a specific global scope.
+Remove all global scopes (pass `null`) or a specific list.
 
 ```php
-public function withoutGlobalScope(string|Scope $identifier): Builder
+// Remove all global scopes
+$postMapper->query()->withoutGlobalScopes(null)->get();
+
+// Remove specific scopes
+$postMapper->query()->withoutGlobalScopes([PublishedScope::class, 'active'])->get();
 ```
 
-##### withoutGlobalScopes(): Builder
+#### `removedScopes(): array`
 
-Create a query without any global scopes.
+Return the list of scope identifiers that have been removed from this query.
+
+### Delete Methods
+
+#### `delete(): mixed`
+
+Execute a delete against the query. When `SoftDeletingScope` is registered, the `onDelete` callback is used to set `deleted_at` instead.
+
+> **Note:** The builder-level soft-delete path currently has a bug (calls a nonexistent mapper method). Use mapper-level `remove()` for soft deletes.
+
+#### `forceDelete(): mixed`
+
+Execute a hard delete, bypassing any `onDelete` callback.
+
+### Proxied Methods
+
+All methods not explicitly defined on `Builder` are proxied to the underlying `Illuminate\Database\Query\Builder`. This includes `select`, `selectRaw`, `where`, `orWhere`, `whereIn`, `whereNull`, `whereNotNull`, `whereBetween`, `orderBy`, `groupBy`, `having`, `join`, `leftJoin`, `limit`, `offset`, `skip`, `take`, `distinct`, `union`, `when`, and more.
+
+---
+
+## Scope
+
+Interface that all global scope classes must implement.
 
 ```php
-public function withoutGlobalScopes(): Builder
+interface CodeSleeve\Holloway\Scope
 ```
 
-#### Caching Methods
-
-##### remember(int $seconds): Builder
-
-Cache the query results.
+### Required Method
 
 ```php
-public function remember(int $seconds): Builder
+public function apply(Builder $builder, Mapper $mapper): void;
 ```
 
-##### rememberForever(): Builder
-
-Cache the query results forever.
+Both parameters are required. Example:
 
 ```php
-public function rememberForever(): Builder
+use CodeSleeve\Holloway\Scope;
+use CodeSleeve\Holloway\Builder;
+use CodeSleeve\Holloway\Mapper;
+
+class PublishedScope implements Scope
+{
+    public function apply(Builder $builder, Mapper $mapper): void
+    {
+        $builder->where('published', true);
+    }
+}
 ```
 
-##### flush(): void
+---
 
-Clear all cached results for this mapper.
+## SoftDeletes Trait
+
+Add to a **mapper** (not entity) to enable soft delete behavior. You must also explicitly register `SoftDeletingScope` as a global scope:
 
 ```php
+use CodeSleeve\Holloway\SoftDeletes;
+use CodeSleeve\Holloway\SoftDeletingScope;
+
+class PostMapper extends Mapper
+{
+    use SoftDeletes;
+
+    public function __construct()
+    {
+        parent::__construct();
+        static::addGlobalScope(new SoftDeletingScope());
+    }
+}
+```
+
+The trait provides flags and helper methods. `SoftDeletingScope` is what adds `WHERE deleted_at IS NULL` to all queries and provides the `withTrashed()`, `onlyTrashed()`, and `withoutTrashed()` builder macros.
+
+### Methods
+
+#### `forceRemove($entity): bool|null`
+
+Hard-delete an entity, bypassing soft delete logic.
+
+```php
+$post = $postMapper->withTrashed()->find(1);
+$postMapper->forceRemove($post);
+```
+
+#### `restore($entity): bool|null`
+
+Restore a soft-deleted entity or iterable of entities. Fires `restoring`/`restored` events.
+
+```php
+$post = $postMapper->onlyTrashed()->find(1);
+$postMapper->restore($post);
+
+// Or restore multiple
+$posts = $postMapper->onlyTrashed()->where('author_id', 5)->get();
+$postMapper->restore($posts);
+```
+
+#### `getDeletedAtColumnName(): string`
+
+Return the soft delete column name (`deleted_at` by default, or `static::DELETED_AT` if defined).
+
+#### `getQualifiedDeletedAtColumn(): string`
+
+Return the fully-qualified column name (`table.deleted_at`).
+
+### Custom Column
+
+```php
+class PostMapper extends Mapper
+{
+    use SoftDeletes;
+
+    const DELETED_AT = 'archived_at';
+}
+```
+
+---
+
+## EntityCache
+
+Internal per-mapper cache of raw entity attribute arrays (keyed by primary key). Used internally by the mapper during hydration.
+
+```php
+class CodeSleeve\Holloway\EntityCache
+```
+
+```php
+public function get(string $identifier): ?array
+public function set(string $identifier, array $attributes): void
+public function has(string $identifier): bool
+public function all(): array
+public function count(): int
+public function merge(array $records): void
+public function remove(string $identifier): void
 public function flush(): void
 ```
 
-#### Event Methods
-
-##### creating(callable $callback): void
-
-Register a creating event listener.
-
-```php
-public function creating(callable $callback): void
-```
-
-##### created(callable $callback): void
-
-Register a created event listener.
-
-```php
-public function created(callable $callback): void
-```
-
-##### updating(callable $callback): void
-
-Register an updating event listener.
-
-```php
-public function updating(callable $callback): void
-```
-
-##### updated(callable $callback): void
-
-Register an updated event listener.
-
-```php
-public function updated(callable $callback): void
-```
-
-##### deleting(callable $callback): void
-
-Register a deleting event listener.
-
-```php
-public function deleting(callable $callback): void
-```
-
-##### deleted(callable $callback): void
-
-Register a deleted event listener.
-
-```php
-public function deleted(callable $callback): void
-```
-
-### Builder
-
-The query builder provides a fluent interface for constructing database queries.
-
-#### Class Declaration
-
-```php
-class Builder
-```
-
-#### Query Methods
-
-##### select(array|string $columns): Builder
-
-Set the columns to select.
-
-```php
-public function select(array|string $columns): Builder
-```
-
-##### selectRaw(string $expression, array $bindings = []): Builder
-
-Add a raw select expression.
-
-```php
-public function selectRaw(string $expression, array $bindings = []): Builder
-```
-
-##### distinct(): Builder
-
-Add a distinct clause.
-
-```php
-public function distinct(): Builder
-```
-
-##### join(string $table, string $first, string $operator, string $second): Builder
-
-Add an inner join.
-
-```php
-public function join(string $table, string $first, string $operator, string $second): Builder
-```
-
-##### leftJoin(string $table, string $first, string $operator, string $second): Builder
-
-Add a left join.
-
-```php
-public function leftJoin(string $table, string $first, string $operator, string $second): Builder
-```
-
-##### groupBy(string ...$columns): Builder
-
-Add group by clauses.
-
-```php
-public function groupBy(string ...$columns): Builder
-```
-
-##### having(string $column, string $operator, mixed $value): Builder
-
-Add a having clause.
-
-```php
-public function having(string $column, string $operator, mixed $value): Builder
-```
-
-##### union(Builder $query): Builder
-
-Add a union clause.
-
-```php
-public function union(Builder $query): Builder
-```
-
-#### Execution Methods
-
-##### get(): Collection
-
-Execute the query and return all results.
-
-```php
-public function get(): Collection
-```
-
-##### first(): ?object
-
-Execute the query and return the first result.
-
-```php
-public function first(): ?object
-```
-
-##### firstOrFail(): object
-
-Execute the query and return the first result or fail.
-
-```php
-public function firstOrFail(): object
-```
-
-##### count(): int
-
-Get the count of query results.
-
-```php
-public function count(): int
-```
-
-##### exists(): bool
-
-Determine if any results exist.
-
-```php
-public function exists(): bool
-```
-
-##### max(string $column): mixed
-
-Get the maximum value of a column.
-
-```php
-public function max(string $column): mixed
-```
-
-##### min(string $column): mixed
-
-Get the minimum value of a column.
-
-```php
-public function min(string $column): mixed
-```
-
-##### avg(string $column): mixed
-
-Get the average value of a column.
-
-```php
-public function avg(string $column): mixed
-```
-
-##### sum(string $column): mixed
-
-Get the sum of a column.
-
-```php
-public function sum(string $column): mixed
-```
-
-#### Pagination Methods
-
-##### paginate(int $perPage = 15): LengthAwarePaginator
-
-Paginate the query results.
-
-```php
-public function paginate(int $perPage = 15): LengthAwarePaginator
-```
-
-##### simplePaginate(int $perPage = 15): Paginator
-
-Simple pagination without total count.
-
-```php
-public function simplePaginate(int $perPage = 15): Paginator
-```
-
-##### chunk(int $count, callable $callback): bool
-
-Process results in chunks.
-
-```php
-public function chunk(int $count, callable $callback): bool
-```
-
-### Scope
-
-Base class for query scopes.
-
-#### Class Declaration
-
-```php
-abstract class Scope
-```
-
-#### Abstract Methods
-
-##### apply(Builder $builder): void
-
-Apply the scope to a query builder.
-
-```php
-abstract public function apply(Builder $builder): void
-```
-
-### Relationship Classes
-
-#### HasOne
-
-One-to-one relationship.
-
-```php
-class HasOne extends Relationship
-{
-    public static function make(string $related, string $foreignKey, string $localKey = 'id'): self
-    public function getResults(): ?object
-    public function associate(object $entity): void
-    public function dissociate(): void
-}
-```
-
-#### HasMany
-
-One-to-many relationship.
-
-```php
-class HasMany extends Relationship
-{
-    public static function make(string $related, string $foreignKey, string $localKey = 'id'): self
-    public function getResults(): Collection
-    public function create(array $attributes): object
-    public function save(object $entity): object
-    public function saveMany(array $entities): Collection
-}
-```
-
-#### BelongsTo
-
-Inverse one-to-one or one-to-many relationship.
-
-```php
-class BelongsTo extends Relationship
-{
-    public static function make(string $related, string $foreignKey, string $ownerKey = 'id'): self
-    public function getResults(): ?object
-    public function associate(object $entity): void
-    public function dissociate(): void
-}
-```
-
-#### BelongsToMany
-
-Many-to-many relationship.
-
-```php
-class BelongsToMany extends Relationship
-{
-    public static function make(string $related, string $table, string $foreignPivotKey, string $relatedPivotKey): self
-    public function getResults(): Collection
-    public function attach(mixed $id, array $attributes = []): void
-    public function detach(mixed $ids = null): int
-    public function sync(array $ids): array
-    public function toggle(mixed $ids): array
-}
-```
-
-### EntityCache
-
-Entity caching functionality.
-
-```php
-class EntityCache
-{
-    public function get(string $key): ?object
-    public function put(string $key, object $entity, int $ttl = null): void
-    public function forget(string $key): bool
-    public function flush(): bool
-    public function remember(string $key, int $ttl, callable $callback): mixed
-}
-```
-
-### Factory
-
-Entity factory for testing and seeding.
-
-```php
-abstract class Factory
-{
-    public static function new(): static
-    public function count(int $count): self
-    public function state(array $state): self
-    public function create(array $attributes = []): object|Collection
-    public function make(array $attributes = []): object|Collection
-    public function for(object $parent): self
-    public function afterCreating(callable $callback): self
-    abstract protected function definition(): array
-}
-```
-
-## Configuration Options
-
-### Mapper Configuration
-
-```php
-class UserMapper extends Mapper
-{
-    protected string $table = 'users';
-    protected string $primaryKey = 'id';
-    protected string $connection = 'mysql';
-    protected array $fillable = ['name', 'email'];
-    protected array $hidden = ['password'];
-    protected array $casts = [
-        'email_verified_at' => 'datetime',
-        'active' => 'boolean',
-    ];
-    protected bool $timestamps = true;
-}
-```
-
-### Global Configuration
-
-```php
-// config/holloway.php
-return [
-    'default_connection' => 'mysql',
-    'cache' => [
-        'enabled' => true,
-        'ttl' => 3600,
-        'prefix' => 'holloway:',
-    ],
-    'performance' => [
-        'chunk_size' => 1000,
-        'log_queries' => false,
-    ],
-];
-```
+---
 
 ## Events
 
-### Available Events
+Holloway dispatches string-based events using the Laravel event dispatcher. Events are formatted as:
 
-- `holloway.creating` - Before entity creation
-- `holloway.created` - After entity creation  
-- `holloway.updating` - Before entity update
-- `holloway.updated` - After entity update
-- `holloway.deleting` - Before entity deletion
-- `holloway.deleted` - After entity deletion
-- `holloway.query.executed` - After query execution
-
-### Event Payloads
-
-```php
-// Entity events
-[
-    'entity' => $entity,
-    'mapper' => $mapper,
-    'attributes' => $attributes // for update events
-]
-
-// Query events
-[
-    'sql' => $sql,
-    'bindings' => $bindings,
-    'time' => $executionTime,
-    'mapper' => $mapper
-]
+```
+"eventName: FullyQualifiedEntityClassName"
 ```
 
-## Exceptions
+### Event Names
 
-### Core Exceptions
+| Event | When | Cancellable |
+|-------|------|-------------|
+| `storing` | Before create or update | Yes |
+| `creating` | Before a new entity is inserted | Yes |
+| `created` | After a new entity is inserted | No |
+| `updating` | Before an existing entity is updated | Yes |
+| `updated` | After an existing entity is updated | No |
+| `stored` | After create or update completes | No |
+| `removing` | Before an entity is removed | Yes |
+| `removed` | After an entity is removed | No |
+| `restoring` | Before a soft-deleted entity is restored | Yes |
+| `restored` | After a soft-deleted entity is restored | No |
 
-- `EntityNotFoundException` - Entity not found
-- `RelationshipNotFoundException` - Relationship not defined
-- `InvalidQueryException` - Invalid query construction
-- `CacheException` - Caching operation failed
-- `ConnectionException` - Database connection failed
+### Registering Listeners
 
-### Exception Handling
+Use `registerPersistenceEvent()` on the mapper:
 
 ```php
-try {
-    $user = $userMapper->findOrFail(123);
-} catch (EntityNotFoundException $e) {
-    // Handle not found
-} catch (ConnectionException $e) {
-    // Handle connection error
+class PostMapper extends Mapper
+{
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->registerPersistenceEvent('created', function(Post $post) {
+            Cache::tags(['posts'])->flush();
+        });
+
+        $this->registerPersistenceEvent('removing', function(Post $post) {
+            if ($post->hasActiveOrders()) {
+                return false; // Cancels the remove
+            }
+        });
+    }
 }
 ```
 
-## Constants
+Return `false` from a `storing`, `creating`, `updating`, or `removing` listener to cancel the operation.
 
-### Query Operators
+---
 
-```php
-const OPERATORS = [
-    '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
-    'like', 'like binary', 'not like', 'ilike',
-    '&', '|', '^', '<<', '>>',
-    'rlike', 'not rlike', 'regexp', 'not regexp',
-    '~', '~*', '!~', '!~*', 'similar to',
-    'not similar to', 'not ilike', '~~*', '!~~*',
-];
-```
+## Exceptions
 
-### Cache Keys
+### `Illuminate\Database\Eloquent\ModelNotFoundException`
 
-```php
-const CACHE_KEYS = [
-    'entity' => 'holloway:entity:{class}:{id}',
-    'query' => 'holloway:query:{hash}',
-    'relationship' => 'holloway:rel:{class}:{id}:{relation}',
-];
-```
+Thrown by `findOrFail()` and `firstOrFail()` when no matching entity exists.
 
-This API reference provides comprehensive documentation for all public interfaces in Holloway. Use it as a reference when building applications or contributing to the framework.
+### `CodeSleeve\Holloway\Exceptions\UknownRelationshipException`
+
+Thrown when accessing a relationship that has not been defined in `defineRelations()`.
+
+---
 
 ## Next Steps
 
-- **[Examples](../examples/complete-examples.md)** - Practical usage examples
-- **[Best Practices](../examples/best-practices.md)** - Recommended patterns
+- **[Eager Loading](../relationships/eager-loading.md)** - Optimizing relationship loading
+- **[Query Scopes](../mappers/scopes.md)** - Reusable query constraints
+- **[Events](../advanced/events.md)** - Full event system documentation
+- **[Soft Deletes](../advanced/soft-deletes.md)** - Soft delete behavior

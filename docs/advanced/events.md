@@ -1,742 +1,271 @@
-# Events and Observers
+# Events
 
-Holloway's event system provides a powerful way to decouple your application logic and respond to entity lifecycle events. This enables clean separation of concerns, easier testing, and flexible application architecture.
+Holloway fires string-based events at key points in the entity persistence lifecycle. You can listen to these events to send notifications, clear caches, maintain audit logs, or trigger downstream workflows.
 
 ## Table of Contents
 
-- [Understanding Events](#understanding-events)
-- [Entity Lifecycle Events](#entity-lifecycle-events)
-- [Creating Event Listeners](#creating-event-listeners)
-- [Observer Pattern](#observer-pattern)
-- [Custom Events](#custom-events)
+- [Persistence Event Names](#persistence-event-names)
+- [Registering Listeners](#registering-listeners)
+- [Preventing Operations](#preventing-operations)
+- [Soft Delete Events](#soft-delete-events)
+- [Custom Domain Events](#custom-domain-events)
 - [Event-Driven Architecture](#event-driven-architecture)
-- [Performance Considerations](#performance-considerations)
 - [Best Practices](#best-practices)
 
-## Understanding Events
+## Persistence Event Names
 
-Holloway's event system allows you to hook into various points in the entity lifecycle, enabling you to:
+Events are dispatched as strings in the format `"eventName: FullEntityClassName"`. The following events fire during `store()` and `remove()` operations:
 
-- Send notifications when entities are created/updated
-- Maintain audit logs
-- Clear caches when data changes
-- Trigger business logic workflows
-- Synchronize with external systems
+| Event | When |
+|-------|------|
+| `storing` | Before create or update |
+| `creating` | Before a new entity is inserted |
+| `created` | After a new entity is inserted |
+| `updating` | Before an existing entity is updated |
+| `updated` | After an existing entity is updated |
+| `stored` | After create or update completes |
+| `removing` | Before an entity is removed |
+| `removed` | After an entity is removed |
 
-### Event Flow
+For mappers using the `SoftDeletes` trait, two additional events fire during `restore()`:
 
-```
-Entity Operation → Mapper → Event Dispatcher → Listeners → Side Effects
-```
+| Event | When |
+|-------|------|
+| `restoring` | Before a soft-deleted entity is restored |
+| `restored` | After a soft-deleted entity is restored |
 
-## Entity Lifecycle Events
+## Registering Listeners
 
-Holloway provides several built-in events that fire during entity operations:
-
-### Available Events
-
-```php
-// Before operations (can prevent the operation)
-EntityCreating::class    // Before entity is created
-EntityUpdating::class    // Before entity is updated
-EntityDeleting::class    // Before entity is deleted
-EntitySaving::class      // Before entity is saved (create or update)
-
-// After operations (for side effects)
-EntityCreated::class     // After entity is created
-EntityUpdated::class     // After entity is updated
-EntityDeleted::class     // After entity is deleted
-EntitySaved::class       // After entity is saved (create or update)
-
-// Special events
-EntityRestoring::class   // Before soft deleted entity is restored
-EntityRestored::class    // After soft deleted entity is restored
-```
-
-### Basic Event Listening
-
-Register event listeners in your mapper:
+Use `registerPersistenceEvent()` on the mapper to register a listener for a named event. The callback receives the entity as its only argument.
 
 ```php
-<?php
-
 class PostMapper extends Mapper
 {
-    protected function configure(): void
+    public function __construct()
     {
-        $this->field('id')->primary();
-        $this->field('title');
-        $this->field('content');
-        $this->field('slug');
-        $this->field('published_at');
-        
-        // Register event listeners
-        $this->addEventListener(EntityCreating::class, [$this, 'generateSlug']);
-        $this->addEventListener(EntityCreated::class, [$this, 'sendNotification']);
-        $this->addEventListener(EntityUpdating::class, [$this, 'updateSlugIfNeeded']);
-    }
-    
-    public function generateSlug(EntityCreating $event): void
-    {
-        $post = $event->getEntity();
-        
-        if (empty($post->getSlug())) {
-            $post->setSlug(Str::slug($post->getTitle()));
-        }
-    }
-    
-    public function sendNotification(EntityCreated $event): void
-    {
-        $post = $event->getEntity();
-        
-        if ($post->getPublishedAt()) {
-            event(new PostPublished($post));
-        }
-    }
-    
-    public function updateSlugIfNeeded(EntityUpdating $event): void
-    {
-        $post = $event->getEntity();
-        
-        if ($event->isDirty('title') && !$event->isDirty('slug')) {
-            $post->setSlug(Str::slug($post->getTitle()));
-        }
+        parent::__construct();
+
+        $this->registerPersistenceEvent('created', function(Post $post) {
+            // Runs after a new post is inserted
+            Cache::tags(['posts'])->flush();
+        });
+
+        $this->registerPersistenceEvent('updated', function(Post $post) {
+            Cache::forget("post:{$post->getId()}");
+        });
+
+        $this->registerPersistenceEvent('removed', function(Post $post) {
+            Cache::tags(['posts', "author:{$post->getAuthorId()}"])->flush();
+        });
     }
 }
 ```
 
-## Creating Event Listeners
-
-### Dedicated Event Listeners
-
-Create focused event listeners for complex logic:
+You can also register listeners from a service provider or anywhere after the mapper is resolved from the container:
 
 ```php
-<?php
-
-class PostEventListener
-{
-    public function __construct(
-        private NotificationService $notifications,
-        private CacheManager $cache,
-        private AuditLogger $auditLogger
-    ) {}
-    
-    public function handleCreated(EntityCreated $event): void
-    {
-        if (!$event->getEntity() instanceof Post) {
-            return;
-        }
-        
-        $post = $event->getEntity();
-        
-        // Clear relevant caches
-        $this->cache->tags(['posts', 'author:' . $post->getAuthorId()])->flush();
-        
-        // Log creation
-        $this->auditLogger->log('post.created', [
-            'post_id' => $post->getId(),
-            'title' => $post->getTitle(),
-            'author_id' => $post->getAuthorId()
-        ]);
-        
-        // Send notifications
-        if ($post->isPublished()) {
-            $this->notifications->notifySubscribers($post);
-        }
-    }
-    
-    public function handleUpdated(EntityUpdated $event): void
-    {
-        $post = $event->getEntity();
-        $changes = $event->getChanges();
-        
-        // Handle publication
-        if (isset($changes['published_at']) && $post->isPublished()) {
-            $this->notifications->notifySubscribers($post);
-        }
-        
-        // Clear caches
-        $this->cache->forget("post:{$post->getId()}");
-        
-        // Log significant changes
-        if (isset($changes['title']) || isset($changes['content'])) {
-            $this->auditLogger->log('post.content_updated', [
-                'post_id' => $post->getId(),
-                'changes' => $changes
-            ]);
-        }
-    }
-    
-    public function handleDeleted(EntityDeleted $event): void
-    {
-        $post = $event->getEntity();
-        
-        // Clear all related caches
-        $this->cache->tags(['posts', 'author:' . $post->getAuthorId()])->flush();
-        
-        // Archive related data
-        $this->archiveComments($post);
-        
-        // Log deletion
-        $this->auditLogger->log('post.deleted', [
-            'post_id' => $post->getId(),
-            'title' => $post->getTitle()
-        ]);
-    }
-    
-    private function archiveComments(Post $post): void
-    {
-        // Archive comments logic
-    }
-}
-```
-
-### Register Listeners in Service Provider
-
-```php
-<?php
-
 class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $listener = app(PostEventListener::class);
-        
-        Event::listen(EntityCreated::class, [$listener, 'handleCreated']);
-        Event::listen(EntityUpdated::class, [$listener, 'handleUpdated']);
-        Event::listen(EntityDeleted::class, [$listener, 'handleDeleted']);
+        $postMapper = app(PostMapper::class);
+
+        $postMapper->registerPersistenceEvent('created', function(Post $post) {
+            app(AuditLogger::class)->log('post.created', ['id' => $post->getId()]);
+        });
     }
 }
 ```
 
-## Observer Pattern
+## Preventing Operations
 
-Use observers for a more structured approach to handling entity events:
-
-### Creating an Observer
+Return `false` from a `storing`, `creating`, `updating`, or `removing` listener to abort the operation. The mapper method will return `false`.
 
 ```php
-<?php
+$this->registerPersistenceEvent('removing', function(Post $post) {
+    if ($post->hasActiveOrders()) {
+        return false; // Prevents the remove
+    }
+});
 
-class PostObserver
-{
-    public function __construct(
-        private SlugGenerator $slugGenerator,
-        private NotificationService $notifications,
-        private SearchIndexer $searchIndexer
-    ) {}
-    
-    /**
-     * Handle the Post "creating" event.
-     */
-    public function creating(Post $post): void
-    {
-        // Generate slug if not provided
-        if (empty($post->getSlug())) {
-            $post->setSlug($this->slugGenerator->generate($post->getTitle()));
-        }
-        
-        // Set default values
-        if (!$post->getStatus()) {
-            $post->setStatus('draft');
-        }
-    }
-    
-    /**
-     * Handle the Post "created" event.
-     */
-    public function created(Post $post): void
-    {
-        // Index for search
-        $this->searchIndexer->index($post);
-        
-        // Send notifications if published
-        if ($post->isPublished()) {
-            $this->notifications->notifyAuthorFollowers($post);
-        }
-    }
-    
-    /**
-     * Handle the Post "updating" event.
-     */
-    public function updating(Post $post): void
-    {
-        // Update slug if title changed
-        if ($post->isDirty('title') && !$post->isDirty('slug')) {
-            $post->setSlug($this->slugGenerator->generate($post->getTitle()));
-        }
-    }
-    
-    /**
-     * Handle the Post "updated" event.
-     */
-    public function updated(Post $post): void
-    {
-        // Update search index
-        $this->searchIndexer->update($post);
-        
-        // Handle publication status change
-        if ($post->wasChanged('published_at')) {
-            if ($post->isPublished()) {
-                $this->notifications->notifySubscribers($post);
-            }
-        }
-    }
-    
-    /**
-     * Handle the Post "deleting" event.
-     */
-    public function deleting(Post $post): bool
-    {
-        // Prevent deletion if post has active orders (example business rule)
-        if ($post->hasActiveOrders()) {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * Handle the Post "deleted" event.
-     */
-    public function deleted(Post $post): void
-    {
-        // Remove from search index
-        $this->searchIndexer->remove($post);
-        
-        // Archive related data
-        $this->archiveRelatedData($post);
-    }
-    
-    /**
-     * Handle the Post "restored" event.
-     */
-    public function restored(Post $post): void
-    {
-        // Re-index for search
-        $this->searchIndexer->index($post);
-        
-        // Restore related data
-        $this->restoreRelatedData($post);
-    }
-    
-    private function archiveRelatedData(Post $post): void
-    {
-        // Implementation for archiving related data
-    }
-    
-    private function restoreRelatedData(Post $post): void
-    {
-        // Implementation for restoring related data
-    }
+// In calling code
+if (!$postMapper->remove($post)) {
+    // Removal was prevented
 }
 ```
 
-### Registering Observers
+Returning `false` from `stored`, `created`, `updated`, or `removed` has no effect — the operation has already completed.
+
+## Soft Delete Events
+
+Mappers using `SoftDeletes` fire `restoring` and `restored` around calls to `restore()`. You can cancel a restore by returning `false` from a `restoring` listener.
 
 ```php
-<?php
-
-class PostMapper extends Mapper
-{
-    protected function configure(): void
-    {
-        $this->field('id')->primary();
-        $this->field('title');
-        $this->field('content');
-        $this->field('slug');
-        $this->field('status');
-        $this->field('published_at');
-        
-        // Register observer
-        $this->observe(PostObserver::class);
+$this->registerPersistenceEvent('restoring', function(Post $post) {
+    if (!$post->isEligibleForRestore()) {
+        return false;
     }
-}
+});
+
+$this->registerPersistenceEvent('restored', function(Post $post) {
+    Cache::forget("post:{$post->getId()}");
+});
 ```
 
-## Custom Events
+## Custom Domain Events
 
-Create domain-specific events for better semantics:
-
-### Defining Custom Events
+For domain-level events — things that happen within your application logic, not just at the persistence layer — define and dispatch your own event classes. This is a Laravel pattern that Holloway doesn't need to know about.
 
 ```php
-<?php
-
+// Define your event
 class PostPublished
 {
     public function __construct(
         public readonly Post $post,
-        public readonly \DateTimeInterface $publishedAt
+        public readonly \DateTimeInterface $publishedAt,
     ) {}
 }
 
-class PostFeatured
-{
-    public function __construct(
-        public readonly Post $post,
-        public readonly User $featuredBy
-    ) {}
-}
-
-class PostViewCountReached
-{
-    public function __construct(
-        public readonly Post $post,
-        public readonly int $milestone
-    ) {}
-}
-```
-
-### Dispatching Custom Events
-
-```php
-<?php
-
+// Dispatch from your service layer
 class PostService
 {
     public function publish(Post $post): void
     {
         $post->setPublishedAt(now());
         $post->setStatus('published');
-        
-        $this->postMapper->save($post);
-        
-        // Dispatch custom event
+
+        $this->postMapper->store($post);
+
         event(new PostPublished($post, $post->getPublishedAt()));
     }
-    
-    public function feature(Post $post, User $user): void
-    {
-        $post->setFeatured(true);
-        $post->setFeaturedAt(now());
-        $post->setFeaturedBy($user->getId());
-        
-        $this->postMapper->save($post);
-        
-        event(new PostFeatured($post, $user));
-    }
-    
-    public function incrementViewCount(Post $post): void
-    {
-        $newCount = $post->incrementViewCount();
-        $this->postMapper->save($post);
-        
-        // Check for milestones
-        $milestones = [100, 1000, 10000, 100000];
-        
-        foreach ($milestones as $milestone) {
-            if ($newCount === $milestone) {
-                event(new PostViewCountReached($post, $milestone));
-                break;
-            }
-        }
-    }
 }
+
+// Listen in your service provider
+Event::listen(PostPublished::class, function(PostPublished $event) {
+    app(SearchIndexer::class)->index($event->post);
+    app(NotificationService::class)->notifySubscribers($event->post);
+});
 ```
 
-### Listening to Custom Events
-
-```php
-<?php
-
-class PostMetricsListener
-{
-    public function handlePublished(PostPublished $event): void
-    {
-        // Update author statistics
-        $this->updateAuthorStats($event->post);
-        
-        // Send to analytics
-        $this->analytics->track('post.published', [
-            'post_id' => $event->post->getId(),
-            'author_id' => $event->post->getAuthorId(),
-            'published_at' => $event->publishedAt->toISOString()
-        ]);
-    }
-    
-    public function handleFeatured(PostFeatured $event): void
-    {
-        // Notify author
-        $this->notifications->send($event->post->getAuthor(), new PostFeaturedNotification($event->post));
-        
-        // Update featured posts cache
-        $this->cache->forget('featured_posts');
-    }
-    
-    public function handleViewMilestone(PostViewCountReached $event): void
-    {
-        // Award badges
-        $this->badgeService->awardViewMilestone($event->post->getAuthor(), $event->milestone);
-        
-        // Send congratulations
-        $this->notifications->send(
-            $event->post->getAuthor(),
-            new ViewMilestoneNotification($event->post, $event->milestone)
-        );
-    }
-    
-    private function updateAuthorStats(Post $post): void
-    {
-        // Update author's published post count
-        $author = $post->getAuthor();
-        $author->incrementPublishedPostCount();
-        $this->userMapper->save($author);
-    }
-}
-```
+This keeps domain logic in your service/entity layer and decoupled from the mapper.
 
 ## Event-Driven Architecture
 
-### Saga Pattern Implementation
+For complex workflows that span multiple services, a saga or process manager pattern works well alongside custom events:
 
 ```php
-<?php
-
 class OrderProcessingSaga
 {
     public function __construct(
         private OrderMapper $orderMapper,
         private InventoryService $inventory,
         private PaymentService $payment,
-        private ShippingService $shipping
+        private ShippingService $shipping,
     ) {}
-    
+
     public function handleOrderCreated(OrderCreated $event): void
     {
         $order = $event->order;
-        
+
         try {
-            // Step 1: Reserve inventory
             $this->inventory->reserve($order);
             $order->setStatus('inventory_reserved');
-            $this->orderMapper->save($order);
-            
+            $this->orderMapper->store($order);
+
             event(new OrderInventoryReserved($order));
-            
+
         } catch (InsufficientInventoryException $e) {
             $order->setStatus('failed_inventory');
-            $this->orderMapper->save($order);
-            
+            $this->orderMapper->store($order);
+
             event(new OrderProcessingFailed($order, 'insufficient_inventory'));
         }
     }
-    
+
     public function handleInventoryReserved(OrderInventoryReserved $event): void
     {
         $order = $event->order;
-        
+
         try {
-            // Step 2: Process payment
             $this->payment->charge($order);
             $order->setStatus('payment_processed');
-            $this->orderMapper->save($order);
-            
+            $this->orderMapper->store($order);
+
             event(new OrderPaymentProcessed($order));
-            
+
         } catch (PaymentFailedException $e) {
-            // Compensate: Release reserved inventory
             $this->inventory->release($order);
-            
             $order->setStatus('failed_payment');
-            $this->orderMapper->save($order);
-            
+            $this->orderMapper->store($order);
+
             event(new OrderProcessingFailed($order, 'payment_failed'));
         }
-    }
-    
-    public function handlePaymentProcessed(OrderPaymentProcessed $event): void
-    {
-        $order = $event->order;
-        
-        try {
-            // Step 3: Arrange shipping
-            $this->shipping->schedule($order);
-            $order->setStatus('shipped');
-            $this->orderMapper->save($order);
-            
-            event(new OrderShipped($order));
-            
-        } catch (ShippingException $e) {
-            // Compensate: Refund payment and release inventory
-            $this->payment->refund($order);
-            $this->inventory->release($order);
-            
-            $order->setStatus('failed_shipping');
-            $this->orderMapper->save($order);
-            
-            event(new OrderProcessingFailed($order, 'shipping_failed'));
-        }
-    }
-}
-```
-
-## Performance Considerations
-
-### Asynchronous Event Processing
-
-```php
-<?php
-
-class AsyncEventListener
-{
-    public function __construct(private QueueManager $queue) {}
-    
-    public function handleEntityCreated(EntityCreated $event): void
-    {
-        // Process immediately for critical operations
-        $this->updateCache($event);
-        
-        // Queue time-consuming operations
-        $this->queue->push(new SendNotificationsJob($event));
-        $this->queue->push(new UpdateSearchIndexJob($event));
-        $this->queue->push(new UpdateAnalyticsJob($event));
-    }
-    
-    private function updateCache(EntityCreated $event): void
-    {
-        // Fast cache update
-        Cache::forget("entity:{$event->getEntity()->getId()}");
-    }
-}
-```
-
-### Event Filtering
-
-```php
-<?php
-
-class ConditionalEventListener
-{
-    public function handleEntityUpdated(EntityUpdated $event): void
-    {
-        $entity = $event->getEntity();
-        $changes = $event->getChanges();
-        
-        // Only process significant changes
-        $significantFields = ['title', 'content', 'status', 'published_at'];
-        
-        if (!array_intersect(array_keys($changes), $significantFields)) {
-            return; // Skip processing for minor changes
-        }
-        
-        $this->processSignificantUpdate($entity, $changes);
-    }
-    
-    private function processSignificantUpdate($entity, array $changes): void
-    {
-        // Process only significant updates
     }
 }
 ```
 
 ## Best Practices
 
-### 1. Keep Event Listeners Focused
+### Keep listeners focused
 
 ```php
-// Good: Single responsibility
-class PostCacheListener
-{
-    public function handleUpdated(EntityUpdated $event): void
-    {
-        if ($event->getEntity() instanceof Post) {
-            $this->clearPostCaches($event->getEntity());
-        }
-    }
-}
+// Good: one responsibility per listener
+$this->registerPersistenceEvent('created', function(Post $post) {
+    Cache::tags(['posts'])->flush();
+});
 
-// Good: Separate concerns
-class PostNotificationListener
-{
-    public function handleCreated(EntityCreated $event): void
-    {
-        if ($event->getEntity() instanceof Post) {
-            $this->sendNotifications($event->getEntity());
-        }
-    }
-}
+$this->registerPersistenceEvent('created', function(Post $post) {
+    app(AuditLogger::class)->log('post.created', ['id' => $post->getId()]);
+});
 ```
 
-### 2. Use Dependency Injection
+### Queue slow work
+
+Persistence event listeners run synchronously inside the `store()` / `remove()` call. Keep them fast — queue anything that can wait.
 
 ```php
-class PostEventListener
-{
-    public function __construct(
-        private NotificationService $notifications,
-        private CacheManager $cache,
-        private Logger $logger
-    ) {}
-    
-    // Event handling methods...
-}
+$this->registerPersistenceEvent('created', function(Post $post) {
+    // Fast: clear cache inline
+    Cache::forget("post:{$post->getId()}");
+
+    // Slow: queue for background processing
+    dispatch(new UpdateSearchIndexJob($post->getId()));
+    dispatch(new SendPublicationNotificationsJob($post->getId()));
+});
 ```
 
-### 3. Handle Failures Gracefully
+### Handle failures gracefully
+
+A listener that throws an exception will bubble up and abort the persistence call. Wrap side effects that shouldn't block persistence.
 
 ```php
-class RobustEventListener
-{
-    public function handleEntityCreated(EntityCreated $event): void
-    {
-        try {
-            $this->updateSearchIndex($event->getEntity());
-        } catch (SearchIndexException $e) {
-            // Log error but don't break the main flow
-            $this->logger->error('Failed to update search index', [
-                'entity_id' => $event->getEntity()->getId(),
-                'error' => $e->getMessage()
-            ]);
-            
-            // Queue for retry
-            $this->queue->push(new RetrySearchIndexJob($event->getEntity()));
-        }
+$this->registerPersistenceEvent('created', function(Post $post) {
+    try {
+        app(SearchIndexer::class)->index($post);
+    } catch (SearchIndexException $e) {
+        logger()->error('Search index failed', ['post_id' => $post->getId()]);
+        dispatch(new RetrySearchIndexJob($post->getId()));
     }
-}
+});
 ```
 
-### 4. Test Event Listeners
+### Use domain events for business logic
+
+Mapper persistence events are for infrastructure concerns (caching, logging, syncing). Business logic — state transitions, notifications tied to domain rules — belongs in domain events dispatched from your service layer.
 
 ```php
-class PostEventListenerTest extends TestCase
+// Infrastructure concern: belongs in persistence event
+$this->registerPersistenceEvent('removed', fn($post) => Cache::forget("post:{$post->getId()}"));
+
+// Business concern: belongs in service layer as a domain event
+class PostService
 {
-    public function test_created_event_sends_notification(): void
+    public function archive(Post $post): void
     {
-        $notification = Mockery::mock(NotificationService::class);
-        $notification->shouldReceive('notifySubscribers')->once();
-        
-        $listener = new PostEventListener($notification, $this->cache, $this->logger);
-        
-        $post = new Post();
-        $post->setPublished(true);
-        
-        $event = new EntityCreated($post);
-        $listener->handleCreated($event);
+        $post->archive();
+        $this->postMapper->store($post);
+
+        event(new PostArchived($post)); // domain event, not persistence event
     }
 }
 ```
-
-### 5. Document Event Contracts
-
-```php
-/**
- * Fired when a post is published for the first time
- * 
- * Listeners should handle:
- * - Notifying subscribers
- * - Updating search index
- * - Recording analytics
- * - Awarding author badges
- */
-class PostPublished
-{
-    public function __construct(
-        public readonly Post $post,
-        public readonly \DateTimeInterface $publishedAt
-    ) {}
-}
-```
-
-Events and observers provide a powerful way to build loosely coupled, maintainable applications. By leveraging Holloway's event system, you can create clean, testable code that responds appropriately to changes in your domain entities.

@@ -9,6 +9,7 @@ Eager loading is a crucial performance optimization technique in Holloway that a
 - [Nested Eager Loading](#nested-eager-loading)
 - [Conditional Eager Loading](#conditional-eager-loading)
 - [Custom Eager Loading](#custom-eager-loading)
+- [Counting Relationships](#counting-relationships)
 - [Performance Considerations](#performance-considerations)
 - [Best Practices](#best-practices)
 
@@ -181,6 +182,214 @@ $posts = $postMapper->withPopularComments()->get();
 $activePosts = $postMapper->withRecentActivity()->get();
 ```
 
+## Counting Relationships
+
+The `withCount()` method allows you to count related records without loading them, which is significantly more efficient when you only need counts rather than the full data.
+
+### Basic Counting
+
+```php
+// Count a single relationship
+$users = $userMapper->withCount('posts')->get();
+
+foreach ($users as $user) {
+    echo "{$user->name} has {$user->posts_count} posts";
+}
+```
+
+The count is added as an attribute on the entity using the relationship name in snake_case with a `_count` suffix.
+
+### Multiple Counts
+
+Count multiple relationships in a single query:
+
+```php
+$users = $userMapper->withCount(['posts', 'comments', 'likes'])->get();
+
+foreach ($users as $user) {
+    echo "Posts: {$user->posts_count}, ";
+    echo "Comments: {$user->comments_count}, ";
+    echo "Likes: {$user->likes_count}";
+}
+```
+
+### Counting with Constraints
+
+Apply conditions to count queries:
+
+```php
+// Count only published posts
+$users = $userMapper->withCount([
+    'posts' => function($query) {
+        $query->where('published', true);
+    }
+])->get();
+
+echo $users->first()->posts_count; // Only counts published posts
+```
+
+### Multiple Counts with Different Constraints
+
+Use aliasing to count the same relationship with different conditions:
+
+```php
+$users = $userMapper->withCount([
+    'posts',
+    'posts as published_posts' => function($query) {
+        $query->where('published', true);
+    },
+    'posts as draft_posts' => function($query) {
+        $query->where('published', false);
+    }
+])->get();
+
+foreach ($users as $user) {
+    echo "Total: {$user->posts_count}, ";
+    echo "Published: {$user->published_posts}, ";
+    echo "Drafts: {$user->draft_posts}";
+}
+```
+
+### Custom Count Aliases
+
+Customize the count column name using the `as` syntax:
+
+```php
+$posts = $postMapper->withCount('comments as total_comments')->get();
+
+echo $posts->first()->total_comments; // Uses custom alias
+```
+
+### Counting All Relationship Types
+
+`withCount()` works with all standard relationship types:
+
+```php
+// HasMany relationships
+$users = $userMapper->withCount('posts')->get();
+echo $users->first()->posts_count;
+
+// HasOne relationships
+$users = $userMapper->withCount('profile')->get();
+echo $users->first()->profile_count; // 1 or 0
+
+// BelongsTo relationships
+$posts = $postMapper->withCount('author')->get();
+echo $posts->first()->author_count; // Always 1 if exists
+
+// BelongsToMany relationships
+$users = $userMapper->withCount('roles')->get();
+echo $users->first()->roles_count;
+```
+
+### Combining Counts with Eager Loading
+
+You can combine `withCount()` with `with()` to both count and load relationships:
+
+```php
+$users = $userMapper
+    ->withCount('posts')
+    ->with(['posts' => function($query) {
+        $query->latest()->limit(5);
+    }])
+    ->get();
+
+foreach ($users as $user) {
+    echo "Total posts: {$user->posts_count}";
+    echo "Latest 5 posts:";
+    foreach ($user->posts as $post) {
+        echo $post->title;
+    }
+}
+```
+
+The count includes all posts, but only the 5 latest are actually loaded.
+
+### Scopes and Global Scopes
+
+Global scopes (like `SoftDeletes`) are automatically applied to count queries:
+
+```php
+// Soft deleted comments are excluded from count automatically
+$posts = $postMapper->withCount('comments')->get();
+echo $posts->first()->comments_count; // Only non-deleted comments
+```
+
+### Custom Relationship Counts
+
+Custom relationships can support `withCount()` by providing a count closure:
+
+```php
+class UserMapper extends Mapper
+{
+    public function defineRelations(): void
+    {
+        $this->custom(
+            'activeOrders',
+            function($query, Collection $users) {
+                return $query->from('orders')
+                    ->where('status', 'active')
+                    ->whereIn('user_id', $users->pluck('id'))
+                    ->get();
+            },
+            fn(stdClass $user, stdClass $order) => $user->id === $order->user_id,
+            Order::class,
+            false,
+            function($query, string $parentTable, string $parentKey) {
+                return $query
+                    ->selectRaw('count(*)')
+                    ->from('orders')
+                    ->where('status', 'active')
+                    ->whereColumn('user_id', '=', "$parentTable.$parentKey");
+            }
+        );
+    }
+}
+
+// Now you can count the custom relationship
+$users = $userMapper->withCount('activeOrders')->get();
+echo $users->first()->active_orders_count;
+```
+
+### Performance Benefits
+
+Using `withCount()` is significantly more efficient than loading relationships just to count them:
+
+```php
+// Efficient: Only counts, doesn't load data
+$users = $userMapper->withCount('posts')->get();
+echo $users->first()->posts_count;
+
+// Inefficient: Loads all posts just to count them
+$users = $userMapper->with('posts')->get();
+echo count($users->first()->posts); // Loaded unnecessary data
+```
+
+### Limitations
+
+- **Nested counts not supported**: You cannot use dot notation with `withCount()` (e.g., `withCount('posts.comments')` is not supported)
+- **Custom relationships require count closure**: Custom relationships must provide a count closure to support `withCount()`
+
+```php
+// Not supported
+$users = $userMapper->withCount('posts.comments')->get(); // Won't work
+
+// Instead, count at each level
+$users = $userMapper
+    ->withCount('posts')
+    ->with(['posts' => function($query) {
+        $query->withCount('comments');
+    }])
+    ->get();
+
+foreach ($users as $user) {
+    echo "User posts: {$user->posts_count}";
+    foreach ($user->posts as $post) {
+        echo "Post comments: {$post->comments_count}";
+    }
+}
+```
+
 ## Performance Considerations
 
 ### Selectivity in Eager Loading
@@ -224,73 +433,6 @@ $postMapper
             processPost($post);
         }
     });
-```
-
-## Lazy Eager Loading
-
-Load relationships after the initial query when needed:
-
-```php
-$posts = $postMapper->all();
-
-// Later, load relationships when needed
-$posts->load('author');
-$posts->load(['comments', 'tags']);
-
-// With constraints
-$posts->load(['comments' => function($query) {
-    $query->where('status', 'approved');
-}]);
-```
-
-### Conditional Lazy Loading
-
-```php
-$posts = $postMapper->all();
-
-if ($needsComments) {
-    $posts->load('comments.author');
-}
-```
-
-## Query Optimization Patterns
-
-### Relationship Existence Queries
-
-Check if relationships exist without loading them:
-
-```php
-// Posts that have comments
-$postsWithComments = $postMapper
-    ->has('comments')
-    ->get();
-
-// Posts with at least 5 approved comments
-$popularPosts = $postMapper
-    ->has('comments', '>=', 5, function($query) {
-        $query->where('status', 'approved');
-    })
-    ->get();
-```
-
-### Counting Related Records
-
-```php
-// Load posts with comment counts
-$posts = $postMapper
-    ->withCount('comments')
-    ->get();
-
-foreach ($posts as $post) {
-    echo "Post has {$post->comments_count} comments";
-}
-
-// With constraints
-$posts = $postMapper
-    ->withCount(['comments' => function($query) {
-        $query->where('status', 'approved');
-    }])
-    ->get();
 ```
 
 ## Best Practices
@@ -358,21 +500,6 @@ CREATE INDEX idx_post_tags_post_id ON post_tags(post_id);
 CREATE INDEX idx_post_tags_tag_id ON post_tags(tag_id);
 ```
 
-### 5. Consider Caching for Expensive Relationships
-
-```php
-class PostMapper extends Mapper
-{
-    public function withCachedStats()
-    {
-        return $this->with(['stats' => function($query) {
-            // Cache expensive calculated relationships
-            $query->remember(3600); // Cache for 1 hour
-        }]);
-    }
-}
-```
-
 ## Debugging Eager Loading
 
 ### Query Analysis
@@ -384,19 +511,6 @@ DB::listen(function($query) {
 });
 
 $posts = $postMapper->with('author')->get();
-```
-
-### Relationship Loading Status
-
-```php
-// Check if a relationship is loaded
-$post = $postMapper->find(1);
-
-if ($post->relationLoaded('author')) {
-    echo "Author is already loaded";
-} else {
-    echo "Author not loaded yet";
-}
 ```
 
 ### Memory Usage Monitoring
