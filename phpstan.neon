@@ -1,0 +1,54 @@
+includes:
+    - phpstan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+        - phpstan/Extension
+
+    ignoreErrors:
+        # removeEntity() accesses $isForceDeleting and getQualifiedDeletedAtColumn() which
+        # are injected at runtime by the SoftDeletes trait. PHPStan cannot see these on the
+        # abstract Mapper type even though they exist on any mapper that uses the trait.
+        - identifier: property.notFound
+          path: src/Mapper.php
+          message: '#isForceDeleting#'
+        - identifier: method.notFound
+          path: src/Mapper.php
+          message: '#getQualifiedDeletedAtColumn#'
+
+        # SoftDeletingScope calls withTrashed() on Builder, which is added by the SoftDeletes
+        # trait. The scope is only ever applied to builders whose mapper uses SoftDeletes.
+        - identifier: method.notFound
+          path: src/SoftDeletingScope.php
+
+        # SoftDeletingScope's argument.type mismatch: it passes a QueryBuilder as scope
+        # identifier — intentional internal behaviour for scope removal.
+        - identifier: argument.type
+          path: src/SoftDeletingScope.php
+
+        # Helpers.php uses the Laravel app() global helper which is not available outside
+        # a full Laravel bootstrap. Suppress for the library-only analysis target.
+        - identifier: function.notFound
+          path: src/Helpers.php
+
+        # The @param annotation in Helpers.php uses a legacy non-PHPDoc "dynamic" syntax.
+        - identifier: phpDoc.parseError
+          path: src/Helpers.php
+
+        # Factory.php wraps laravel/legacy-factories which has its own type issues
+        # unrelated to Holloway's mapper/builder functionality.
+        - path: src/Factory.php
+          messages:
+              - '#.+#'
+
+        # SoftDeletes trait is analysed in context of the concrete mappers that use it;
+        # PHPStan reports it as unused when scanning src/ alone.
+        - identifier: trait.unused
+          path: src/SoftDeletes.php
+
+        # Tree.php uses a typed array that PHPStan narrows to {} in one branch; the
+        # array_key_exists check is still correct at runtime.
+        - identifier: function.impossibleType
+          path: src/Relationships/Tree.php

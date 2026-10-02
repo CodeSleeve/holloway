@@ -1,0 +1,37 @@
+# Holloway PHPStan Extension
+#
+# Include this file in your project's phpstan.neon to get typed return
+# values from Holloway mappers without any annotations on your mapper or
+# entity classes.
+#
+# Example:
+#
+#   includes:
+#     - vendor/codesleeve/holloway/phpstan/extension.neon
+#
+# How it works:
+#   MapperReturnTypeExtension reads the $entityClassName default property
+#   value from each concrete mapper class via PHP reflection and returns
+#   properly typed results — e.g. Pup|null for find(), Collection<int, Pup>
+#   for get(), Builder<Pup> for where() / newQuery() / with(), etc.
+#
+#   GetMapperReturnTypeExtension makes Holloway::getMapper(Pup::class) return
+#   Mapper<Pup> so the type chain holds when going through the registry.
+#
+# Level compatibility:
+#   Levels 1–5: no annotations required on concrete mapper or entity classes.
+#   Level 6+: PHPStan enforces missingType.generics, so concrete mappers will
+#   need "@extends Mapper<Entity>" in their class-level docblock. The extension
+#   still provides typed returns; the annotation only satisfies the strictness
+#   check.
+
+services:
+    -
+        class: CodeSleeve\Holloway\PhpStan\Extension\GetMapperReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    -
+        class: CodeSleeve\Holloway\PhpStan\Extension\MapperReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
