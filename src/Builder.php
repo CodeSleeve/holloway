@@ -14,6 +14,70 @@ use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
 use Illuminate\Support\{Collection, Str};
 use Illuminate\Database\Concerns\BuildsQueries;
 
+/**
+ * @template TEntity
+ *
+ * QueryBuilder pass-through methods that return $this via __call.
+ * Annotated here so PHPStan preserves Builder<TEntity> through chains
+ * like ->orderBy()->where()->get().
+ *
+ * @method Builder<TEntity> select(array|string ...$columns)
+ * @method Builder<TEntity> selectRaw(string $expression, array $bindings = [])
+ * @method Builder<TEntity> addSelect(array|string $column)
+ * @method Builder<TEntity> distinct()
+ * @method Builder<TEntity> join(string $table, \Closure|string $first, string|null $operator = null, string|null $second = null, string $type = 'inner', bool $where = false)
+ * @method Builder<TEntity> leftJoin(string $table, \Closure|string $first, string|null $operator = null, string|null $second = null)
+ * @method Builder<TEntity> rightJoin(string $table, \Closure|string $first, string|null $operator = null, string|null $second = null)
+ * @method Builder<TEntity> crossJoin(string $table, \Closure|string|null $first = null, string|null $operator = null, string|null $second = null)
+ * @method Builder<TEntity> joinWhere(string $table, string $first, string $operator, string $second, string $type = 'inner')
+ * @method Builder<TEntity> leftJoinWhere(string $table, string $first, string $operator, string $second)
+ * @method Builder<TEntity> rightJoinWhere(string $table, string $first, string $operator, string $second)
+ * @method Builder<TEntity> whereRaw(string $sql, mixed $bindings = [], string $boolean = 'and')
+ * @method Builder<TEntity> orWhereRaw(string $sql, mixed $bindings = [])
+ * @method Builder<TEntity> whereIn(string $column, mixed $values, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> orWhereIn(string $column, mixed $values)
+ * @method Builder<TEntity> whereNotIn(string $column, mixed $values, string $boolean = 'and')
+ * @method Builder<TEntity> orWhereNotIn(string $column, mixed $values)
+ * @method Builder<TEntity> whereNull(string|array $columns, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> orWhereNull(string $column)
+ * @method Builder<TEntity> whereNotNull(string|array $columns, string $boolean = 'and')
+ * @method Builder<TEntity> orWhereNotNull(string $column)
+ * @method Builder<TEntity> whereBetween(string $column, array $values, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> orWhereBetween(string $column, array $values)
+ * @method Builder<TEntity> whereNotBetween(string $column, array $values, string $boolean = 'and')
+ * @method Builder<TEntity> orWhereNotBetween(string $column, array $values)
+ * @method Builder<TEntity> whereDate(string $column, string $operator, \DateTimeInterface|string|null $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> orWhereDate(string $column, string $operator, \DateTimeInterface|string|null $value = null)
+ * @method Builder<TEntity> whereYear(string $column, string $operator, \DateTimeInterface|string|int|null $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> whereMonth(string $column, string $operator, \DateTimeInterface|string|int|null $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> whereDay(string $column, string $operator, \DateTimeInterface|string|int|null $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> whereTime(string $column, string $operator, \DateTimeInterface|string|null $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> whereColumn(string|array $first, string|null $operator = null, string|null $second = null, string $boolean = 'and')
+ * @method Builder<TEntity> orWhereColumn(string|array $first, string|null $operator = null, string|null $second = null)
+ * @method Builder<TEntity> groupBy(string ...$groups)
+ * @method Builder<TEntity> groupByRaw(string $sql, array $bindings = [])
+ * @method Builder<TEntity> having(string $column, string|null $operator = null, string|null $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> orHaving(string $column, string|null $operator = null, string|null $value = null)
+ * @method Builder<TEntity> havingRaw(string $sql, array $bindings = [], string $boolean = 'and')
+ * @method Builder<TEntity> orHavingRaw(string $sql, array $bindings = [])
+ * @method Builder<TEntity> havingBetween(string $column, array $values, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> orderBy(string $column, string $direction = 'asc')
+ * @method Builder<TEntity> orderByDesc(string $column)
+ * @method Builder<TEntity> orderByRaw(string $sql, array $bindings = [])
+ * @method Builder<TEntity> reorder(string|null $column = null, string $direction = 'asc')
+ * @method Builder<TEntity> take(int $value)
+ * @method Builder<TEntity> limit(int $value)
+ * @method Builder<TEntity> skip(int $value)
+ * @method Builder<TEntity> offset(int $value)
+ * @method Builder<TEntity> forPage(int $page, int $perPage = 15)
+ * @method Builder<TEntity> forPageBeforeId(int $perPage = 15, int|null $lastId = 0, string $column = 'id')
+ * @method Builder<TEntity> forPageAfterId(int $perPage = 15, int|null $lastId = 0, string $column = 'id')
+ * @method Builder<TEntity> union(\Illuminate\Database\Query\Builder|\Closure $query, bool $all = false)
+ * @method Builder<TEntity> unionAll(\Illuminate\Database\Query\Builder|\Closure $query)
+ * @method Builder<TEntity> lock(string|bool $value = true)
+ * @method Builder<TEntity> lockForUpdate()
+ * @method Builder<TEntity> sharedLock()
+ */
 class Builder
 {
     use BuildsQueries;
@@ -25,6 +89,8 @@ class Builder
 
     /**
      * The mapper for this builder.
+     *
+     * @var Mapper<TEntity>|null
      */
     protected ?Mapper $mapper = null;
 
@@ -43,12 +109,7 @@ class Builder
      */
     protected array $localMacros = [];
 
-    /**
-     * A replacement for the typical delete function.
-     *
-     * @var \Closure
-     */
-    protected $onDelete;
+    protected ?\Closure $onDelete = null;
 
     /**
      * The methods that should be returned from query builder.
@@ -148,7 +209,7 @@ class Builder
     }
 
     /**
-     * @return Mapper
+     * @return Mapper<TEntity>
      */
     public function getMapper() : Mapper
     {
@@ -156,8 +217,8 @@ class Builder
     }
 
     /**
-     *  @param  Mapper $mapper
-     *  @return Builder
+     *  @param  Mapper<TEntity>  $mapper
+     *  @return Builder<TEntity>
      */
     public function setMapper(Mapper $mapper) : Builder
     {
@@ -170,7 +231,7 @@ class Builder
 
     /**
      * @param  mixed  $id
-     * @return mixed
+     * @return ($id is array ? Collection<int, TEntity> : TEntity|null)
      */
     public function find($id)
     {
@@ -184,7 +245,7 @@ class Builder
     /**
      * @param  mixed $id
      * @throws ModelNotFoundException
-     * @return mixed
+     * @return TEntity
      */
     public function findOrFail($id)
     {
@@ -199,7 +260,7 @@ class Builder
 
     /**
      * @throws ModelNotFoundException
-     * @return mixed
+     * @return TEntity
      */
     public function firstOrFail()
     {
@@ -214,7 +275,7 @@ class Builder
 
     /**
      * @param  array  $ids
-     * @return \Illuminate\Support\Collection
+     * @return Collection<int, TEntity>
      */
     public function findMany($ids) : Collection
     {
@@ -228,7 +289,7 @@ class Builder
     /**
      * Execute the query and get the first result.
      *
-     * @return mixed|null
+     * @return TEntity|null
      */
     public function first()
     {
@@ -239,7 +300,7 @@ class Builder
      * Add a where clause on the primary key to the query.
      *
      * @param  mixed  $id
-     * @return Builder
+     * @return Builder<TEntity>
      */
     public function whereKey($id) : Builder
     {
@@ -259,9 +320,9 @@ class Builder
      * @param  string  $operator
      * @param  mixed   $value
      * @param  string  $boolean
-     * @return Builder
+     * @return Builder<TEntity>
      */
-    public function where($column, string $operator = null, $value = null, string $boolean = 'and') : self
+    public function where($column, ?string $operator = null, $value = null, string $boolean = 'and') : self
     {
         if ($column instanceof Closure) {
             $query = $this->mapper->newQueryWithoutScopes();
@@ -282,15 +343,17 @@ class Builder
      * @param  string|\Closure  $column
      * @param  string           $operator
      * @param  mixed            $value
-     * @return Builder
+     * @return Builder<TEntity>
      */
-    public function orWhere($column, string $operator = null, $value = null) : self
+    public function orWhere($column, ?string $operator = null, $value = null) : self
     {
         return $this->where($column, $operator, $value, 'or');
     }
 
     /**
      * Execute the query as a "select" statement.
+     *
+     * @return Collection<int, TEntity>
      */
     public function get() : Collection
     {
@@ -330,7 +393,7 @@ class Builder
     /**
      * Apply any global scopes to the Holloway builder instance and return it.
      *
-     * @return Builder
+     * @return Builder<TEntity>
      */
     public function applyScopes() : Builder
     {
@@ -470,6 +533,8 @@ class Builder
      * Set the relations that should be eager loaded.
      * Here, all we're really doing is passing these through to this
      * query's tree so that they'll be loaded when we tell our tree to render.
+     *
+     * @return Builder<TEntity>
      */
     public function with(mixed $relations) : self
     {
@@ -481,6 +546,8 @@ class Builder
 
     /**
      * Prevent the specified relations from being eager loaded.
+     *
+     * @return Builder<TEntity>
      */
     public function without(mixed $relations) : self
     {
@@ -493,7 +560,7 @@ class Builder
      * Add subselect queries to count the relations.
      *
      * @param  mixed  $relations
-     * @return self
+     * @return Builder<TEntity>
      */
     public function withCount(mixed $relations) : self
     {
@@ -691,7 +758,7 @@ class Builder
      * @param  array  $columns
      * @param  string  $pageName
      * @param  int|null  $page
-     * @return LengthAwarePaginatorContract
+     * @return LengthAwarePaginatorContract<int, TEntity>
      *
      * @throws \InvalidArgumentException
      */
@@ -702,7 +769,7 @@ class Builder
         $perPage = $perPage ?: $this->mapper->getPerPage();
 
         $results = ($total = $this->toBase()->getCountForPagination($columns))
-                                    ? $this->forPage($page, $perPage)->get($columns)
+                                    ? $this->forPage($page, $perPage)->get()
                                     : $this->mapper->newCollection();
 
         return $this->paginator($results, $total, $perPage, $page, [
@@ -713,8 +780,10 @@ class Builder
 
     /**
      * Paginate the given query into a simple paginator.
+     *
+     * @return PaginatorContract<int, TEntity>
      */
-    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract 
+    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
         $perPage = $perPage ?: $this->mapper->getPerPage();
@@ -724,7 +793,7 @@ class Builder
         // paginator instances for these results with the given page and per page.
         $this->skip(($page - 1) * $perPage)->take($perPage + 1);
 
-        return $this->simplePaginator($this->get($columns), $perPage, $page, [
+        return $this->simplePaginator($this->get(), $perPage, $page, [
             'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
@@ -762,6 +831,8 @@ class Builder
 
     /**
      * Set the underlying query builder instance.
+     *
+     * @return Builder<TEntity>
      */
     public function setQuery(QueryBuilder $query) : self
     {
@@ -780,6 +851,8 @@ class Builder
 
     /**
      * Register a new global scope.
+     *
+     * @return Builder<TEntity>
      */
     public function withGlobalScope(string $identifier, Scope|Closure $scope) : self
     {
@@ -794,6 +867,8 @@ class Builder
 
     /**
      * Remove a registered global scope.
+     *
+     * @return Builder<TEntity>
      */
     public function withoutGlobalScope(Scope|string $scope) : self
     {   
@@ -810,6 +885,8 @@ class Builder
 
     /**
      * Remove all or passed registered global scopes.
+     *
+     * @return Builder<TEntity>
      */
     public function withoutGlobalScopes(?array $scopes) : self
     {
