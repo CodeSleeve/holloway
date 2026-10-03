@@ -29,8 +29,8 @@ function concreteMapper(PupMapper $mapper, mixed $id, array $ids, int $int) : vo
     assertType('Illuminate\Support\Collection<int, ' . Pup::class . '>', $mapper->newCollection());
 
     // Paginators
-    assertType('Illuminate\Contracts\Pagination\LengthAwarePaginator<int, ' . Pup::class . '>', $mapper->paginate());
-    assertType('Illuminate\Contracts\Pagination\Paginator<int, ' . Pup::class . '>', $mapper->simplePaginate());
+    assertType('Illuminate\Pagination\LengthAwarePaginator<int, ' . Pup::class . '>', $mapper->paginate());
+    assertType('Illuminate\Pagination\Paginator<int, ' . Pup::class . '>', $mapper->simplePaginate());
 
     // Builders and chains
     assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->newQuery());
