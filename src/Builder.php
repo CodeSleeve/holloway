@@ -367,7 +367,7 @@ class Builder
      */
     public function getLoads() : array
     {
-        return $this->loads;
+        return $this->getTree()->getLoads();
     }
 
     /**

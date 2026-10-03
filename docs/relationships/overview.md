@@ -7,13 +7,10 @@ Holloway's relationship system provides powerful and flexible ways to define con
 - [Relationship Types](#relationship-types)
 - [How Relationships Work](#how-relationships-work)
 - [Relationship Loading Strategy](#relationship-loading-strategy)
-- [Relationship Tree System](#relationship-tree-system)
 - [Relationship Configuration](#relationship-configuration)
 - [Relationship Constraints](#relationship-constraints)
 - [Performance Characteristics](#performance-characteristics)
 - [Advanced Relationship Features](#advanced-relationship-features)
-- [Best Practices](#best-practices)
-- [Debugging Relationships](#debugging-relationships)
 - [Next Steps](#next-steps)
 
 ## Relationship Types
@@ -112,57 +109,6 @@ Unlike Active Record patterns, Holloway doesn't support lazy loading. This is in
 - **Improves performance** through batched loading
 - **Enhances predictability** - you know exactly when queries execute
 
-## Relationship Tree System
-
-Holloway uses a sophisticated tree system to optimize relationship loading:
-
-### Tree Building
-
-```php
-// This relationship string:
-'posts.comments.author'
-
-// Becomes this tree structure:
-[
-    'posts' => [
-        'name' => 'posts',
-        'constraints' => function() {},
-        'relationship' => PostRelationship,
-        'children' => [
-            'comments' => [
-                'name' => 'comments',
-                'constraints' => function() {},
-                'relationship' => CommentRelationship,
-                'children' => [
-                    'author' => [
-                        'name' => 'author',
-                        'constraints' => function() {},
-                        'relationship' => AuthorRelationship,
-                        'children' => []
-                    ]
-                ]
-            ]
-        ]
-    ]
-]
-```
-
-### Optimized Loading Process
-
-1. **Tree Traversal** - Load data for each level of the tree
-2. **Batch Queries** - Single query per relationship level
-3. **Entity Creation** - Convert loaded data to entities
-4. **Attachment** - Attach related entities to parents
-
-```php
-// For 'posts.comments.author' on 10 users:
-// Query 1: Load 10 users
-// Query 2: Load all posts for these users
-// Query 3: Load all comments for these posts  
-// Query 4: Load all authors for these comments
-// Total: 4 queries regardless of data volume
-```
-
 ## Relationship Configuration
 
 ### Basic Configuration
@@ -193,8 +139,8 @@ Holloway follows Laravel-style conventions but allows full customization:
 // Local key: {primary_key} (id)
 
 // BelongsTo:
-// Foreign key: {singular_related_table}_id (company_id)  
-// Local key: {primary_key} (id)
+// Foreign key: {singular_related_table}_id (company_id), a column on this mapper's table
+// Local key: this mapper's primary key name (id), used as the key column on the related table
 
 // BelongsToMany:
 // Pivot table: {table1}_{table2} (alphabetical order)
@@ -242,33 +188,8 @@ $users = $userMapper->with('posts.comments.author')->get();
 
 ### Memory Optimization
 
-- **Entity Caching** - Each database record creates only one entity instance
 - **Batch Loading** - All relationships loaded in single queries per level
 - **Selective Loading** - Only requested relationships are loaded
-
-### Caching Integration
-
-```php
-class UserMapper extends Mapper
-{
-    public function defineRelations(): void
-    {
-        $this->hasMany('posts', Post::class);
-    }
-    
-    // Entities are cached automatically
-    public function findWithPosts($id)
-    {
-        $user = $this->with('posts')->find($id);
-        
-        // Second call uses cached entities
-        $sameUser = $this->with('posts')->find($id);
-        
-        // $user and $sameUser are the same instances
-        return $user;
-    }
-}
-```
 
 ## Advanced Relationship Features
 
@@ -329,106 +250,6 @@ $user = $userMapper->with([
         $query->withTrashed();
     }
 ])->find(1);
-```
-
-## Best Practices
-
-### 1. Define Relationships Explicitly
-
-```php
-// Good: Explicit relationship definition
-public function defineRelations(): void
-{
-    $this->hasMany('posts', Post::class, 'author_id', 'id');
-    $this->hasOne('profile', UserProfile::class, 'user_id', 'id');
-}
-
-// Avoid: Relying only on conventions (less clear)
-public function defineRelations(): void
-{
-    $this->hasMany('posts', Post::class);
-    $this->hasOne('profile', UserProfile::class);
-}
-```
-
-### 2. Use Specific Relationship Loading
-
-```php
-// Good: Load only needed relationships
-$user = $userMapper->with(['posts', 'profile'])->find(1);
-
-// Avoid: Loading unnecessary relationships
-$user = $userMapper->with(['posts', 'profile', 'roles', 'permissions'])->find(1);
-```
-
-### 3. Apply Constraints at Database Level
-
-```php
-// Good: Filter at database level
-$user = $userMapper->with([
-    'posts' => function($query) {
-        $query->where('status', 'published')
-              ->where('created_at', '>=', now()->subDays(30));
-    }
-])->find(1);
-
-// Avoid: Filtering in PHP after loading all data
-$user = $userMapper->with('posts')->find(1);
-$recentPosts = $user->posts->filter(function($post) {
-    return $post->status === 'published' && 
-           $post->created_at >= now()->subDays(30);
-});
-```
-
-### 4. Handle Missing Relationships Gracefully
-
-```php
-// In your entity hydration
-public function hydrate(stdClass $record, Collection $relations)
-{
-    $entity = new User($record->name, $record->email);
-    
-    // Handle potentially missing relationships
-    if ($relations && isset($relations['profile'])) {
-        $entity->setProfile($relations['profile']);
-    }
-    
-    if ($relations && isset($relations['posts'])) {
-        $entity->setPosts($relations['posts']);
-    } else {
-        // Don't set posts if not loaded to avoid confusion
-        // Entity should indicate whether posts were loaded
-    }
-    
-    return $entity;
-}
-```
-
-## Debugging Relationships
-
-### Relationship Tree Inspection
-
-```php
-$query = $userMapper->with('posts.comments.author');
-$tree = $query->getTree();
-
-// Inspect the relationship tree structure
-var_dump($tree->getLoads());
-```
-
-### Query Logging
-
-```php
-// Enable query logging
-DB::enableQueryLog();
-
-$users = $userMapper->with('posts.comments')->get();
-
-// View executed queries
-$queries = DB::getQueryLog();
-foreach ($queries as $query) {
-    echo $query['query'] . "\n";
-}
 ```
 
 ## Next Steps

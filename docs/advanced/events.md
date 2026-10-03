@@ -8,13 +8,10 @@ Holloway fires string-based events at key points in the entity persistence lifec
 - [Registering Listeners](#registering-listeners)
 - [Preventing Operations](#preventing-operations)
 - [Soft Delete Events](#soft-delete-events)
-- [Custom Domain Events](#custom-domain-events)
-- [Event-Driven Architecture](#event-driven-architecture)
-- [Best Practices](#best-practices)
 
 ## Persistence Event Names
 
-Events are dispatched as strings in the format `"eventName: FullEntityClassName"`. The following events fire during `store()` and `remove()` operations:
+Events are dispatched as strings in the format `"holloway.eventName: FullEntityClassName"`, for example `"holloway.stored: App\Entities\Post"`. The `holloway.` prefix keeps them separate from other events on the shared dispatcher, so `Event::listen('holloway.*', ...)` listens to all of them. The following events fire during `store()` and `remove()` operations:
 
 | Event | When |
 |-------|------|
@@ -79,7 +76,7 @@ class AppServiceProvider extends ServiceProvider
 
 ## Preventing Operations
 
-Return `false` from a `storing`, `creating`, `updating`, or `removing` listener to abort the operation. The mapper method will return `false`.
+Return `false` from a `storing`, `creating`, `updating`, `removing` or `restoring` listener to cancel the operation, just as with Eloquent's model events. The mapper method returns `false` and nothing is written.
 
 ```php
 $this->registerPersistenceEvent('removing', function(Post $post) {
@@ -94,11 +91,16 @@ if (!$postMapper->remove($post)) {
 }
 ```
 
-Returning `false` from `stored`, `created`, `updated`, or `removed` has no effect — the operation has already completed.
+A few things to know:
+
+- **Return nothing from "before" listeners that shouldn't cancel.** As with Eloquent, the first non-null value a `storing`, `creating`, `updating`, `removing` or `restoring` listener returns stops the remaining listeners for that event. Avoid arrow functions that return a value, such as `fn($post) => Cache::forget(...)`.
+- Returning `false` from a `stored`, `created`, `updated`, `removed` or `restored` listener has no effect. The operation has already completed, and every listener runs.
+- When you pass an iterable to `store()`, `remove()` or `restore()`, an entity whose operation is cancelled is skipped and the call still returns `true`.
+- Throwing an exception from a listener also stops the operation.
 
 ## Soft Delete Events
 
-Mappers using `SoftDeletes` fire `restoring` and `restored` around calls to `restore()`. You can cancel a restore by returning `false` from a `restoring` listener.
+Mappers using `SoftDeletes` fire `restoring` and `restored` around calls to `restore()`. You can cancel a restore by returning `false` from a `restoring` listener (see [Preventing Operations](#preventing-operations)).
 
 ```php
 $this->registerPersistenceEvent('restoring', function(Post $post) {
@@ -112,160 +114,7 @@ $this->registerPersistenceEvent('restored', function(Post $post) {
 });
 ```
 
-## Custom Domain Events
+## Notes
 
-For domain-level events — things that happen within your application logic, not just at the persistence layer — define and dispatch your own event classes. This is a Laravel pattern that Holloway doesn't need to know about.
-
-```php
-// Define your event
-class PostPublished
-{
-    public function __construct(
-        public readonly Post $post,
-        public readonly \DateTimeInterface $publishedAt,
-    ) {}
-}
-
-// Dispatch from your service layer
-class PostService
-{
-    public function publish(Post $post): void
-    {
-        $post->setPublishedAt(now());
-        $post->setStatus('published');
-
-        $this->postMapper->store($post);
-
-        event(new PostPublished($post, $post->getPublishedAt()));
-    }
-}
-
-// Listen in your service provider
-Event::listen(PostPublished::class, function(PostPublished $event) {
-    app(SearchIndexer::class)->index($event->post);
-    app(NotificationService::class)->notifySubscribers($event->post);
-});
-```
-
-This keeps domain logic in your service/entity layer and decoupled from the mapper.
-
-## Event-Driven Architecture
-
-For complex workflows that span multiple services, a saga or process manager pattern works well alongside custom events:
-
-```php
-class OrderProcessingSaga
-{
-    public function __construct(
-        private OrderMapper $orderMapper,
-        private InventoryService $inventory,
-        private PaymentService $payment,
-        private ShippingService $shipping,
-    ) {}
-
-    public function handleOrderCreated(OrderCreated $event): void
-    {
-        $order = $event->order;
-
-        try {
-            $this->inventory->reserve($order);
-            $order->setStatus('inventory_reserved');
-            $this->orderMapper->store($order);
-
-            event(new OrderInventoryReserved($order));
-
-        } catch (InsufficientInventoryException $e) {
-            $order->setStatus('failed_inventory');
-            $this->orderMapper->store($order);
-
-            event(new OrderProcessingFailed($order, 'insufficient_inventory'));
-        }
-    }
-
-    public function handleInventoryReserved(OrderInventoryReserved $event): void
-    {
-        $order = $event->order;
-
-        try {
-            $this->payment->charge($order);
-            $order->setStatus('payment_processed');
-            $this->orderMapper->store($order);
-
-            event(new OrderPaymentProcessed($order));
-
-        } catch (PaymentFailedException $e) {
-            $this->inventory->release($order);
-            $order->setStatus('failed_payment');
-            $this->orderMapper->store($order);
-
-            event(new OrderProcessingFailed($order, 'payment_failed'));
-        }
-    }
-}
-```
-
-## Best Practices
-
-### Keep listeners focused
-
-```php
-// Good: one responsibility per listener
-$this->registerPersistenceEvent('created', function(Post $post) {
-    Cache::tags(['posts'])->flush();
-});
-
-$this->registerPersistenceEvent('created', function(Post $post) {
-    app(AuditLogger::class)->log('post.created', ['id' => $post->getId()]);
-});
-```
-
-### Queue slow work
-
-Persistence event listeners run synchronously inside the `store()` / `remove()` call. Keep them fast — queue anything that can wait.
-
-```php
-$this->registerPersistenceEvent('created', function(Post $post) {
-    // Fast: clear cache inline
-    Cache::forget("post:{$post->getId()}");
-
-    // Slow: queue for background processing
-    dispatch(new UpdateSearchIndexJob($post->getId()));
-    dispatch(new SendPublicationNotificationsJob($post->getId()));
-});
-```
-
-### Handle failures gracefully
-
-A listener that throws an exception will bubble up and abort the persistence call. Wrap side effects that shouldn't block persistence.
-
-```php
-$this->registerPersistenceEvent('created', function(Post $post) {
-    try {
-        app(SearchIndexer::class)->index($post);
-    } catch (SearchIndexException $e) {
-        logger()->error('Search index failed', ['post_id' => $post->getId()]);
-        dispatch(new RetrySearchIndexJob($post->getId()));
-    }
-});
-```
-
-### Use domain events for business logic
-
-Mapper persistence events are for infrastructure concerns (caching, logging, syncing). Business logic — state transitions, notifications tied to domain rules — belongs in domain events dispatched from your service layer.
-
-```php
-// Infrastructure concern: belongs in persistence event
-$this->registerPersistenceEvent('removed', fn($post) => Cache::forget("post:{$post->getId()}"));
-
-// Business concern: belongs in service layer as a domain event
-class PostService
-{
-    public function archive(Post $post): void
-    {
-        $post->archive();
-        $this->postMapper->store($post);
-
-        event(new PostArchived($post)); // domain event, not persistence event
-    }
-}
-```
+- Listeners run synchronously inside the `store()`, `remove()` or `restore()` call, so keep them fast and queue anything slow.
+- An exception thrown from a listener propagates out of the mapper call.

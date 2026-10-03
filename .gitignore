@@ -4,5 +4,6 @@
 *.code-workspace
 *.sublime-project
 *.sublime-workspace
-/.github
+/.github/agents
+/.github/prompts
 /.vscode

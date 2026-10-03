@@ -17,9 +17,10 @@ This quick tour shows how to install Holloway in a fresh Laravel project, regist
 
 ## Prerequisites
 
-- Laravel 10 or 11 project with a working database connection.
-- PHP 8.1 or higher (Holloway itself supports 8.1+, though some advanced patterns assume 8.2+).
+- Laravel 10, 11 or 12 project with a working database connection.
+- PHP 8.1 or higher for Laravel 10 (Laravel 11 and 12 require PHP 8.2+; some advanced patterns also assume 8.2+).
 - Familiarity with basic Laravel concepts (service providers, artisan commands, configuration).
+- `doctrine/instantiator`. Holloway's base `Mapper` uses it to create entities without calling their constructors, but it is currently only a development dependency of Holloway itself and the base `Mapper` does not create the instance for you. Install it in your application (`composer require doctrine/instantiator`) and assign `$this->instantiator` in your own base mapper's constructor (see [Base Classes](./core-concepts/base-classes.md)).
 
 ## 1. Install the package
 
@@ -62,6 +63,7 @@ class DataMapperServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->instance(Holloway::class, Holloway::instance());
+        // Optional: lets the container supply the Instantiator that your base Mapper's constructor receives.
         $this->app->singleton(Instantiator::class);
 
         $this->registerEntities();
@@ -347,51 +349,6 @@ class AnalyticsMapper extends Mapper
     protected string $table = 'events';
 }
 ```
-
-### Using with validation
-
-Validate input in your controllers or form requests before creating entities:
-
-```php
-class PostController extends Controller
-{
-    public function store(Request $request, PostMapper $posts)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-        ]);
-
-        $post = new Post($validated['title'], $validated['content']);
-        $posts->store($post);
-
-        return response()->json($post->toArray(), 201);
-    }
-}
-```
-
-### Using with queues and events
-
-Dispatch jobs and events just like you normally would:
-
-```php
-class PostMapper extends Mapper
-{
-    public function publish(Post $post): void
-    {
-        $post->publish();
-        $this->store($post);
-
-        // Dispatch Laravel events
-        event(new PostPublished($post));
-
-        // Queue jobs
-        ProcessPostImages::dispatch($post);
-    }
-}
-```
-
-Holloway entities work with Laravel's job serialization automatically as long as your entities have public getters or implement serialization methods.
 
 ## Troubleshooting
 

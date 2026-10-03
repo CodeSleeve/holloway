@@ -2,7 +2,6 @@
 
 namespace CodeSleeve\Holloway;
 
-use Illuminate\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
 class HollowayServiceProvider extends ServiceProvider
@@ -16,7 +15,7 @@ class HollowayServiceProvider extends ServiceProvider
     {
         Mapper::setConnectionResolver($this->app['db']);
 
-        Mapper::setEventManager(new Dispatcher);
+        Mapper::setEventManager($this->app['events']);
     }
 
     /**

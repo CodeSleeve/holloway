@@ -16,21 +16,21 @@ Holloway includes a Laravel service provider that handles integration with Larav
 The `HollowayServiceProvider` performs two key functions:
 
 1. **Sets up database connections** - Configures Holloway to use Laravel's database connection resolver
-2. **Registers event dispatcher** - Enables Holloway to work with Laravel's event system
+2. **Sets the event dispatcher** - Points mappers at the application's event dispatcher for persistence events
 
 ```php
 // From HollowayServiceProvider::boot()
 Mapper::setConnectionResolver($this->app['db']);
-Mapper::setEventManager(new Dispatcher);
+Mapper::setEventManager($this->app['events']);
 ```
 
 ## Registration
 
-### Automatic Registration (Laravel 5.5+)
-If you're using Laravel 5.5 or later with package auto-discovery, the service provider registers automatically.
+### Automatic Registration
+The service provider is registered through Laravel's package auto-discovery (`extra.laravel.providers` in Holloway's `composer.json`), so no setup is needed.
 
 ### Manual Registration
-For older Laravel versions, add to `config/app.php`:
+If you've disabled package auto-discovery for Holloway, add the provider yourself. In `config/app.php`:
 
 ```php
 'providers' => [
@@ -51,21 +51,27 @@ $userMapper = new UserMapper();
 // Or specify a different connection
 class AnalyticsMapper extends Mapper 
 {
-    protected $connection = 'analytics'; // Must exist in config/database.php
+    protected string $connection = 'analytics'; // Must exist in config/database.php
 }
 ```
 
 ## Event Integration
 
-The service provider configures Holloway to use Laravel's event dispatcher, enabling you to listen for mapper events:
+Mapper events are dispatched through the application's event dispatcher, so they work like Eloquent's model events. Listen with `registerPersistenceEvent()` on a mapper, or with the `Event` facade or a subscriber. The event name is `"holloway.eventName: FullEntityClassName"`, so `Event::listen('holloway.*', ...)` catches all mapper events:
 
 ```php
-// In a service provider or EventServiceProvider
-Event::listen('mapper.*', function ($eventName, $data) {
-    // Handle mapper events
-    Log::info("Mapper event: {$eventName}");
+// On the mapper
+$postMapper->registerPersistenceEvent('created', function (Post $post) {
+    Log::info("Post created: {$post->getId()}");
+});
+
+// Or from anywhere in the application
+Event::listen('holloway.created: ' . Post::class, function (Post $post) {
+    //
 });
 ```
+
+See [Events](../advanced/events.md) for the event names.
 
 ## Extending the Service Provider
 
