@@ -15,6 +15,10 @@
 #   properly typed results — e.g. Pup|null for find(), Collection<int, Pup>
 #   for get(), Builder<Pup> for where() / newQuery() / with(), etc.
 #
+#   ScopeMethodsExtension resolves local scopes (scopeSearch() called as search())
+#   and the soft-delete macros (withTrashed() and friends) on a concrete mapper
+#   and on the Builder<Entity, Mapper> it returns.
+#
 #   GetMapperReturnTypeExtension makes Holloway::getMapper(Pup::class) return
 #   Mapper<Pup> so the type chain holds when going through the registry.
 #
@@ -34,3 +38,10 @@ services:
         class: CodeSleeve\Holloway\PhpStan\Extension\MapperReturnTypeExtension
         tags:
             - phpstan.broker.dynamicMethodReturnTypeExtension
+
+    - CodeSleeve\Holloway\PhpStan\Extension\EntityTypeResolver
+
+    -
+        class: CodeSleeve\Holloway\PhpStan\Extension\ScopeMethodsExtension
+        tags:
+            - phpstan.broker.methodsClassReflectionExtension

@@ -33,9 +33,9 @@ function concreteMapper(PupMapper $mapper, mixed $id, array $ids, int $int) : vo
     assertType('Illuminate\Pagination\Paginator<int, ' . Pup::class . '>', $mapper->simplePaginate());
 
     // Builders and chains
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->newQuery());
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->newQueryWithoutScopes());
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->with('collar'));
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->newQuery());
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->newQueryWithoutScopes());
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->with('collar'));
     assertType('Illuminate\Support\Collection<int, ' . Pup::class . '>', $mapper->where('a', '=', 'b')->orderBy('name')->get());
     assertType(Pup::class . '|null', $mapper->with('collar')->where('a', 'b')->groupBy('a')->first());
 }
@@ -46,8 +46,8 @@ function concreteMapper(PupMapper $mapper, mixed $id, array $ids, int $int) : vo
  */
 function permissiveArguments(PupMapper $mapper) : void
 {
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->orderBy(new \Illuminate\Database\Query\Expression('name')));
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->where('a', 'b')->groupBy(['a', 'b']));
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->where('a', 'b')->having('c', '>', 5));
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $mapper->whereBetween('a', new \ArrayObject([1, 2])));
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->orderBy(new \Illuminate\Database\Query\Expression('name')));
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->where('a', 'b')->groupBy(['a', 'b']));
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->where('a', 'b')->having('c', '>', 5));
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', ' . PupMapper::class . '>', $mapper->whereBetween('a', new \ArrayObject([1, 2])));
 }

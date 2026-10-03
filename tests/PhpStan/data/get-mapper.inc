@@ -21,7 +21,7 @@ function getMapper(Holloway $holloway, Pup $pup, string $name, string $class) : 
     // The type chain holds through the registry.
     assertType(Pup::class . '|null', $holloway->getMapper(Pup::class)->find(1));
     assertType('Illuminate\Support\Collection<int, ' . Pup::class . '>', $holloway->getMapper(Pup::class)->get());
-    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . '>', $holloway->getMapper(Pup::class)->where('a', 'b'));
+    assertType('CodeSleeve\Holloway\Builder<' . Pup::class . ', CodeSleeve\Holloway\Mapper<' . Pup::class . '>>', $holloway->getMapper(Pup::class)->where('a', 'b'));
 }
 
 function getMapperUnion(Holloway $holloway, bool $flag) : void
