@@ -117,3 +117,43 @@ jobs:
 
       - name: Audit dependencies for known vulnerabilities
         run: composer audit
+
+  coverage:
+    runs-on: ubuntu-latest
+    name: Code coverage
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: holloway_test
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_pgsql
+          coverage: pcov
+
+      - name: Install dependencies
+        run: |
+          composer require "illuminate/database:^12.0" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests with coverage
+        env:
+          DB_DRIVER: pgsql
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: holloway_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: password
+        run: vendor/bin/phpunit --coverage-text
