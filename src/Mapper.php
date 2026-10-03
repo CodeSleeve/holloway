@@ -19,6 +19,11 @@ abstract class Mapper
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
     const DEFAULT_TIME_ZONE = 'UTC';
+
+    /**
+     * Persistence events fired before an operation. A listener that returns false from one of these cancels it.
+     */
+    protected const HALTING_EVENTS = ['storing', 'creating', 'updating', 'removing', 'restoring'];
     
     protected static ?Resolver $resolver = null;
     protected static ?EventManagerInterface $eventManager = null;
@@ -616,7 +621,11 @@ abstract class Mapper
     */
     protected function firePersistenceEvent(string $eventName, $entity)
     {
-        return static::$eventManager->dispatch("$eventName: " . get_class($entity), $entity);
+        // The "before" events halt on the first non-null listener response (just as Eloquent's
+        // model events do) so that a listener can return false to cancel the operation.
+        $method = in_array($eventName, static::HALTING_EVENTS, true) ? 'until' : 'dispatch';
+
+        return static::$eventManager->{$method}("$eventName: " . get_class($entity), $entity);
     }
 
     /**
