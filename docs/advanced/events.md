@@ -14,7 +14,7 @@ Holloway fires string-based events at key points in the entity persistence lifec
 
 ## Persistence Event Names
 
-Events are dispatched as strings in the format `"eventName: FullEntityClassName"`. The following events fire during `store()` and `remove()` operations:
+Events are dispatched as strings in the format `"holloway.eventName: FullEntityClassName"`, for example `"holloway.stored: App\Entities\Post"`. The `holloway.` prefix keeps them separate from other events on the shared dispatcher, so `Event::listen('holloway.*', ...)` listens to all of them. The following events fire during `store()` and `remove()` operations:
 
 | Event | When |
 |-------|------|

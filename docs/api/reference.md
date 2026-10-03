@@ -459,7 +459,7 @@ public function flush(): void
 Holloway dispatches string-based events using the Laravel event dispatcher. Events are formatted as:
 
 ```
-"eventName: FullyQualifiedEntityClassName"
+"holloway.eventName: FullyQualifiedEntityClassName"
 ```
 
 ### Event Names

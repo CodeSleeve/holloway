@@ -625,7 +625,17 @@ abstract class Mapper
         // model events do) so that a listener can return false to cancel the operation.
         $method = in_array($eventName, static::HALTING_EVENTS, true) ? 'until' : 'dispatch';
 
-        return static::$eventManager->{$method}("$eventName: " . get_class($entity), $entity);
+        return static::$eventManager->{$method}(static::persistenceEventName($eventName, get_class($entity)), $entity);
+    }
+
+    /**
+     * Get the name that a persistence event is dispatched under, e.g. "holloway.stored: App\Entities\Post".
+     * The "holloway." prefix namespaces mapper events on the shared dispatcher, just as Eloquent
+     * prefixes its model events with "eloquent.", so "holloway.*" listens to all of them.
+     */
+    protected static function persistenceEventName(string $eventName, string $entityClassName) : string
+    {
+        return "holloway.$eventName: $entityClassName";
     }
 
     /**
@@ -637,7 +647,7 @@ abstract class Mapper
             $callback = Closure::fromCallable($callback);
         }
 
-        static::$eventManager->listen("$eventName: " . $this->entityClassName, $callback);
+        static::$eventManager->listen(static::persistenceEventName($eventName, $this->entityClassName), $callback);
     }
 
 

@@ -609,10 +609,10 @@ class MapperTest extends TestCase
         $tobi->setFirstName('Toby');
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('until')->once()->with('storing: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('until')->once()->with('updating: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('updated: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('stored: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('until')->once()->with('holloway.storing: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('until')->once()->with('holloway.updating: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('holloway.updated: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('holloway.stored: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
         $mapper->setEventManager($mockDispatcher);
 
         // when
@@ -657,8 +657,8 @@ class MapperTest extends TestCase
         $tobi = $mapper->find(1);
 
         $mockDispatcher = m::mock('Illuminate\Contracts\Events\Dispatcher');
-        $mockDispatcher->shouldReceive('until')->once()->with('removing: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
-        $mockDispatcher->shouldReceive('dispatch')->once()->with('removed: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('until')->once()->with('holloway.removing: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
+        $mockDispatcher->shouldReceive('dispatch')->once()->with('holloway.removed: CodeSleeve\Holloway\Tests\Fixtures\Entities\Pup', $tobi);
 
         $mapper->setEventManager($mockDispatcher);
 

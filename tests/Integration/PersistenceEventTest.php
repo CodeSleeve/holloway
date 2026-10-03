@@ -200,6 +200,31 @@ class PersistenceEventTest extends TestCase
     }
 
     /** @test */
+    public function a_holloway_wildcard_listener_receives_mapper_events_under_namespaced_names()
+    {
+        // given
+        $this->buildFixtures();
+        $dispatcher = new Dispatcher;
+        Mapper::setEventManager($dispatcher);
+        $names = [];
+        $dispatcher->listen('holloway.*', function($eventName, $payload) use (&$names) { $names[] = $eventName; });
+        $unrelated = [];
+        $dispatcher->listen('eloquent.*', function($eventName, $payload) use (&$unrelated) { $unrelated[] = $eventName; });
+
+        // when
+        Holloway::instance()->getMapper(Pup::class)->store(new Pup(Holloway::instance()->getMapper(Pack::class)->find(2), 'Snowball', 'Adams', 'white'));
+
+        // then
+        $this->assertSame([
+            'holloway.storing: ' . Pup::class,
+            'holloway.creating: ' . Pup::class,
+            'holloway.created: ' . Pup::class,
+            'holloway.stored: ' . Pup::class,
+        ], $names);
+        $this->assertSame([], $unrelated);
+    }
+
+    /** @test */
     public function the_service_provider_sends_mapper_events_through_the_applications_event_dispatcher()
     {
         // given
@@ -209,7 +234,7 @@ class PersistenceEventTest extends TestCase
         $app['db'] = Mapper::getConnectionResolver();
 
         $received = [];
-        $app['events']->listen('created: ' . Pup::class, function($pup) use (&$received) { $received[] = $pup; });
+        $app['events']->listen('holloway.created: ' . Pup::class, function($pup) use (&$received) { $received[] = $pup; });
 
         // when
         (new HollowayServiceProvider($app))->boot();

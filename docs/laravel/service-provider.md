@@ -57,7 +57,7 @@ class AnalyticsMapper extends Mapper
 
 ## Event Integration
 
-Mapper events are dispatched through the application's event dispatcher, so they work like Eloquent's model events. Listen with `registerPersistenceEvent()` on a mapper, or with the `Event` facade or a subscriber. The event name is `"eventName: FullEntityClassName"`:
+Mapper events are dispatched through the application's event dispatcher, so they work like Eloquent's model events. Listen with `registerPersistenceEvent()` on a mapper, or with the `Event` facade or a subscriber. The event name is `"holloway.eventName: FullEntityClassName"`, so `Event::listen('holloway.*', ...)` catches all mapper events:
 
 ```php
 // On the mapper
@@ -66,7 +66,7 @@ $postMapper->registerPersistenceEvent('created', function (Post $post) {
 });
 
 // Or from anywhere in the application
-Event::listen('created: ' . Post::class, function (Post $post) {
+Event::listen('holloway.created: ' . Post::class, function (Post $post) {
     //
 });
 ```
