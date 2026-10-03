@@ -4,5 +4,7 @@
 *.code-workspace
 *.sublime-project
 *.sublime-workspace
-/.github
+/.github/agents
+/.github/copilot-instructions.md
+/.github/prompts
 /.vscode
