@@ -11,6 +11,10 @@ includes:
     - vendor/codesleeve/holloway/phpstan/extension.neon
 ```
 
+## Requirements
+
+The extension is built and tested against PHPStan 2.x (2.2 at the time of writing). Scope support uses PHPStan's method reflection API, which isn't covered by PHPStan's backward compatibility promise, so a future PHPStan minor release may need an update.
+
 ## What you get
 
 The extension reads the `$entityClassName` default from each concrete mapper:
@@ -40,6 +44,26 @@ Holloway::instance()->getMapper(Pup::class)->find(1);   // Pup|null
 
 `getMapper()` accepts a class constant, an entity instance, or a `class-string<Entity>`. Anything PHPStan can't narrow to a class (such as a plain `string`) returns an untyped `Mapper`.
 
+## Scopes and soft-delete macros
+
+Local scopes are resolved from the mapper's `scopeXxx()` methods, so calling them without the prefix is understood, on the mapper or anywhere in a chain, with the arguments checked against the scope's own signature:
+
+```php
+class UserMapper extends Mapper
+{
+    public function scopeSearch(Builder $query, string $term): Builder { /* ... */ }
+}
+
+$userMapper->search('rex');                        // Builder<User, UserMapper>
+$userMapper->where('active', true)->search('rex')  // Builder<User, UserMapper>
+    ->get();                                       // Collection<int, User>
+$userMapper->search();                             // error: missing argument $term
+```
+
+On mappers that use the `SoftDeletes` trait, `withTrashed()`, `withoutTrashed()` and `onlyTrashed()` are understood the same way. Calling them on a mapper that doesn't use the trait is still an error.
+
+This works because query builders returned from a concrete mapper carry the mapper's class as a second type, `Builder<User, UserMapper>`.
+
 ## Higher rule levels
 
 Nothing needs to be added to your mappers at any level. `Mapper` and `Builder` declare their entity type with a default (`@template TEntity = mixed`), so referring to them without a type, such as `class PupMapper extends Mapper` or a `Builder $query` parameter in a scope, doesn't raise `missingType.generics`. You can still write `@extends Mapper<Pup>` to give a mapper an explicit entity type.
@@ -50,5 +74,5 @@ At level 8, the typed results surface nullability that was previously hidden: `f
 
 - The entity type comes from the `$entityClassName` default property. A mapper that only implements `getEntityClassName()` without setting the property is not resolved (use `@extends Mapper<Entity>` for those).
 - Methods forwarded to the underlying query builder through `__call` are typed from the `@method` annotations on `Mapper` and `Builder`; their arguments are not checked, so anything Laravel accepts is accepted here. Methods not listed there are untyped.
-- Local scopes (`scopeActive()` called as `active()`) and the soft-delete macros (`withTrashed()`, `onlyTrashed()`) are resolved at runtime, so PHPStan reports them as undefined methods unless you declare them with `@method` on your mapper.
+- Scopes and soft-delete macros are resolved only when the mapper's class is known. They are not resolved on a mapper obtained from `Holloway::getMapper()` (its class isn't known statically), or on a bare `Builder $query` parameter inside a scope method (declare `@param Builder<User, UserMapper> $query` to call other scopes from there).
 - A mapper that overrides `find()`, `get()` and similar keeps its own declared return types.
