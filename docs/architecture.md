@@ -19,7 +19,7 @@ This document explains how Holloway works under the hood: the design patterns, l
 
 ## Before you dive in
 
-- Looking for setup instructions? Head back to [Using Holloway](./README.md#using-holloway-start-here).
+- Looking for setup instructions? Head back to [the readme](../readme.md#documentation).
 - Need to wire a mapper or relationship? Start with [Mapper Query Building](./mappers/query-building.md) and [Relationships Overview](./relationships/overview.md).
 - If you’re exploring internals to extend Holloway, keep this page handy—but skim the section summaries first so you can jump straight to what you need.
 

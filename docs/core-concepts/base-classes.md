@@ -948,7 +948,7 @@ $client->full_name; // "John Doe" (calls getFullName() accessor)
 $client = new Client('Jane', 'Smith', email('jane@example.com'));
 
 // 5. Save to database
-$clientMapper->save($client);
+$clientMapper->store($client);
 // - Mapper calls dehydrate()
 //   - toArray() gets all properties
 //   - Relationships excluded

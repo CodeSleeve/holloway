@@ -345,41 +345,6 @@ class UserMapper extends Mapper
 
 ## Custom Relationships with Constraints
 
-### Dynamic Constraints
-
-```php
-class PostMapper extends Mapper
-{
-    public function defineRelations(): void
-    {
-        // Custom relationship that accepts runtime parameters
-        $this->customMany('commentsByType', function($query, $posts) {
-            // Access constraint parameters through closure scope
-            $commentType = $this->getConstraintParameter('type', 'public');
-            $limit = $this->getConstraintParameter('limit', 10);
-            
-            return $query->from('comments')
-                ->whereIn('post_id', $posts->pluck('id'))
-                ->where('type', $commentType)
-                ->where('approved', true)
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get();
-        }, function($post, $comment) {
-            return $post->id == $comment->post_id;
-        }, Comment::class);
-    }
-}
-
-// Usage with constraints
-$posts = $postMapper->with([
-    'commentsByType' => function($query) {
-        $query->setConstraintParameter('type', 'featured');
-        $query->setConstraintParameter('limit', 5);
-    }
-])->get();
-```
-
 ### Conditional Loading
 
 ```php

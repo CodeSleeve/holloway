@@ -60,7 +60,7 @@ class OrderBad
     public function save(): void
     {
         // Don't do this - persistence belongs in mappers
-        app(OrderMapper::class)->save($this);
+        app(OrderMapper::class)->store($this);
     }
 }
 ```
@@ -230,14 +230,16 @@ class UserMapper extends Mapper
         });
     }
 
-    public function save(User $user): void
+    public function store($entity): bool
     {
-        parent::save($user);
-        
+        $stored = parent::store($entity);
+
         // Invalidate cache
-        if ($user->getId()) {
-            cache()->forget("user.{$user->getId()}");
+        if ($entity instanceof User && $entity->getId()) {
+            cache()->forget("user.{$entity->getId()}");
         }
+
+        return $stored;
     }
 
     public function findWithProfile(int $id): ?User
@@ -417,7 +419,9 @@ class UserMapper extends Mapper
             UserRole::from($validatedData['role'] ?? 'member')
         );
 
-        return $this->save($user);
+        $this->store($user);
+
+        return $user;
     }
 
     private function validateUserData(array $data): array

@@ -253,21 +253,6 @@ $postMapper->with(['author', 'comments' => function($query) {
 
 Remove relationships from the eager load list (useful for overriding `$with`).
 
-#### `withCount(mixed $relations): self`
-
-Add subselect count queries for relationships.
-
-```php
-$users = $userMapper->withCount(['posts', 'posts as published_posts' => function($query) {
-    $query->where('published', true);
-}])->get();
-
-echo $users->first()->posts_count;
-echo $users->first()->published_posts;
-```
-
-The count attribute is the relationship name in `snake_case` with a `_count` suffix, or the alias if specified with `as`.
-
 ### Pagination
 
 #### `paginate(int $perPage = null): LengthAwarePaginator`

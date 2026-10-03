@@ -244,7 +244,7 @@ $client = new Client(
     email: new Email('john@example.com')
 );
 
-$clientMapper->save($client);
+$clientMapper->store($client);
 
 // Loading EXISTING client (bypasses constructor, uses mapperFill)
 $client = $clientMapper->find(1);
@@ -259,7 +259,7 @@ $client->changeName('Jane', 'Smith');
 $client->changeEmail(new Email('jane@example.com'));
 $client->addRevenue(Money::USD(10000));
 
-$clientMapper->save($client);
+$clientMapper->store($client);
 ```
 
 ### Common Traits
@@ -560,7 +560,7 @@ $client = new Client(
     email: 'john@example.com' // Converted to Email via set hook
 );
 
-$clientMapper->save($client);
+$clientMapper->store($client);
 
 // Loading EXISTING client
 $client = $clientMapper->find(1);
@@ -574,7 +574,7 @@ echo $client->full_name;         // "John Doe" (computed property)
 $client->first_name = '  Jane  '; // Automatically trimmed
 $client->email = 'jane@example.com'; // Automatically converted to Email
 
-$clientMapper->save($client);
+$clientMapper->store($client);
 ```
 
 ### Benefits of Property Hooks Pattern
@@ -1298,6 +1298,6 @@ The beauty of Holloway's datamapper pattern is that your choice of entity design
 
 ## Next Steps
 
-- **[Mappers](../mappers/creating-mappers.md)** - Implementing mappers for different entity patterns
-- **[Relationships](../relationships/overview.md)** - Handling relationships with various entity designs
-- **[Best Practices](../examples/best-practices.md)** - Recommended patterns for different use cases
+- **[Mappers](./mappers/creating-mappers.md)** - Implementing mappers for different entity patterns
+- **[Relationships](./relationships/overview.md)** - Handling relationships with various entity designs
+- **[Best Practices](./examples/best-practices.md)** - Recommended patterns for different use cases

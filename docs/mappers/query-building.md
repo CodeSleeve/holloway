@@ -574,28 +574,6 @@ $users = $userMapper
     ->get();
 ```
 
-### Relationship Existence Queries
-
-```php
-// Users who have posts
-$usersWithPosts = $userMapper->has('posts')->get();
-
-// Users who have published posts
-$usersWithPublishedPosts = $userMapper
-    ->whereHas('posts', function($query) {
-        $query->where('published', true);
-    })
-    ->get();
-
-// Users who don't have posts
-$usersWithoutPosts = $userMapper->doesntHave('posts')->get();
-
-// Count relationships
-$usersWithManyPosts = $userMapper
-    ->has('posts', '>=', 10)
-    ->get();
-```
-
 ## Error Handling and Debugging
 
 ### Query Debugging

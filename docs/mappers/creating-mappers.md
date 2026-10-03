@@ -212,6 +212,8 @@ public function hydrate(stdClass $record, Collection $relations)
 }
 ```
 
+> **Note:** `Holloway\Mapper` declares `protected Instantiator $instantiator` but does not initialize it, and `doctrine/instantiator` is not installed with Holloway. Install it in your application and assign `$this->instantiator` in your base mapper's constructor before calling `instantiateEntity()` or the example above (see [Base Classes](../core-concepts/base-classes.md)).
+
 **Key Principles:**
 - ❌ **DON'T** call entity constructor during hydration - it runs validation meant for NEW entities
 - ❌ **DON'T** put validation in hydration - database data is already trusted
