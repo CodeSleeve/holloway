@@ -19,11 +19,10 @@
 #   Mapper<Pup> so the type chain holds when going through the registry.
 #
 # Level compatibility:
-#   Levels 1–5: no annotations required on concrete mapper or entity classes.
-#   Level 6+: PHPStan enforces missingType.generics, so concrete mappers will
-#   need "@extends Mapper<Entity>" in their class-level docblock. The extension
-#   still provides typed returns; the annotation only satisfies the strictness
-#   check.
+#   No annotations are required on concrete mapper or entity classes at any
+#   level. Mapper and Builder declare "@template TEntity = mixed", so raw
+#   references (extends Mapper, a Builder parameter) don't trigger
+#   missingType.generics. "@extends Mapper<Entity>" is optional.
 
 services:
     -
