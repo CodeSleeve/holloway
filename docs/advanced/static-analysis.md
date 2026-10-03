@@ -42,18 +42,13 @@ Holloway::instance()->getMapper(Pup::class)->find(1);   // Pup|null
 
 ## Higher rule levels
 
-At PHPStan level 6 and above, `missingType.generics` will ask for a generic on your concrete mappers. Add this to each mapper's class docblock to satisfy it:
+Nothing needs to be added to your mappers at any level. `Mapper` and `Builder` declare their entity type with a default (`@template TEntity = mixed`), so referring to them without a type, such as `class PupMapper extends Mapper` or a `Builder $query` parameter in a scope, doesn't raise `missingType.generics`. You can still write `@extends Mapper<Pup>` to give a mapper an explicit entity type.
 
-```php
-/**
- * @extends Mapper<Pup>
- */
-class PupMapper extends Mapper
-```
-
-The extension still provides the typed results either way.
+At level 8, the typed results surface nullability that was previously hidden: `find()` and `first()` return `Pup|null`, so code that uses the result without a null check will be reported, as it would be with Eloquent.
 
 ## Limitations
 
 - The entity type comes from the `$entityClassName` default property. A mapper that only implements `getEntityClassName()` without setting the property is not resolved (use `@extends Mapper<Entity>` for those).
-- Methods forwarded to the underlying query builder through `__call` are typed from the `@method` annotations on `Mapper` and `Builder`. Methods not listed there are untyped.
+- Methods forwarded to the underlying query builder through `__call` are typed from the `@method` annotations on `Mapper` and `Builder`; their arguments are not checked, so anything Laravel accepts is accepted here. Methods not listed there are untyped.
+- Local scopes (`scopeActive()` called as `active()`) and the soft-delete macros (`withTrashed()`, `onlyTrashed()`) are resolved at runtime, so PHPStan reports them as undefined methods unless you declare them with `@method` on your mapper.
+- A mapper that overrides `find()`, `get()` and similar keeps its own declared return types.
