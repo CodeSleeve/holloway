@@ -6,8 +6,8 @@ namespace CodeSleeve\Holloway\PhpStan\Extension;
 
 use CodeSleeve\Holloway\Builder;
 use CodeSleeve\Holloway\Mapper;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use PhpParser\Node\Expr\MethodCall;
 use PHPStan\Analyser\Scope;
@@ -99,7 +99,10 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
 
     public function isMethodSupported(MethodReflection $methodReflection): bool
     {
-        return in_array($methodReflection->getName(), self::ALL_METHODS, true);
+        // Only methods declared on Mapper itself (real methods and @method tags). A concrete mapper
+        // that overrides find(), get(), etc. has its own return type, which must not be replaced.
+        return in_array($methodReflection->getName(), self::ALL_METHODS, true)
+            && $methodReflection->getDeclaringClass()->getName() === Mapper::class;
     }
 
     public function getTypeFromMethodCall(

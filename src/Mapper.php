@@ -15,7 +15,7 @@ use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
 use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
 
 /**
- * @template TEntity
+ * @template TEntity = mixed
  *
  * Query methods forwarded to Builder<TEntity> via __call:
  *
@@ -25,30 +25,30 @@ use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
  * @method TEntity firstOrFail()
  * @method \Illuminate\Support\Collection<int, TEntity> findMany(array $ids)
  * @method \Illuminate\Support\Collection<int, TEntity> get()
- * @method \Illuminate\Contracts\Pagination\LengthAwarePaginator<int, TEntity> paginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
- * @method \Illuminate\Contracts\Pagination\Paginator<int, TEntity> simplePaginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
- * @method Builder<TEntity> where(string|\Closure $column, string|null $operator = null, mixed $value = null, string $boolean = 'and')
- * @method Builder<TEntity> orWhere(string|\Closure $column, string|null $operator = null, mixed $value = null)
+ * @method \Illuminate\Pagination\LengthAwarePaginator<int, TEntity> paginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
+ * @method \Illuminate\Pagination\Paginator<int, TEntity> simplePaginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
+ * @method Builder<TEntity> where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> orWhere(mixed $column, mixed $operator = null, mixed $value = null)
  * @method Builder<TEntity> whereKey(mixed $id)
- * @method Builder<TEntity> whereIn(\Illuminate\Contracts\Database\Query\Expression|string $column, mixed $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> whereNull(\Illuminate\Contracts\Database\Query\Expression|array|string $columns, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> whereNotNull(\Illuminate\Contracts\Database\Query\Expression|array|string $columns, string $boolean = 'and')
- * @method Builder<TEntity> whereBetween(\Illuminate\Contracts\Database\Query\Expression|string $column, iterable $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> orderBy(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string $column, string $direction = 'asc')
- * @method Builder<TEntity> orderByDesc(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string $column)
- * @method Builder<TEntity> limit(int $value)
- * @method Builder<TEntity> take(int $value)
- * @method Builder<TEntity> skip(int $value)
- * @method Builder<TEntity> offset(int $value)
- * @method Builder<TEntity> forPage(int $page, int $perPage = 15)
- * @method Builder<TEntity> select(mixed ...$columns)
- * @method Builder<TEntity> addSelect(mixed $column)
- * @method Builder<TEntity> distinct(mixed ...$distinct)
- * @method Builder<TEntity> groupBy(array|\Illuminate\Contracts\Database\Query\Expression|string ...$groups)
- * @method Builder<TEntity> having(\Closure|\Illuminate\Contracts\Database\Query\Expression|string $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
- * @method Builder<TEntity> join(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null, string $type = 'inner', bool $where = false)
- * @method Builder<TEntity> leftJoin(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null)
- * @method Builder<TEntity> rightJoin(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null)
+ * @method Builder<TEntity> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity> limit(mixed ...$parameters)
+ * @method Builder<TEntity> take(mixed ...$parameters)
+ * @method Builder<TEntity> skip(mixed ...$parameters)
+ * @method Builder<TEntity> offset(mixed ...$parameters)
+ * @method Builder<TEntity> forPage(mixed ...$parameters)
+ * @method Builder<TEntity> select(mixed ...$parameters)
+ * @method Builder<TEntity> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity> distinct(mixed ...$parameters)
+ * @method Builder<TEntity> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity> having(mixed ...$parameters)
+ * @method Builder<TEntity> join(mixed ...$parameters)
+ * @method Builder<TEntity> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity> rightJoin(mixed ...$parameters)
  * @method Builder<TEntity> withCount(mixed $relations)
  * @method Builder<TEntity> without(mixed $relations)
  * @method Builder<TEntity> scopes(array $scopes)
@@ -59,11 +59,11 @@ use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
  * @method bool chunk(int $count, callable $callback)
  * @method bool chunkById(int $count, callable $callback, string|null $column = null, string|null $alias = null)
  * @method bool exists()
- * @method int count(string $columns = '*')
- * @method mixed min(string $column)
- * @method mixed max(string $column)
- * @method mixed avg(string $column)
- * @method mixed sum(string $column)
+ * @method int count(mixed $columns = '*')
+ * @method mixed min(mixed $column)
+ * @method mixed max(mixed $column)
+ * @method mixed avg(mixed $column)
+ * @method mixed sum(mixed $column)
  * @method string toSql()
  */
 abstract class Mapper
@@ -115,8 +115,6 @@ abstract class Mapper
 
     /**
      * Return the name of the entity class for this map.
-     *
-     * @return class-string<TEntity>
      */
     abstract public function getEntityClassName() : string;
 

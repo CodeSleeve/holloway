@@ -15,68 +15,68 @@ use Illuminate\Support\{Collection, Str};
 use Illuminate\Database\Concerns\BuildsQueries;
 
 /**
- * @template TEntity
+ * @template TEntity = mixed
  *
  * QueryBuilder pass-through methods that return $this via __call.
  * Annotated here so PHPStan preserves Builder<TEntity> through chains
  * like ->orderBy()->where()->get().
  *
- * @method Builder<TEntity> select(mixed ...$columns)
- * @method Builder<TEntity> selectRaw(string $expression, array $bindings = [])
- * @method Builder<TEntity> addSelect(mixed $column)
- * @method Builder<TEntity> distinct(mixed ...$distinct)
- * @method Builder<TEntity> join(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null, string $type = 'inner', bool $where = false)
- * @method Builder<TEntity> leftJoin(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null)
- * @method Builder<TEntity> rightJoin(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null)
- * @method Builder<TEntity> crossJoin(string $table, \Closure|string|null $first = null, string|null $operator = null, string|null $second = null)
- * @method Builder<TEntity> joinWhere(string $table, string $first, string $operator, string $second, string $type = 'inner')
- * @method Builder<TEntity> leftJoinWhere(string $table, string $first, string $operator, string $second)
- * @method Builder<TEntity> rightJoinWhere(string $table, string $first, string $operator, string $second)
- * @method Builder<TEntity> whereRaw(string $sql, mixed $bindings = [], string $boolean = 'and')
- * @method Builder<TEntity> orWhereRaw(string $sql, mixed $bindings = [])
- * @method Builder<TEntity> whereIn(\Illuminate\Contracts\Database\Query\Expression|string $column, mixed $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> orWhereIn(string $column, mixed $values)
- * @method Builder<TEntity> whereNotIn(string $column, mixed $values, string $boolean = 'and')
- * @method Builder<TEntity> orWhereNotIn(string $column, mixed $values)
- * @method Builder<TEntity> whereNull(\Illuminate\Contracts\Database\Query\Expression|array|string $columns, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> orWhereNull(string $column)
- * @method Builder<TEntity> whereNotNull(\Illuminate\Contracts\Database\Query\Expression|array|string $columns, string $boolean = 'and')
- * @method Builder<TEntity> orWhereNotNull(string $column)
- * @method Builder<TEntity> whereBetween(\Illuminate\Contracts\Database\Query\Expression|string $column, iterable $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> orWhereBetween(string $column, array $values)
- * @method Builder<TEntity> whereNotBetween(string $column, array $values, string $boolean = 'and')
- * @method Builder<TEntity> orWhereNotBetween(string $column, array $values)
- * @method Builder<TEntity> whereDate(string $column, string $operator, \DateTimeInterface|string|null $value = null, string $boolean = 'and')
- * @method Builder<TEntity> orWhereDate(string $column, string $operator, \DateTimeInterface|string|null $value = null)
- * @method Builder<TEntity> whereYear(string $column, string $operator, \DateTimeInterface|string|int|null $value = null, string $boolean = 'and')
- * @method Builder<TEntity> whereMonth(string $column, string $operator, \DateTimeInterface|string|int|null $value = null, string $boolean = 'and')
- * @method Builder<TEntity> whereDay(string $column, string $operator, \DateTimeInterface|string|int|null $value = null, string $boolean = 'and')
- * @method Builder<TEntity> whereTime(string $column, string $operator, \DateTimeInterface|string|null $value = null, string $boolean = 'and')
- * @method Builder<TEntity> whereColumn(string|array $first, string|null $operator = null, string|null $second = null, string $boolean = 'and')
- * @method Builder<TEntity> orWhereColumn(string|array $first, string|null $operator = null, string|null $second = null)
- * @method Builder<TEntity> groupBy(array|\Illuminate\Contracts\Database\Query\Expression|string ...$groups)
- * @method Builder<TEntity> groupByRaw(string $sql, array $bindings = [])
- * @method Builder<TEntity> having(\Closure|\Illuminate\Contracts\Database\Query\Expression|string $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
- * @method Builder<TEntity> orHaving(string $column, string|null $operator = null, string|null $value = null)
- * @method Builder<TEntity> havingRaw(string $sql, array $bindings = [], string $boolean = 'and')
- * @method Builder<TEntity> orHavingRaw(string $sql, array $bindings = [])
- * @method Builder<TEntity> havingBetween(string $column, array $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> orderBy(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string $column, string $direction = 'asc')
- * @method Builder<TEntity> orderByDesc(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string $column)
- * @method Builder<TEntity> orderByRaw(string $sql, array $bindings = [])
- * @method Builder<TEntity> reorder(string|null $column = null, string $direction = 'asc')
- * @method Builder<TEntity> take(int $value)
- * @method Builder<TEntity> limit(int $value)
- * @method Builder<TEntity> skip(int $value)
- * @method Builder<TEntity> offset(int $value)
- * @method Builder<TEntity> forPage(int $page, int $perPage = 15)
- * @method Builder<TEntity> forPageBeforeId(int $perPage = 15, int|null $lastId = 0, string $column = 'id')
- * @method Builder<TEntity> forPageAfterId(int $perPage = 15, int|null $lastId = 0, string $column = 'id')
- * @method Builder<TEntity> union(\Illuminate\Database\Query\Builder|\Closure $query, bool $all = false)
- * @method Builder<TEntity> unionAll(\Illuminate\Database\Query\Builder|\Closure $query)
- * @method Builder<TEntity> lock(string|bool $value = true)
- * @method Builder<TEntity> lockForUpdate()
- * @method Builder<TEntity> sharedLock()
+ * @method Builder<TEntity> select(mixed ...$parameters)
+ * @method Builder<TEntity> selectRaw(mixed ...$parameters)
+ * @method Builder<TEntity> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity> distinct(mixed ...$parameters)
+ * @method Builder<TEntity> join(mixed ...$parameters)
+ * @method Builder<TEntity> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity> rightJoin(mixed ...$parameters)
+ * @method Builder<TEntity> crossJoin(mixed ...$parameters)
+ * @method Builder<TEntity> joinWhere(mixed ...$parameters)
+ * @method Builder<TEntity> leftJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity> rightJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity> whereRaw(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereRaw(mixed ...$parameters)
+ * @method Builder<TEntity> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereIn(mixed ...$parameters)
+ * @method Builder<TEntity> whereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereNull(mixed ...$parameters)
+ * @method Builder<TEntity> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereBetween(mixed ...$parameters)
+ * @method Builder<TEntity> whereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity> whereDate(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereDate(mixed ...$parameters)
+ * @method Builder<TEntity> whereYear(mixed ...$parameters)
+ * @method Builder<TEntity> whereMonth(mixed ...$parameters)
+ * @method Builder<TEntity> whereDay(mixed ...$parameters)
+ * @method Builder<TEntity> whereTime(mixed ...$parameters)
+ * @method Builder<TEntity> whereColumn(mixed ...$parameters)
+ * @method Builder<TEntity> orWhereColumn(mixed ...$parameters)
+ * @method Builder<TEntity> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity> groupByRaw(mixed ...$parameters)
+ * @method Builder<TEntity> having(mixed ...$parameters)
+ * @method Builder<TEntity> orHaving(mixed ...$parameters)
+ * @method Builder<TEntity> havingRaw(mixed ...$parameters)
+ * @method Builder<TEntity> orHavingRaw(mixed ...$parameters)
+ * @method Builder<TEntity> havingBetween(mixed ...$parameters)
+ * @method Builder<TEntity> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity> orderByRaw(mixed ...$parameters)
+ * @method Builder<TEntity> reorder(mixed ...$parameters)
+ * @method Builder<TEntity> take(mixed ...$parameters)
+ * @method Builder<TEntity> limit(mixed ...$parameters)
+ * @method Builder<TEntity> skip(mixed ...$parameters)
+ * @method Builder<TEntity> offset(mixed ...$parameters)
+ * @method Builder<TEntity> forPage(mixed ...$parameters)
+ * @method Builder<TEntity> forPageBeforeId(mixed ...$parameters)
+ * @method Builder<TEntity> forPageAfterId(mixed ...$parameters)
+ * @method Builder<TEntity> union(mixed ...$parameters)
+ * @method Builder<TEntity> unionAll(mixed ...$parameters)
+ * @method Builder<TEntity> lock(mixed ...$parameters)
+ * @method Builder<TEntity> lockForUpdate(mixed ...$parameters)
+ * @method Builder<TEntity> sharedLock(mixed ...$parameters)
  */
 class Builder
 {
@@ -316,13 +316,13 @@ class Builder
     /**
      * Add a basic where clause to the query.
      *
-     * @param  string|\Closure  $column
-     * @param  string  $operator
+     * @param  mixed   $column
+     * @param  mixed   $operator
      * @param  mixed   $value
      * @param  string  $boolean
      * @return Builder<TEntity>
      */
-    public function where($column, ?string $operator = null, $value = null, string $boolean = 'and') : self
+    public function where($column, $operator = null, $value = null, string $boolean = 'and') : self
     {
         if ($column instanceof Closure) {
             $query = $this->mapper->newQueryWithoutScopes();
@@ -340,12 +340,12 @@ class Builder
     /**
      * Add an "or where" clause to the query.
      *
-     * @param  string|\Closure  $column
-     * @param  string           $operator
+     * @param  mixed            $column
+     * @param  mixed            $operator
      * @param  mixed            $value
      * @return Builder<TEntity>
      */
-    public function orWhere($column, ?string $operator = null, $value = null) : self
+    public function orWhere($column, $operator = null, $value = null) : self
     {
         return $this->where($column, $operator, $value, 'or');
     }
@@ -758,7 +758,7 @@ class Builder
      * @param  array  $columns
      * @param  string  $pageName
      * @param  int|null  $page
-     * @return LengthAwarePaginatorContract<int, TEntity>
+     * @return \Illuminate\Pagination\LengthAwarePaginator<int, TEntity>
      *
      * @throws \InvalidArgumentException
      */
@@ -781,7 +781,7 @@ class Builder
     /**
      * Paginate the given query into a simple paginator.
      *
-     * @return PaginatorContract<int, TEntity>
+     * @return \Illuminate\Pagination\Paginator<int, TEntity>
      */
     public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract
     {

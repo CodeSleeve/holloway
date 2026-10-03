@@ -17,6 +17,7 @@ class TypeInferenceTest extends TypeInferenceTestCase
     {
         yield from self::gatherAssertTypes(__DIR__ . '/data/mapper.inc');
         yield from self::gatherAssertTypes(__DIR__ . '/data/get-mapper.inc');
+        yield from self::gatherAssertTypes(__DIR__ . '/data/mapper-overrides.inc');
     }
 
     /**
