@@ -35,10 +35,12 @@ use PHPStan\Type\TypeCombinator;
  * typed results — e.g. Pup|null for find(), Collection<int, Pup> for get().
  *
  * Covered methods (entity-returning):
- *   find, findOrFail, first, firstOrFail, findMany, get, paginate, simplePaginate
+ *   find, findOrFail, first, firstOrFail, findMany, get, all, paginate,
+ *   simplePaginate, makeEntity, makeEntities, instantiateEntity, newCollection
  *
  * Covered methods (builder-returning):
- *   newQuery, query, with, where, orWhere, whereKey, whereIn, whereNull,
+ *   newQuery, newQueryWithoutScopes, newQueryWithoutScope, newHollowayBuilder,
+ *   query, with, where, orWhere, whereKey, whereIn, whereNull,
  *   whereNotNull, whereBetween, orderBy, orderByDesc, take, skip, limit,
  *   offset, forPage, select, addSelect, distinct, groupBy, having, join,
  *   leftJoin, rightJoin, withCount, without, scopes, applyScopes,
@@ -52,8 +54,11 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
     /** Methods that always return a single entity (throw on miss) */
     private const SINGLE_REQUIRED = ['findOrFail', 'firstOrFail'];
 
+    /** Methods that return a single entity */
+    private const ENTITY = ['makeEntity', 'instantiateEntity'];
+
     /** Methods that return Collection<int, TEntity> */
-    private const COLLECTION = ['findMany', 'get'];
+    private const COLLECTION = ['findMany', 'get', 'all', 'makeEntities', 'newCollection'];
 
     /** Methods that return LengthAwarePaginator<int, TEntity> */
     private const LENGTH_AWARE_PAGINATOR = ['paginate'];
@@ -63,7 +68,8 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
 
     /** Methods that return Builder<TEntity> */
     private const BUILDER = [
-        'newQuery', 'query', 'with', 'without', 'withCount',
+        'newQuery', 'newQueryWithoutScopes', 'newQueryWithoutScope', 'newHollowayBuilder',
+        'query', 'with', 'without', 'withCount',
         'where', 'orWhere', 'whereKey', 'whereIn', 'whereNull', 'whereNotNull',
         'whereBetween', 'orderBy', 'orderByDesc', 'take', 'skip', 'limit',
         'offset', 'forPage', 'select', 'addSelect', 'distinct',
@@ -75,6 +81,7 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
     private const ALL_METHODS = [
         ...self::SINGLE_OR_NULL,
         ...self::SINGLE_REQUIRED,
+        ...self::ENTITY,
         ...self::COLLECTION,
         ...self::LENGTH_AWARE_PAGINATOR,
         ...self::SIMPLE_PAGINATOR,
@@ -147,19 +154,29 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
         $collection = new GenericObjectType(Collection::class, [new IntegerType(), $entityType]);
 
         if ($method === 'find') {
-            // find(array $ids) returns Collection<int, TEntity>; find(scalar) returns TEntity|null
+            // find(array $ids) returns Collection<int, TEntity>; find(scalar) returns TEntity|null.
+            // When the argument could be either, the result is the union of both.
             $args = $methodCall->getArgs();
-            if ($args !== [] && $scope->getType($args[0]->value)->isArray()->yes()) {
+            $nullable = TypeCombinator::addNull($entityType);
+
+            if ($args === []) {
+                return $nullable;
+            }
+
+            $isArray = $scope->getType($args[0]->value)->isArray();
+
+            if ($isArray->yes()) {
                 return $collection;
             }
-            return TypeCombinator::addNull($entityType);
+
+            return $isArray->no() ? $nullable : TypeCombinator::union($collection, $nullable);
         }
 
         if (in_array($method, self::SINGLE_OR_NULL, true)) {
             return TypeCombinator::addNull($entityType);
         }
 
-        if (in_array($method, self::SINGLE_REQUIRED, true)) {
+        if (in_array($method, [...self::SINGLE_REQUIRED, ...self::ENTITY], true)) {
             return $entityType;
         }
 

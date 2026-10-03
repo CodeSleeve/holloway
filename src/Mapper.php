@@ -30,25 +30,25 @@ use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
  * @method Builder<TEntity> where(string|\Closure $column, string|null $operator = null, mixed $value = null, string $boolean = 'and')
  * @method Builder<TEntity> orWhere(string|\Closure $column, string|null $operator = null, mixed $value = null)
  * @method Builder<TEntity> whereKey(mixed $id)
- * @method Builder<TEntity> whereIn(string $column, mixed $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> whereNull(string|array $columns, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> whereNotNull(string|array $columns, string $boolean = 'and')
- * @method Builder<TEntity> whereBetween(string $column, array $values, string $boolean = 'and', bool $not = false)
- * @method Builder<TEntity> orderBy(string $column, string $direction = 'asc')
- * @method Builder<TEntity> orderByDesc(string $column)
+ * @method Builder<TEntity> whereIn(\Illuminate\Contracts\Database\Query\Expression|string $column, mixed $values, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> whereNull(\Illuminate\Contracts\Database\Query\Expression|array|string $columns, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> whereNotNull(\Illuminate\Contracts\Database\Query\Expression|array|string $columns, string $boolean = 'and')
+ * @method Builder<TEntity> whereBetween(\Illuminate\Contracts\Database\Query\Expression|string $column, iterable $values, string $boolean = 'and', bool $not = false)
+ * @method Builder<TEntity> orderBy(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string $column, string $direction = 'asc')
+ * @method Builder<TEntity> orderByDesc(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Contracts\Database\Query\Expression|string $column)
  * @method Builder<TEntity> limit(int $value)
  * @method Builder<TEntity> take(int $value)
  * @method Builder<TEntity> skip(int $value)
  * @method Builder<TEntity> offset(int $value)
  * @method Builder<TEntity> forPage(int $page, int $perPage = 15)
- * @method Builder<TEntity> select(array|string ...$columns)
- * @method Builder<TEntity> addSelect(array|string $column)
- * @method Builder<TEntity> distinct()
- * @method Builder<TEntity> groupBy(string ...$groups)
- * @method Builder<TEntity> having(string $column, string|null $operator = null, mixed $value = null, string $boolean = 'and')
- * @method Builder<TEntity> join(string $table, string $first, string|null $operator = null, string|null $second = null, string $type = 'inner', bool $where = false)
- * @method Builder<TEntity> leftJoin(string $table, string $first, string|null $operator = null, string|null $second = null)
- * @method Builder<TEntity> rightJoin(string $table, string $first, string|null $operator = null, string|null $second = null)
+ * @method Builder<TEntity> select(mixed ...$columns)
+ * @method Builder<TEntity> addSelect(mixed $column)
+ * @method Builder<TEntity> distinct(mixed ...$distinct)
+ * @method Builder<TEntity> groupBy(array|\Illuminate\Contracts\Database\Query\Expression|string ...$groups)
+ * @method Builder<TEntity> having(\Closure|\Illuminate\Contracts\Database\Query\Expression|string $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method Builder<TEntity> join(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null, string $type = 'inner', bool $where = false)
+ * @method Builder<TEntity> leftJoin(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null)
+ * @method Builder<TEntity> rightJoin(\Illuminate\Contracts\Database\Query\Expression|string $table, \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first, string|null $operator = null, \Illuminate\Contracts\Database\Query\Expression|string|null $second = null)
  * @method Builder<TEntity> withCount(mixed $relations)
  * @method Builder<TEntity> without(mixed $relations)
  * @method Builder<TEntity> scopes(array $scopes)
@@ -260,6 +260,7 @@ abstract class Mapper
      */
     public static function resolveConnection(?string $connection = null) : Connection
     {
+        // The resolver contract returns ConnectionInterface; in practice it always yields an Illuminate Connection.
         /** @phpstan-ignore return.type */
         return static::$resolver->connection($connection);
     }
