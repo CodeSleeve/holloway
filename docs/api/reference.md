@@ -95,7 +95,7 @@ Begin a query with eager loading.
 $posts = $postMapper->with(['author', 'category'])->get();
 ```
 
-All other query methods (`where`, `orderBy`, `limit`, `join`, etc.) are proxied via `__call` to the underlying `Illuminate\Database\Query\Builder` and return the Holloway `Builder` instance.
+All other query methods (`where`, `orderBy`, `limit`, `join`, `get`, `find`, etc.) are forwarded via `__call` to a new Holloway `Builder` for the mapper, which in turn proxies to the underlying `Illuminate\Database\Query\Builder` (see [Proxied Methods](#proxied-methods)).
 
 ### Persistence
 
@@ -255,7 +255,7 @@ Remove relationships from the eager load list (useful for overriding `$with`).
 
 ### Pagination
 
-#### `paginate(int $perPage = null): LengthAwarePaginator`
+#### `paginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null): LengthAwarePaginator`
 
 Paginate results with a total count.
 
@@ -263,7 +263,7 @@ Paginate results with a total count.
 $posts = $postMapper->where('published', true)->paginate(20);
 ```
 
-#### `simplePaginate(int $perPage = null): Paginator`
+#### `simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null): Paginator`
 
 Paginate results without a total count (more efficient for large tables).
 
@@ -330,7 +330,7 @@ Execute a hard delete, bypassing any `onDelete` callback.
 
 ### Proxied Methods
 
-All methods not explicitly defined on `Builder` are proxied to the underlying `Illuminate\Database\Query\Builder`. This includes `select`, `selectRaw`, `where`, `orWhere`, `whereIn`, `whereNull`, `whereNotNull`, `whereBetween`, `orderBy`, `groupBy`, `having`, `join`, `leftJoin`, `limit`, `offset`, `skip`, `take`, `distinct`, `union`, `when`, and more.
+All methods not explicitly defined on `Builder` are proxied to the underlying `Illuminate\Database\Query\Builder`. This includes `select`, `selectRaw`, `where`, `orWhere`, `whereIn`, `whereNull`, `whereNotNull`, `whereBetween`, `orderBy`, `groupBy`, `having`, `join`, `leftJoin`, `limit`, `offset`, `skip`, `take`, `distinct`, `union`, `when`, and more. Most return the Holloway `Builder` so calls can be chained. These are the exceptions: `insert`, `insertGetId`, `getBindings`, `toSql`, `exists`, `count`, `min`, `max`, `avg`, `sum` and `getConnection` run against the base query and return its result directly.
 
 ---
 
@@ -464,18 +464,18 @@ Holloway dispatches string-based events using the Laravel event dispatcher. Even
 
 ### Event Names
 
-| Event | When | Cancellable |
-|-------|------|-------------|
-| `storing` | Before create or update | Yes |
-| `creating` | Before a new entity is inserted | Yes |
-| `created` | After a new entity is inserted | No |
-| `updating` | Before an existing entity is updated | Yes |
-| `updated` | After an existing entity is updated | No |
-| `stored` | After create or update completes | No |
-| `removing` | Before an entity is removed | Yes |
-| `removed` | After an entity is removed | No |
-| `restoring` | Before a soft-deleted entity is restored | Yes |
-| `restored` | After a soft-deleted entity is restored | No |
+| Event | When |
+|-------|------|
+| `storing` | Before create or update |
+| `creating` | Before a new entity is inserted |
+| `created` | After a new entity is inserted |
+| `updating` | Before an existing entity is updated |
+| `updated` | After an existing entity is updated |
+| `stored` | After create or update completes |
+| `removing` | Before an entity is removed |
+| `removed` | After an entity is removed |
+| `restoring` | Before a soft-deleted entity is restored |
+| `restored` | After a soft-deleted entity is restored |
 
 ### Registering Listeners
 
@@ -501,7 +501,7 @@ class PostMapper extends Mapper
 }
 ```
 
-Return `false` from a `storing`, `creating`, `updating`, or `removing` listener to cancel the operation.
+Return `false` from a `storing`, `creating`, `updating`, `removing` or `restoring` listener to cancel the operation (see [Events](../advanced/events.md#preventing-operations)).
 
 ---
 

@@ -486,16 +486,16 @@ class UserMapper extends Mapper
 }
 ```
 
-**✅ Correct: Use Events or Observers**
+**✅ Correct: Use persistence events**
 
 ```php
-// In a service provider or observer
-Event::listen(EntitySaved::class, function($event) {
-    if ($event->entity instanceof User) {
-        Cache::forget("user.{$event->entity->id}");
-    }
+// In a service provider, after the mapper is resolved
+$userMapper->registerPersistenceEvent('stored', function (User $user) {
+    Cache::forget("user.{$user->getId()}");
 });
 ```
+
+See [Events](../advanced/events.md) for the available events.
 
 **Mapper Responsibilities:**
 - ✅ Database queries
@@ -507,8 +507,8 @@ Event::listen(EntitySaved::class, function($event) {
 **NOT Mapper Responsibilities:**
 - ❌ Validation
 - ❌ Business logic
-- ❌ Cache management
-- ❌ Event dispatching
+- ❌ Application-level cache invalidation
+- ❌ Domain event dispatching
 - ❌ Authorization
 - ❌ Notifications
 

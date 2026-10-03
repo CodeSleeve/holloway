@@ -10,7 +10,7 @@ Value Objects are small,immutable objects that represent a conceptual whole defi
   - [Email Value Object](#email-value-object)
   - [Money Value Object](#money-value-object-using-moneyphpmoney)
   - [Address Value Object](#address-value-object)
-  - [Date/DateTime Value Objects](#datetime-value-objects)
+  - [Date/DateTime Value Objects](#datedatetime-value-objects)
   - [Custom Notification Settings](#custom-notification-settings)
 - [Integrating with Holloway](#integrating-with-holloway)
 - [Common Patterns](#common-patterns)

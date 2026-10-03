@@ -104,27 +104,22 @@ $existingUser->updateName('John Smith');
 $userMapper->store($existingUser); // UPDATE operation
 ```
 
-### Dirty Tracking
+### Change Detection
 
-Holloway tracks entity changes through the entity cache:
+Holloway remembers the attributes of each row it loads in the mapper's entity cache, and `store()` compares them with the entity's `dehydrate()` output:
 
 ```php
-// Load entity (cached attributes stored)
+// Load entity (the row's attributes are cached)
 $user = $userMapper->find(1);
-// Cache: ['id' => 1, 'name' => 'John', 'email' => 'john@example.com']
 
-// Modify entity
 $user->updateName('John Smith');
-$user->updateEmail('johnsmith@example.com');
 
-// Store operation compares with cache
+// store() issues an UPDATE for the entity
 $userMapper->store($user);
-// Only changed fields are updated:
-// UPDATE users SET name = 'John Smith', email = 'johnsmith@example.com' WHERE id = 1
-
-// No-op if no changes
-$userMapper->store($user); // No database query - nothing changed
+// UPDATE users SET id = 1, name = 'John Smith', email = 'john@example.com', ... WHERE id = 1
 ```
+
+Holloway does not diff individual columns: an update writes **all** dehydrated attributes. The `UPDATE` is skipped only when `dehydrate()` returns an array identical (strict `!==` comparison) to the cached attributes, which in the current implementation is uncommon, so expect an `UPDATE` on every `store()` of an existing entity. See [Entity Caching](../advanced/caching.md#what-store-does-with-it).
 
 ## Implementing Persistence Methods
 
@@ -790,7 +785,7 @@ class UserMapper extends Mapper
 }
 ```
 
-Persistence operations in Holloway provide explicit, controlled data storage with clear separation between domain logic and persistence concerns. The system's dirty tracking, automatic transaction support, and event hooks enable robust, maintainable applications.
+Persistence operations in Holloway provide explicit, controlled data storage with clear separation between domain logic and persistence concerns. The system's change detection, transaction support for collections, and event hooks enable robust, maintainable applications.
 
 ## Next Steps
 

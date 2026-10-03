@@ -79,7 +79,7 @@ class AppServiceProvider extends ServiceProvider
 
 ## Preventing Operations
 
-Return `false` from a `storing`, `creating`, `updating`, or `removing` listener to abort the operation. The mapper method will return `false`.
+Return `false` from a `storing`, `creating`, `updating`, `removing` or `restoring` listener to cancel the operation, just as with Eloquent's model events. The mapper method returns `false` and nothing is written.
 
 ```php
 $this->registerPersistenceEvent('removing', function(Post $post) {
@@ -94,11 +94,16 @@ if (!$postMapper->remove($post)) {
 }
 ```
 
-Returning `false` from `stored`, `created`, `updated`, or `removed` has no effect — the operation has already completed.
+A few things to know:
+
+- **Return nothing from "before" listeners that shouldn't cancel.** As with Eloquent, the first non-null value a `storing`, `creating`, `updating`, `removing` or `restoring` listener returns stops the remaining listeners for that event. Avoid arrow functions that return a value, such as `fn($post) => Cache::forget(...)`.
+- Returning `false` from a `stored`, `created`, `updated`, `removed` or `restored` listener has no effect. The operation has already completed, and every listener runs.
+- When you pass an iterable to `store()`, `remove()` or `restore()`, an entity whose operation is cancelled is skipped and the call still returns `true`.
+- Throwing an exception from a listener also stops the operation.
 
 ## Soft Delete Events
 
-Mappers using `SoftDeletes` fire `restoring` and `restored` around calls to `restore()`. You can cancel a restore by returning `false` from a `restoring` listener.
+Mappers using `SoftDeletes` fire `restoring` and `restored` around calls to `restore()`. You can cancel a restore by returning `false` from a `restoring` listener (see [Preventing Operations](#preventing-operations)).
 
 ```php
 $this->registerPersistenceEvent('restoring', function(Post $post) {

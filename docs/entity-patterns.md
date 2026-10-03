@@ -21,8 +21,9 @@ Holloway's datamapper architecture provides complete decoupling between your ent
   - [Benefits](#benefits-of-property-hooks-pattern)
   - [When to Use](#when-to-use-property-hooks-pattern)
 - [Array-Based Entities](#array-based-entities)
-- [Public Properties Pattern](#public-properties-pattern)
-- [Getters/Setters Pattern](#getterssetters-pattern)
+- [Defined Properties](#defined-properties)
+  - [Public Properties](#public-properties)
+  - [Protected Properties with Getters/Setters](#protected-properties-with-getterssetters)
 - [Immutable Entities](#immutable-entities)
 
 ## Pattern Comparison
@@ -688,7 +689,7 @@ class User
 ```php
 class UserMapper extends Mapper
 {
-    protected $table = 'users';
+    protected string $table = 'users';
 
     public function hydrate(array $attributes): User
     {
@@ -787,7 +788,7 @@ class User
 ```php
 class UserMapper extends Mapper
 {
-    protected $table = 'users';
+    protected string $table = 'users';
 
     public function hydrate(array $attributes): User
     {
@@ -968,7 +969,7 @@ class User
 ```php
 class UserMapper extends Mapper
 {
-    protected $table = 'users';
+    protected string $table = 'users';
 
     public function hydrate(array $attributes): User
     {
@@ -1119,7 +1120,7 @@ class User
 ```php
 class UserMapper extends Mapper
 {
-    protected $table = 'users';
+    protected string $table = 'users';
 
     public function hydrate(array $attributes): User
     {

@@ -9,7 +9,7 @@ While Holloway's standard relationships (HasOne, HasMany, BelongsTo, BelongsToMa
 - [Advanced Custom Relationship Examples](#advanced-custom-relationship-examples)
 - [Geographic and Spatial Relationships](#geographic-and-spatial-relationships)
 - [Complex Business Logic Relationships](#complex-business-logic-relationships)
-- [Custom Relationships with Constraints](#custom-relationships-with-constraints)
+- [Conditional Custom Relationships](#conditional-custom-relationships)
 - [Error Handling in Custom Relationships](#error-handling-in-custom-relationships)
 - [Performance Optimization](#performance-optimization-for-custom-relationships)
 - [Testing Custom Relationships](#testing-custom-relationships)
@@ -343,7 +343,7 @@ class UserMapper extends Mapper
 }
 ```
 
-## Custom Relationships with Constraints
+## Conditional Custom Relationships
 
 ### Conditional Loading
 
@@ -878,12 +878,12 @@ class NotificationRelationshipTest extends TestCase
     public function testClientNotifications(): void
     {
         // Arrange
-        $client = ClientFactory::new()->create();
-        $user = UserFactory::new()->create();
+        $client = factory(Client::class)->create();
+        $user = factory(User::class)->create();
         
         // Create notifications for both
-        NotificationFactory::new()->for($client)->count(3)->create();
-        NotificationFactory::new()->for($user)->count(2)->create();
+        factory(Notification::class, 3)->create(['notifiable_type' => Client::class, 'notifiable_id' => $client->id]);
+        factory(Notification::class, 2)->create(['notifiable_type' => User::class, 'notifiable_id' => $user->id]);
         
         // Act
         $clientMapper = app(ClientMapper::class);
@@ -900,9 +900,9 @@ class NotificationRelationshipTest extends TestCase
     public function testUnreadNotificationsFilter(): void
     {
         // Arrange
-        $client = ClientFactory::new()->create();
-        NotificationFactory::new()->for($client)->read()->count(2)->create();
-        NotificationFactory::new()->for($client)->unread()->count(3)->create();
+        $client = factory(Client::class)->create();
+        factory(Notification::class, 2)->states('read')->create(['notifiable_type' => Client::class, 'notifiable_id' => $client->id]);
+        factory(Notification::class, 3)->states('unread')->create(['notifiable_type' => Client::class, 'notifiable_id' => $client->id]);
         
         // Act
         $clientMapper = app(ClientMapper::class);

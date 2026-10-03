@@ -285,7 +285,7 @@ class PostService
 
 The mapper fires standard persistence events around soft delete and restore operations. Use `registerPersistenceEvent()` to hook into them.
 
-The `removing` event fires before a soft delete (just like a hard delete). Return `false` to cancel it:
+The `removing` event fires before a soft delete (just like a hard delete). Return `false` to cancel it (see [Events](./events.md#preventing-operations)):
 
 ```php
 public function __construct()

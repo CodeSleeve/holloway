@@ -20,7 +20,7 @@ A concise summary of the methods you'll call most often when working with Hollow
 | `instantiateEntity(array $attributes)` | Create an empty entity instance. | Overridable if you need custom factories. |
 | `hydrate(stdClass $record, Collection $relations)` | Convert a DB record to an entity. | Implemented by your mapper subclass. |
 | `dehydrate($entity)` | Convert an entity to an array of database attributes. | Implemented by your mapper subclass. |
-| `flushEntityCache()` | Clear the mapper’s identity map. | Useful in long-running processes or tests. |
+| `flushEntityCache()` | Clear the mapper’s entity cache (the stored attributes of loaded rows). | Useful in long-running processes or tests. |
 
 ## Query builder shortcuts
 

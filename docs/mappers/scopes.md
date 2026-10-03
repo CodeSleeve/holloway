@@ -419,14 +419,16 @@ See [Soft Deletes](../advanced/soft-deletes.md) for full documentation.
 
 ### Testing Global Scopes
 
+These examples use Holloway's `factory()` helper (Laravel's legacy factories). States such as `published` and `draft` are ones you define in your factory definitions.
+
 ```php
 class GlobalScopeTest extends TestCase
 {
     public function testPublishedScopeAppliedByDefault(): void
     {
         // Arrange
-        PostFactory::new()->published()->create();
-        PostFactory::new()->draft()->create();
+        factory(Post::class)->states('published')->create();
+        factory(Post::class)->states('draft')->create();
 
         // Act
         $posts = app(PostMapper::class)->all();
@@ -439,8 +441,8 @@ class GlobalScopeTest extends TestCase
     public function testCanRemoveGlobalScope(): void
     {
         // Arrange
-        PostFactory::new()->published()->create();
-        PostFactory::new()->draft()->create();
+        factory(Post::class)->states('published')->create();
+        factory(Post::class)->states('draft')->create();
 
         // Act
         $allPosts = app(PostMapper::class)
@@ -461,11 +463,11 @@ class LocalScopeTest extends TestCase
     public function testByAuthorScope(): void
     {
         // Arrange
-        $author = UserFactory::new()->create();
-        $otherAuthor = UserFactory::new()->create();
+        $author = factory(User::class)->create();
+        $otherAuthor = factory(User::class)->create();
         
-        PostFactory::new()->for($author)->count(3)->create();
-        PostFactory::new()->for($otherAuthor)->count(2)->create();
+        factory(Post::class, 3)->create(['author_id' => $author->getId()]);
+        factory(Post::class, 2)->create(['author_id' => $otherAuthor->getId()]);
 
         // Act
         $authorPosts = app(PostMapper::class)
@@ -482,10 +484,10 @@ class LocalScopeTest extends TestCase
     public function testScopeChaining(): void
     {
         // Arrange
-        $author = UserFactory::new()->create();
-        PostFactory::new()->for($author)->popular()->recent()->count(2)->create();
-        PostFactory::new()->for($author)->unpopular()->recent()->create();
-        PostFactory::new()->for($author)->popular()->old()->create();
+        $author = factory(User::class)->create();
+        factory(Post::class, 2)->states('popular', 'recent')->create(['author_id' => $author->getId()]);
+        factory(Post::class)->states('unpopular', 'recent')->create(['author_id' => $author->getId()]);
+        factory(Post::class)->states('popular', 'old')->create(['author_id' => $author->getId()]);
 
         // Act
         $results = app(PostMapper::class)

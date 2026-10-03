@@ -766,7 +766,7 @@ class Client extends Entity
 
 **Key points:**
 - Used by base `Entity` class
-- Mapper calls `setCreatedAt()` and `setUpdatedAt()` automatically
+- Holloway's `Mapper` calls the mapper's optional `setCreatedAtTimestampOnEntity()` / `setUpdatedAtTimestampOnEntity()` hooks, and the base mapper's implementations call `setCreatedAt()` / `setUpdatedAt()` on the entity
 - Uses Cake Chronos for immutable date/time
 - Properties are protected, accessed via magic `__get()`
 

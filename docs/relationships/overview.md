@@ -193,8 +193,8 @@ Holloway follows Laravel-style conventions but allows full customization:
 // Local key: {primary_key} (id)
 
 // BelongsTo:
-// Foreign key: {singular_related_table}_id (company_id)  
-// Local key: {primary_key} (id)
+// Foreign key: {singular_related_table}_id (company_id), a column on this mapper's table
+// Local key: this mapper's primary key name (id), used as the key column on the related table
 
 // BelongsToMany:
 // Pivot table: {table1}_{table2} (alphabetical order)
@@ -242,33 +242,8 @@ $users = $userMapper->with('posts.comments.author')->get();
 
 ### Memory Optimization
 
-- **Entity Caching** - Each database record creates only one entity instance
 - **Batch Loading** - All relationships loaded in single queries per level
 - **Selective Loading** - Only requested relationships are loaded
-
-### Caching Integration
-
-```php
-class UserMapper extends Mapper
-{
-    public function defineRelations(): void
-    {
-        $this->hasMany('posts', Post::class);
-    }
-    
-    // Entities are cached automatically
-    public function findWithPosts($id)
-    {
-        $user = $this->with('posts')->find($id);
-        
-        // Second call uses cached entities
-        $sameUser = $this->with('posts')->find($id);
-        
-        // $user and $sameUser are the same instances
-        return $user;
-    }
-}
-```
 
 ## Advanced Relationship Features
 

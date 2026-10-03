@@ -55,7 +55,7 @@ Holloway implements Martin Fowler's **Datamapper Pattern**, which provides compl
 | **Entity Dependencies** | Requires database connection | Database-agnostic |
 | **Testing** | Requires database mocking | Pure unit testing possible |
 | **Entity Construction** | Framework controlled | Application controlled |
-| **Performance** | Lazy loading, N+1 potential | Explicit loading, caching |
+| **Performance** | Lazy loading, N+1 potential | Explicit eager loading |
 
 ## Core Components
 
@@ -193,9 +193,9 @@ class EntityCache
 
 **Benefits:**
 
-- **Prevents duplicate entity creation** for same record
-- **Tracks dirty attributes** for efficient updates
-- **Automatic cache invalidation** on entity changes
+- **Remembers the attributes of each loaded row** so `store()` can detect changes
+- **Entries are kept current** when entities are stored and removed when they are removed
+- **Not an identity map**: each query builds new entity objects
 
 ### 5. Relationship System
 
@@ -391,9 +391,9 @@ $user = factory(User::class)->make();
 
 ### Entity Caching Strategy
 
-- **Identity Map Pattern** - One entity instance per database record
-- **Dirty Tracking** - Only UPDATE changed attributes
-- **Batch Operations** - Efficient bulk insert/update/delete
+- **Entity cache** - Remembers loaded rows' attributes for change detection (not an identity map)
+- **Change detection** - Skips the UPDATE only when the dehydrated attributes are identical to the loaded row
+- **Transactional batches** - Collections passed to `store()` / `remove()` are persisted inside one transaction
 
 ### Relationship Loading Optimization
 
@@ -404,7 +404,7 @@ $user = factory(User::class)->make();
 ### Memory Management
 
 - **Cache Flushing** - Automatic cache clearing in chunk operations
-- **Lazy Hydration** - Entities created only when accessed
+- **Chunking** - `chunk()` / `chunkById()` process large tables in batches
 - **Selective Loading** - Load only requested relationships
 
 ## Laravel Integration Points
@@ -414,11 +414,10 @@ $user = factory(User::class)->make();
 ```php
 class HollowayServiceProvider extends ServiceProvider
 {
-    public function register(): void
+    public function boot()
     {
-        // Bind Holloway instance
-        // Set up database resolver
-        // Configure event dispatcher
+        Mapper::setConnectionResolver($this->app['db']);   // Laravel's database manager
+        Mapper::setEventManager($this->app['events']);     // The application's event dispatcher
     }
 }
 ```
@@ -431,19 +430,17 @@ class HollowayServiceProvider extends ServiceProvider
 
 ### Event Integration
 
-- Integrates with Laravel's event system
-- Supports event listeners and subscribers
-- Compatible with Laravel's queue system
+- Persistence events are dispatched through the application's event dispatcher
+- Listeners are registered per mapper with `registerPersistenceEvent()` or with the `Event` facade
 
 ## Design Patterns Used
 
 1. **Singleton** - Holloway registry
 2. **Factory** - Entity and relationship creation
 3. **Registry** - Mapper registration and lookup
-4. **Identity Map** - Entity caching
+4. **Entity cache** - Row attributes remembered for change detection
 5. **Data Mapper** - Core pattern
-6. **Unit of Work** - Transaction support
-7. **Lazy Loading** - Relationship proxies
+6. **Transactions** - Collections are persisted and removed inside a transaction
 8. **Strategy** - Different relationship types
 
 ## Next Steps
