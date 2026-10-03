@@ -7,6 +7,7 @@ This file contains your operating system for software development in this projec
 ## Commands
 
 - **Run tests** - `vendor/bin/phpunit`
+- **Run tests with coverage** - `vendor/bin/phpunit --coverage-text` (requires PCOV or Xdebug)
 - **Run static analysis** - `vendor/bin/phpstan analyse`
 
 ## Development Rules
