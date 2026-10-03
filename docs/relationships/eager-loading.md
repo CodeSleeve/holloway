@@ -1,6 +1,8 @@
 # Eager Loading
 
-Eager loading is a crucial performance optimization technique in Holloway that allows you to load related entities in a single query, avoiding the N+1 query problem that can severely impact application performance.
+Eager loading loads related entities up front, one query per relationship level, which avoids the N+1 query problem.
+
+> **Note:** Holloway does not support lazy loading. Relationships must be requested up front with `with()`; accessing an unloaded relationship does not trigger a query.
 
 ## Table of Contents
 
@@ -9,8 +11,6 @@ Eager loading is a crucial performance optimization technique in Holloway that a
 - [Nested Eager Loading](#nested-eager-loading)
 - [Conditional Eager Loading](#conditional-eager-loading)
 - [Custom Eager Loading](#custom-eager-loading)
-- [Performance Considerations](#performance-considerations)
-- [Best Practices](#best-practices)
 
 ## Understanding the N+1 Problem
 
@@ -180,142 +180,3 @@ class PostMapper extends Mapper
 $posts = $postMapper->withPopularComments()->get();
 $activePosts = $postMapper->withRecentActivity()->get();
 ```
-
-## Performance Considerations
-
-### Selectivity in Eager Loading
-
-Only load what you need:
-
-```php
-// Good: Specific fields
-$posts = $postMapper
-    ->with(['author' => function($query) {
-        $query->select(['id', 'name', 'email']);
-    }])
-    ->get();
-
-// Avoid: Loading all fields when you only need a few
-$posts = $postMapper->with('author')->get();
-```
-
-### Limiting Relationships
-
-Use limits to prevent loading too much data:
-
-```php
-$posts = $postMapper
-    ->with(['comments' => function($query) {
-        $query->latest()->limit(5);
-    }])
-    ->get();
-```
-
-### Memory Management
-
-For large datasets, consider using chunks with eager loading:
-
-```php
-$postMapper
-    ->with(['author', 'category'])
-    ->chunk(100, function($posts) {
-        foreach ($posts as $post) {
-            // Process each post with its loaded relationships
-            processPost($post);
-        }
-    });
-```
-
-## Best Practices
-
-### 1. Profile Your Queries
-
-Always monitor query counts and execution time:
-
-```php
-// Enable query logging in development
-DB::enableQueryLog();
-
-$posts = $postMapper->with('author.profile')->get();
-
-// Check executed queries
-$queries = DB::getQueryLog();
-echo "Executed " . count($queries) . " queries";
-```
-
-### 2. Use Eager Loading Strategically
-
-```php
-// Good: Load relationships you know you'll use
-$posts = $postMapper
-    ->with(['author', 'category'])
-    ->paginate(20);
-
-// Avoid: Loading relationships you might not use
-$posts = $postMapper
-    ->with(['author', 'category', 'comments', 'tags', 'likes'])
-    ->paginate(20);
-```
-
-### 3. Optimize Relationship Queries
-
-```php
-// Define efficient relationship loading in your mappers
-class PostMapper extends Mapper
-{
-    public function withEssentials()
-    {
-        return $this->with([
-            'author:id,name,avatar',
-            'category:id,name,slug'
-        ]);
-    }
-}
-```
-
-### 4. Use Indexes for Eager Loading
-
-Ensure your database has proper indexes for relationship queries:
-
-```sql
--- For HasMany relationships
-CREATE INDEX idx_posts_author_id ON posts(author_id);
-
--- For BelongsToMany relationships
-CREATE INDEX idx_post_tags_post_id ON post_tags(post_id);
-CREATE INDEX idx_post_tags_tag_id ON post_tags(tag_id);
-```
-
-## Debugging Eager Loading
-
-### Query Analysis
-
-```php
-// Log queries to understand what's being executed
-DB::listen(function($query) {
-    Log::info($query->sql, $query->bindings);
-});
-
-$posts = $postMapper->with('author')->get();
-```
-
-### Memory Usage Monitoring
-
-```php
-$memoryBefore = memory_get_usage();
-
-$posts = $postMapper->with(['author', 'comments'])->get();
-
-$memoryAfter = memory_get_usage();
-$memoryUsed = $memoryAfter - $memoryBefore;
-
-echo "Memory used: " . number_format($memoryUsed / 1024 / 1024, 2) . " MB";
-```
-
-Eager loading is essential for building performant applications with Holloway. By understanding and implementing these patterns, you can significantly reduce database queries and improve your application's response times.
-
----
-
-> **Note:**
->
-> Holloway does not currently support automatic lazy loading of relationships via proxies or magic properties. All relationships must be explicitly specified using `with()` or similar methods when querying. Attempting to access an unloaded relationship property will not trigger an automatic database query. This design ensures predictable performance and avoids accidental N+1 query issues, but requires you to plan your data loading strategy up front.

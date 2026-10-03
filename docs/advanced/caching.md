@@ -11,7 +11,6 @@ Each mapper keeps a small in-memory cache of the **raw attributes of every row i
 - [Cache Management](#cache-management)
 - [Lifetime and Memory](#lifetime-and-memory)
 - [Relationships](#relationships)
-- [Cache Debugging](#cache-debugging)
 - [Limitations](#limitations)
 - [Next Steps](#next-steps)
 
@@ -95,23 +94,6 @@ echo $postMapper->getNumberOfCachedEntities();   // one entry per loaded post
 
 Related entities are still separate objects. Loading a post by itself later does not return the instance that was attached to `$user->posts`.
 
-## Cache Debugging
-
-The cache is a protected property on the base mapper, so inspect it from your own mapper:
-
-```php
-class UserMapper extends Mapper
-{
-    public function debugCache(): array
-    {
-        return [
-            'count' => $this->entityCache->count(),
-            'keys'  => array_keys($this->entityCache->all()),
-        ];
-    }
-}
-```
-
 ## Limitations
 
 - **Not shared across requests or processes.** Each request builds its own cache, and the cache is not persisted.
@@ -122,4 +104,3 @@ class UserMapper extends Mapper
 
 - **[Soft Deletes](./soft-deletes.md)** - Implement soft deletion
 - **[Events & Hooks](./events.md)** - Use lifecycle events
-- **[Best Practices](../examples/best-practices.md)** - Recommended patterns

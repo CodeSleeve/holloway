@@ -14,7 +14,6 @@ Holloway provides soft delete functionality that allows you to "delete" entities
 - [Permanent Deletion](#permanent-deletion)
 - [Relationships and Soft Deletes](#relationships-and-soft-deletes)
 - [Soft Delete Events](#soft-delete-events)
-- [Best Practices](#best-practices)
 
 ## Understanding Soft Deletes
 
@@ -27,13 +26,6 @@ Add a nullable `deleted_at` column to your table:
 ```sql
 ALTER TABLE posts ADD COLUMN deleted_at TIMESTAMP NULL;
 ```
-
-### Benefits
-
-- **Data recovery**: Restore accidentally deleted records
-- **Audit trails**: Keep a complete history of all rows
-- **Referential integrity**: Avoid cascading foreign key issues
-- **User experience**: Provide "undo delete" functionality
 
 ## Enabling Soft Deletes
 
@@ -84,7 +76,7 @@ class PostMapper extends Mapper
 
 ### Entity Side
 
-The `SoftDeletes` trait lives on the mapper. Your entity class just needs a property for the timestamp; add an `isTrashed()` helper if you need it:
+The table needs the nullable `deleted_at` column, and it's worth carrying it on the entity too, so an entity loaded with `withTrashed()` or `onlyTrashed()` can report its own state:
 
 ```php
 class Post
@@ -97,6 +89,8 @@ class Post
     }
 }
 ```
+
+If your `dehydrate()` includes `deleted_at`, `store()` writes the entity's value back on update, so keep the property in sync with the table.
 
 ## Basic Operations
 
@@ -162,27 +156,6 @@ $recentlyDeleted = $postMapper
     ->get();
 ```
 
-### Conditional Inclusion
-
-```php
-class PostMapper extends Mapper
-{
-    use SoftDeletes;
-
-    public function forAdmin(): Builder
-    {
-        return $this->withTrashed();
-    }
-
-    public function archivedOlderThan(int $days): Collection
-    {
-        return $this->onlyTrashed()
-            ->where('deleted_at', '<', now()->subDays($days))
-            ->get();
-    }
-}
-```
-
 ## Restoring Entities
 
 ### Single Entity
@@ -222,25 +195,6 @@ $postMapper->forceRemove($post);
 // Row is now gone from the database permanently
 ```
 
-### Scheduled Cleanup
-
-```php
-class PostCleanupService
-{
-    public function purgeOldDeletions(int $daysOld = 90): void
-    {
-        $posts = $this->postMapper
-            ->onlyTrashed()
-            ->where('deleted_at', '<', now()->subDays($daysOld))
-            ->get();
-
-        foreach ($posts as $post) {
-            $this->postMapper->forceRemove($post);
-        }
-    }
-}
-```
-
 ## Relationships and Soft Deletes
 
 When a related mapper also uses `SoftDeletes` and has `SoftDeletingScope` registered, the scope applies automatically to its queries. Eager-loaded relationships respect their own mapper's global scopes.
@@ -255,30 +209,6 @@ $posts = $postMapper
         $query->withTrashed();
     }])
     ->get();
-```
-
-### Cascading Soft Deletes
-
-Holloway doesn't cascade soft deletes automatically. Handle this in your service layer:
-
-```php
-class PostService
-{
-    public function deletePost(Post $post): void
-    {
-        // Soft delete comments first (loop since bulk builder delete is not currently reliable)
-        $comments = $this->commentMapper
-            ->where('post_id', $post->getId())
-            ->get();
-
-        foreach ($comments as $comment) {
-            $this->commentMapper->remove($comment);
-        }
-
-        // Then soft delete the post
-        $this->postMapper->remove($post);
-    }
-}
 ```
 
 ## Soft Delete Events
@@ -316,64 +246,3 @@ public function __construct()
 ```
 
 See [Events](./events.md) for full documentation on the event system.
-
-## Best Practices
-
-### Add a database index
-
-```sql
--- Speeds up the automatic WHERE deleted_at IS NULL filter
-CREATE INDEX idx_posts_deleted_at ON posts(deleted_at);
-```
-
-### Expose a scoped method for admin queries
-
-```php
-public function includingDeleted(): Builder
-{
-    return $this->withTrashed();
-}
-```
-
-### Define a clear retention policy
-
-```php
-class PostMapper extends Mapper
-{
-    use SoftDeletes;
-
-    const SOFT_DELETE_RETENTION_DAYS = 30;
-    const HARD_DELETE_AFTER_DAYS = 90;
-}
-```
-
-### Provide restore endpoints when soft deletes are user-visible
-
-```php
-class PostController
-{
-    public function destroy(int $id): JsonResponse
-    {
-        $post = $this->postMapper->findOrFail($id);
-        $this->postMapper->remove($post);
-
-        return response()->json([
-            'message' => 'Post deleted.',
-            'undo_url' => route('posts.restore', $id),
-        ]);
-    }
-
-    public function restore(int $id): JsonResponse
-    {
-        $post = $this->postMapper->onlyTrashed()->find($id);
-
-        if (!$post) {
-            return response()->json(['error' => 'Not found.'], 404);
-        }
-
-        $this->postMapper->restore($post);
-
-        return response()->json(['message' => 'Post restored.']);
-    }
-}
-```

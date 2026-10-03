@@ -350,51 +350,6 @@ class AnalyticsMapper extends Mapper
 }
 ```
 
-### Using with validation
-
-Validate input in your controllers or form requests before creating entities:
-
-```php
-class PostController extends Controller
-{
-    public function store(Request $request, PostMapper $posts)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-        ]);
-
-        $post = new Post($validated['title'], $validated['content']);
-        $posts->store($post);
-
-        return response()->json($post->toArray(), 201);
-    }
-}
-```
-
-### Using with queues and events
-
-Dispatch jobs and events just like you normally would:
-
-```php
-class PostMapper extends Mapper
-{
-    public function publish(Post $post): void
-    {
-        $post->publish();
-        $this->store($post);
-
-        // Dispatch Laravel events
-        event(new PostPublished($post));
-
-        // Queue jobs
-        ProcessPostImages::dispatch($post);
-    }
-}
-```
-
-Holloway entities work with Laravel's job serialization automatically as long as your entities have public getters or implement serialization methods.
-
 ## Troubleshooting
 
 | Symptom | Likely Cause | Fix |
