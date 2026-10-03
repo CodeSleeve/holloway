@@ -864,12 +864,65 @@ class MapperTest extends TestCase
     /** @test */
     public function it_applies_global_query_scopes_when_querying_relations()
     {
-        $this->markTestIncomplete('This test has not been implemented yet.');
+        // given
+        $this->buildFixtures();
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        PupMapper::addGlobalScope('only_black_coats', fn($query) => $query->where('coat', 'black'));
+
+        try {
+            // when
+            $bennettPack = $packMapper->with('pups')->find(1);
+
+            // then
+            $this->assertCount(3, $bennettPack->pups);
+        } finally {
+            PupMapper::removeGlobalScope('only_black_coats');
+        }
     }
 
     /** @test */
     public function global_query_scopes_that_are_removed_will_no_longer_be_applied_when_querying_relations()
     {
-        $this->markTestIncomplete('This test has not been implemented yet.');
+        // given
+        $this->buildFixtures();
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        PupMapper::addGlobalScope('only_black_coats', fn($query) => $query->where('coat', 'black'));
+
+        try {
+            // when the scope is removed for a single relation query
+            $withoutScope = $packMapper->with([
+                'pups' => fn($query) => $query->withoutGlobalScope('only_black_coats'),
+            ])->find(1);
+
+            // then the other queries are still scoped
+            $this->assertCount(4, $withoutScope->pups);
+            $this->assertCount(3, $packMapper->with('pups')->find(1)->pups);
+        } finally {
+            PupMapper::removeGlobalScope('only_black_coats');
+        }
+
+        // and when the scope is removed from the mapper entirely, it is no longer applied
+        $this->assertCount(4, $packMapper->with('pups')->find(1)->pups);
+    }
+
+    /** @test */
+    public function it_exposes_the_pivot_table_and_key_names_of_a_belongs_to_many_relationship()
+    {
+        // given
+        $holloway = Holloway::instance();
+
+        // when
+        $explicit = $holloway->getMapper(User::class)->getRelationship('pups');           // Table and keys given.
+        $defaulted = $holloway->getMapper(PupFood::class)->getRelationship('pups');   // Pivot keys left to their defaults.
+
+        // then
+        $this->assertSame('pups_users', $explicit->getPivotTable());
+        $this->assertSame('user_id', $explicit->getPivotLocalKeyName());
+        $this->assertSame('pup_id', $explicit->getPivotForeignKeyName());
+
+        $this->assertSame('pup_food_id', $defaulted->getPivotLocalKeyName());
+        $this->assertSame('pup_id', $defaulted->getPivotForeignKeyName());
     }
 }
