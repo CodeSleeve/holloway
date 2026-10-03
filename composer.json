@@ -40,6 +40,11 @@
     },
     "minimum-stability": "stable",
     "extra": {
+        "phpstan": {
+            "includes": [
+                "phpstan/extension.neon"
+            ]
+        },
         "laravel": {
             "providers": [
                 "CodeSleeve\\Holloway\\HollowayServiceProvider"
