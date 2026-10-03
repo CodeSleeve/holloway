@@ -17,7 +17,7 @@ use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
 /**
  * @template TEntity = mixed
  *
- * Query methods forwarded to Builder<TEntity> via __call:
+ * Query methods forwarded to Builder<TEntity, static> via __call:
  *
  * @method ($id is array ? \Illuminate\Support\Collection<int, TEntity> : TEntity|null) find(mixed $id)
  * @method TEntity findOrFail(mixed $id)
@@ -27,35 +27,35 @@ use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
  * @method \Illuminate\Support\Collection<int, TEntity> get()
  * @method \Illuminate\Pagination\LengthAwarePaginator<int, TEntity> paginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
  * @method \Illuminate\Pagination\Paginator<int, TEntity> simplePaginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
- * @method Builder<TEntity> where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
- * @method Builder<TEntity> orWhere(mixed $column, mixed $operator = null, mixed $value = null)
- * @method Builder<TEntity> whereKey(mixed $id)
- * @method Builder<TEntity> whereIn(mixed ...$parameters)
- * @method Builder<TEntity> whereNull(mixed ...$parameters)
- * @method Builder<TEntity> whereNotNull(mixed ...$parameters)
- * @method Builder<TEntity> whereBetween(mixed ...$parameters)
- * @method Builder<TEntity> orderBy(mixed ...$parameters)
- * @method Builder<TEntity> orderByDesc(mixed ...$parameters)
- * @method Builder<TEntity> limit(mixed ...$parameters)
- * @method Builder<TEntity> take(mixed ...$parameters)
- * @method Builder<TEntity> skip(mixed ...$parameters)
- * @method Builder<TEntity> offset(mixed ...$parameters)
- * @method Builder<TEntity> forPage(mixed ...$parameters)
- * @method Builder<TEntity> select(mixed ...$parameters)
- * @method Builder<TEntity> addSelect(mixed ...$parameters)
- * @method Builder<TEntity> distinct(mixed ...$parameters)
- * @method Builder<TEntity> groupBy(mixed ...$parameters)
- * @method Builder<TEntity> having(mixed ...$parameters)
- * @method Builder<TEntity> join(mixed ...$parameters)
- * @method Builder<TEntity> leftJoin(mixed ...$parameters)
- * @method Builder<TEntity> rightJoin(mixed ...$parameters)
- * @method Builder<TEntity> withCount(mixed $relations)
- * @method Builder<TEntity> without(mixed $relations)
- * @method Builder<TEntity> scopes(array $scopes)
- * @method Builder<TEntity> applyScopes()
- * @method Builder<TEntity> withGlobalScope(string $identifier, \CodeSleeve\Holloway\Scope|\Closure $scope)
- * @method Builder<TEntity> withoutGlobalScope(\CodeSleeve\Holloway\Scope|string $scope)
- * @method Builder<TEntity> withoutGlobalScopes(array|null $scopes)
+ * @method Builder<TEntity, static> where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method Builder<TEntity, static> orWhere(mixed $column, mixed $operator = null, mixed $value = null)
+ * @method Builder<TEntity, static> whereKey(mixed $id)
+ * @method Builder<TEntity, static> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity, static> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity, static> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, static> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, static> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity, static> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity, static> limit(mixed ...$parameters)
+ * @method Builder<TEntity, static> take(mixed ...$parameters)
+ * @method Builder<TEntity, static> skip(mixed ...$parameters)
+ * @method Builder<TEntity, static> offset(mixed ...$parameters)
+ * @method Builder<TEntity, static> forPage(mixed ...$parameters)
+ * @method Builder<TEntity, static> select(mixed ...$parameters)
+ * @method Builder<TEntity, static> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity, static> distinct(mixed ...$parameters)
+ * @method Builder<TEntity, static> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity, static> having(mixed ...$parameters)
+ * @method Builder<TEntity, static> join(mixed ...$parameters)
+ * @method Builder<TEntity, static> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity, static> rightJoin(mixed ...$parameters)
+ * @method Builder<TEntity, static> withCount(mixed $relations)
+ * @method Builder<TEntity, static> without(mixed $relations)
+ * @method Builder<TEntity, static> scopes(array $scopes)
+ * @method Builder<TEntity, static> applyScopes()
+ * @method Builder<TEntity, static> withGlobalScope(string $identifier, \CodeSleeve\Holloway\Scope|\Closure $scope)
+ * @method Builder<TEntity, static> withoutGlobalScope(\CodeSleeve\Holloway\Scope|string $scope)
+ * @method Builder<TEntity, static> withoutGlobalScopes(array|null $scopes)
  * @method bool chunk(int $count, callable $callback)
  * @method bool chunkById(int $count, callable $callback, string|null $column = null, string|null $alias = null)
  * @method bool exists()
@@ -218,7 +218,7 @@ abstract class Mapper
     /**
      * Begin querying a mapper with eager loading.
      *
-     * @return Builder<TEntity>
+     * @return Builder<TEntity, static>
      */
     public function with($relations) : Builder
     {
@@ -314,7 +314,7 @@ abstract class Mapper
     /**
      * More explicity way to start a new query builder for the mapper.
      *
-     * @return Builder<TEntity>
+     * @return Builder<TEntity, static>
      */
     public function query() : Builder
     {
@@ -324,7 +324,7 @@ abstract class Mapper
     /**
      * Get a new query builder for the mapper's table.
      *
-     * @return Builder<TEntity>
+     * @return Builder<TEntity, static>
      */
     public function newQuery() : Builder
     {
@@ -340,7 +340,7 @@ abstract class Mapper
     /**
      * Get a new query builder that doesn't have any global scopes.
      *
-     * @return Builder<TEntity>
+     * @return Builder<TEntity, static>
      */
     public function newQueryWithoutScopes() : Builder
     {
@@ -355,7 +355,7 @@ abstract class Mapper
     /**
      * Get a new query instance without a given scope.
      *
-     * @return Builder<TEntity>
+     * @return Builder<TEntity, static>
      */
     public function newQueryWithoutScope(Scope|string $scope) : Builder
     {
@@ -367,11 +367,14 @@ abstract class Mapper
     /**
      * Create a new Holloway query builder for the mapper.
      *
-     * @return Builder<TEntity>
+     * @return Builder<TEntity, static>
      */
     public function newHollowayBuilder(QueryBuilder $query) : Builder
     {
-        return new Builder($query);
+        /** @var Builder<TEntity, static> $builder */
+        $builder = new Builder($query);
+
+        return $builder;
     }
 
     /**

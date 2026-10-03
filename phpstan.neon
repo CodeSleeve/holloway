@@ -8,6 +8,12 @@ parameters:
         - phpstan/Extension
 
     ignoreErrors:
+        # ScopeMethodReflection implements PHPStan's ExtendedMethodReflection, which is not
+        # covered by PHPStan's backward compatibility promise (the same is true of any extension
+        # that adds methods, such as Larastan's). Revisit when supporting a new PHPStan minor.
+        - identifier: phpstanApi.interface
+          path: phpstan/Extension/ScopeMethodReflection.php
+
         # removeEntity() accesses $isForceDeleting and getQualifiedDeletedAtColumn() which
         # are injected at runtime by the SoftDeletes trait. PHPStan cannot see these on the
         # abstract Mapper type even though they exist on any mapper that uses the trait.

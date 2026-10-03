@@ -16,67 +16,68 @@ use Illuminate\Database\Concerns\BuildsQueries;
 
 /**
  * @template TEntity = mixed
+ * @template TMapper of Mapper = Mapper
  *
  * QueryBuilder pass-through methods that return $this via __call.
  * Annotated here so PHPStan preserves Builder<TEntity> through chains
  * like ->orderBy()->where()->get().
  *
- * @method Builder<TEntity> select(mixed ...$parameters)
- * @method Builder<TEntity> selectRaw(mixed ...$parameters)
- * @method Builder<TEntity> addSelect(mixed ...$parameters)
- * @method Builder<TEntity> distinct(mixed ...$parameters)
- * @method Builder<TEntity> join(mixed ...$parameters)
- * @method Builder<TEntity> leftJoin(mixed ...$parameters)
- * @method Builder<TEntity> rightJoin(mixed ...$parameters)
- * @method Builder<TEntity> crossJoin(mixed ...$parameters)
- * @method Builder<TEntity> joinWhere(mixed ...$parameters)
- * @method Builder<TEntity> leftJoinWhere(mixed ...$parameters)
- * @method Builder<TEntity> rightJoinWhere(mixed ...$parameters)
- * @method Builder<TEntity> whereRaw(mixed ...$parameters)
- * @method Builder<TEntity> orWhereRaw(mixed ...$parameters)
- * @method Builder<TEntity> whereIn(mixed ...$parameters)
- * @method Builder<TEntity> orWhereIn(mixed ...$parameters)
- * @method Builder<TEntity> whereNotIn(mixed ...$parameters)
- * @method Builder<TEntity> orWhereNotIn(mixed ...$parameters)
- * @method Builder<TEntity> whereNull(mixed ...$parameters)
- * @method Builder<TEntity> orWhereNull(mixed ...$parameters)
- * @method Builder<TEntity> whereNotNull(mixed ...$parameters)
- * @method Builder<TEntity> orWhereNotNull(mixed ...$parameters)
- * @method Builder<TEntity> whereBetween(mixed ...$parameters)
- * @method Builder<TEntity> orWhereBetween(mixed ...$parameters)
- * @method Builder<TEntity> whereNotBetween(mixed ...$parameters)
- * @method Builder<TEntity> orWhereNotBetween(mixed ...$parameters)
- * @method Builder<TEntity> whereDate(mixed ...$parameters)
- * @method Builder<TEntity> orWhereDate(mixed ...$parameters)
- * @method Builder<TEntity> whereYear(mixed ...$parameters)
- * @method Builder<TEntity> whereMonth(mixed ...$parameters)
- * @method Builder<TEntity> whereDay(mixed ...$parameters)
- * @method Builder<TEntity> whereTime(mixed ...$parameters)
- * @method Builder<TEntity> whereColumn(mixed ...$parameters)
- * @method Builder<TEntity> orWhereColumn(mixed ...$parameters)
- * @method Builder<TEntity> groupBy(mixed ...$parameters)
- * @method Builder<TEntity> groupByRaw(mixed ...$parameters)
- * @method Builder<TEntity> having(mixed ...$parameters)
- * @method Builder<TEntity> orHaving(mixed ...$parameters)
- * @method Builder<TEntity> havingRaw(mixed ...$parameters)
- * @method Builder<TEntity> orHavingRaw(mixed ...$parameters)
- * @method Builder<TEntity> havingBetween(mixed ...$parameters)
- * @method Builder<TEntity> orderBy(mixed ...$parameters)
- * @method Builder<TEntity> orderByDesc(mixed ...$parameters)
- * @method Builder<TEntity> orderByRaw(mixed ...$parameters)
- * @method Builder<TEntity> reorder(mixed ...$parameters)
- * @method Builder<TEntity> take(mixed ...$parameters)
- * @method Builder<TEntity> limit(mixed ...$parameters)
- * @method Builder<TEntity> skip(mixed ...$parameters)
- * @method Builder<TEntity> offset(mixed ...$parameters)
- * @method Builder<TEntity> forPage(mixed ...$parameters)
- * @method Builder<TEntity> forPageBeforeId(mixed ...$parameters)
- * @method Builder<TEntity> forPageAfterId(mixed ...$parameters)
- * @method Builder<TEntity> union(mixed ...$parameters)
- * @method Builder<TEntity> unionAll(mixed ...$parameters)
- * @method Builder<TEntity> lock(mixed ...$parameters)
- * @method Builder<TEntity> lockForUpdate(mixed ...$parameters)
- * @method Builder<TEntity> sharedLock(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> select(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> selectRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> distinct(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> join(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> rightJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> crossJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> joinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> leftJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> rightJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereDate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereDate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereYear(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereMonth(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereDay(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereTime(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereColumn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereColumn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> groupByRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> having(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orHaving(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> havingRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orHavingRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> havingBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderByRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> reorder(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> take(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> limit(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> skip(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> offset(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPage(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPageBeforeId(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPageAfterId(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> union(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> unionAll(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> lock(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> lockForUpdate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> sharedLock(mixed ...$parameters)
  */
 class Builder
 {
@@ -218,7 +219,7 @@ class Builder
 
     /**
      *  @param  Mapper<TEntity>  $mapper
-     *  @return Builder<TEntity>
+     *  @return $this
      */
     public function setMapper(Mapper $mapper) : Builder
     {
@@ -300,7 +301,7 @@ class Builder
      * Add a where clause on the primary key to the query.
      *
      * @param  mixed  $id
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function whereKey($id) : Builder
     {
@@ -320,7 +321,7 @@ class Builder
      * @param  mixed   $operator
      * @param  mixed   $value
      * @param  string  $boolean
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function where($column, $operator = null, $value = null, string $boolean = 'and') : self
     {
@@ -343,7 +344,7 @@ class Builder
      * @param  mixed            $column
      * @param  mixed            $operator
      * @param  mixed            $value
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function orWhere($column, $operator = null, $value = null) : self
     {
@@ -393,7 +394,7 @@ class Builder
     /**
      * Apply any global scopes to the Holloway builder instance and return it.
      *
-     * @return Builder<TEntity>
+     * @return static
      */
     public function applyScopes() : Builder
     {
@@ -534,7 +535,7 @@ class Builder
      * Here, all we're really doing is passing these through to this
      * query's tree so that they'll be loaded when we tell our tree to render.
      *
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function with(mixed $relations) : self
     {
@@ -547,7 +548,7 @@ class Builder
     /**
      * Prevent the specified relations from being eager loaded.
      *
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function without(mixed $relations) : self
     {
@@ -560,7 +561,7 @@ class Builder
      * Add subselect queries to count the relations.
      *
      * @param  mixed  $relations
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function withCount(mixed $relations) : self
     {
@@ -832,7 +833,7 @@ class Builder
     /**
      * Set the underlying query builder instance.
      *
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function setQuery(QueryBuilder $query) : self
     {
@@ -852,7 +853,7 @@ class Builder
     /**
      * Register a new global scope.
      *
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function withGlobalScope(string $identifier, Scope|Closure $scope) : self
     {
@@ -868,7 +869,7 @@ class Builder
     /**
      * Remove a registered global scope.
      *
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function withoutGlobalScope(Scope|string $scope) : self
     {   
@@ -886,7 +887,7 @@ class Builder
     /**
      * Remove all or passed registered global scopes.
      *
-     * @return Builder<TEntity>
+     * @return $this
      */
     public function withoutGlobalScopes(?array $scopes) : self
     {

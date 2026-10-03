@@ -12,7 +12,6 @@ use Illuminate\Support\Collection;
 use PhpParser\Node\Expr\MethodCall;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\MethodReflection;
-use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Type\DynamicMethodReturnTypeExtension;
 use PHPStan\Type\Generic\GenericObjectType;
 use PHPStan\Type\IntegerType;
@@ -89,7 +88,7 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
     ];
 
     public function __construct(
-        private readonly ReflectionProvider $reflectionProvider
+        private readonly EntityTypeResolver $entityTypeResolver
     ) {}
 
     public function getClass(): string
@@ -116,43 +115,22 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
             return null;
         }
 
+        // A union of mappers (PupMapper|CollarMapper) has no single entity; fall back to the @method tags.
         $classNames = $callerType->getObjectClassNames();
-        if ($classNames === []) {
+        if (count($classNames) !== 1) {
             return null;
         }
 
-        $entityType = $this->resolveEntityType($classNames[0]);
+        $entityType = $this->entityTypeResolver->resolve($classNames[0]);
 
         if ($entityType === null) {
             return null;
         }
 
-        return $this->buildReturnType($methodReflection->getName(), $entityType, $methodCall, $scope);
+        return $this->buildReturnType($methodReflection->getName(), $entityType, new ObjectType($classNames[0]), $methodCall, $scope);
     }
 
-    private function resolveEntityType(string $mapperClass): ?Type
-    {
-        if (!$this->reflectionProvider->hasClass($mapperClass)) {
-            return null;
-        }
-
-        $class = $this->reflectionProvider->getClass($mapperClass);
-
-        do {
-            $defaults = $class->getNativeReflection()->getDefaultProperties();
-            if (isset($defaults['entityClassName'])
-                && is_string($defaults['entityClassName'])
-                && $defaults['entityClassName'] !== ''
-            ) {
-                return new ObjectType($defaults['entityClassName']);
-            }
-            $class = $class->getParentClass();
-        } while ($class !== null);
-
-        return null;
-    }
-
-    private function buildReturnType(string $method, Type $entityType, MethodCall $methodCall, Scope $scope): Type
+    private function buildReturnType(string $method, Type $entityType, Type $mapperType, MethodCall $methodCall, Scope $scope): Type
     {
         $collection = new GenericObjectType(Collection::class, [new IntegerType(), $entityType]);
 
@@ -196,7 +174,7 @@ final class MapperReturnTypeExtension implements DynamicMethodReturnTypeExtensio
         }
 
         if (in_array($method, self::BUILDER, true)) {
-            return new GenericObjectType(Builder::class, [$entityType]);
+            return new GenericObjectType(Builder::class, [$entityType, $mapperType]);
         }
 
         return new MixedType();
