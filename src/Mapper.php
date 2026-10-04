@@ -438,7 +438,7 @@ abstract class Mapper
                     $keyName = $this->getKeyName();
 
                     if ($this->hasTimestamps === true) {
-                        $attributes = \Illuminate\Support\Arr::except($attributes, [self::UPDATED_AT, self::CREATED_AT]);
+                        $attributes = \Illuminate\Support\Arr::except($attributes, [static::UPDATED_AT, static::CREATED_AT]);
                         $now = $this->currentTime();
                         $attributes[static::UPDATED_AT] = $now->format($this->timestampFormat);
 
