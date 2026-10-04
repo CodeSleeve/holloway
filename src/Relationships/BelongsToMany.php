@@ -126,25 +126,30 @@ class BelongsToMany extends BaseRelationship
     /**
      * Build a count subquery for BelongsToMany relationships.
      *
-     * @param  string  $parentTable
-     * @param  string  $parentKey
+     * The parent column is the relationship's own local key (as in load()).
+     *
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
      * @return \Illuminate\Database\Query\Builder
      */
-    public function toCountQuery(string $parentTable, string $parentKey) : QueryBuilder
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
     {
-        $query = $this->getBaseQueryWithScopes();
+        $query = $this->newCountQuery($parentTable);
 
-        return $query->selectRaw('count(*)')
+        $query->selectRaw('count(*)')
             ->join(
                 $this->pivotTable,
-                $this->table . '.' . $this->foreignKeyName,
+                $query->getMapper()->getTable() . '.' . $this->foreignKeyName,
                 '=',
                 $this->pivotTable . '.' . $this->pivotForeignKeyName
             )
             ->whereColumn(
                 $this->pivotTable . '.' . $this->pivotLocalKeyName,
                 '=',
-                $parentTable . '.' . $parentKey
+                $parentTable . '.' . $this->localKeyName
             );
+
+        return $this->finishCountQuery($query, $constraints);
     }
 }

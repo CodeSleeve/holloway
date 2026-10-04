@@ -60,19 +60,22 @@ class BelongsTo extends BaseRelationship
     /**
      * Build a count subquery for BelongsTo relationships.
      *
-     * @param  string  $parentTable
-     * @param  string  $parentKey
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
      * @return \Illuminate\Database\Query\Builder
      */
-    public function toCountQuery(string $parentTable, string $parentKey) : QueryBuilder
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
     {
-        $query = $this->getBaseQueryWithScopes();
+        $query = $this->newCountQuery($parentTable);
 
-        return $query->selectRaw('count(*)')
+        $query->selectRaw('count(*)')
             ->whereColumn(
-                $this->table . '.' . $this->localKeyName,
+                $query->getMapper()->getTable() . '.' . $this->localKeyName,
                 '=',
                 $parentTable . '.' . $this->foreignKeyName
             );
+
+        return $this->finishCountQuery($query, $constraints);
     }
 }

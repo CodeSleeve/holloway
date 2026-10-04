@@ -9,6 +9,7 @@ use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupMapper;
 use CodeSleeve\Holloway\Tests\Helpers\MigrateFixtureTables;
 use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CollarMapper;
 use CodeSleeve\Holloway\Tests\Fixtures\Mappers\PupFoodMapper;
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\CategoryMapper;
 
 date_default_timezone_set('UTC');
 
@@ -94,3 +95,4 @@ Mapper::setEventManager(new Dispatcher);
 CollarMapper::addGlobalScope(new SoftDeletingScope);
 PupMapper::addGlobalScope(new SoftDeletingScope);
 PupFoodMapper::addGlobalScope(new SoftDeletingScope);
+CategoryMapper::addGlobalScope(new SoftDeletingScope);

@@ -374,11 +374,15 @@ class Builder
     /**
      * Apply the given scope on the current builder instance.
      *
+     * The clauses that the scope adds are grouped in their own nested where, so an "or" in
+     * them can't escape the clauses that were already on the query. This is also how
+     * constraints are applied to a relationship's count subquery.
+     *
      * @param  callable $scope
      * @param  array $parameters
      * @return mixed
      */
-    protected function callScope(callable $scope, $parameters = [])
+    public function callScope(callable $scope, $parameters = [])
     {
         array_unshift($parameters, $this);
 
@@ -500,7 +504,7 @@ class Builder
         $relations = is_string($relations) ? func_get_args() : $relations;
 
         foreach ($this->parseWithRelations($relations) as $name => $constraints) {
-            $segments = explode(' as ', $name);
+            $segments = preg_split('/\s+as\s+/i', $name, 2);
             $relationName = $segments[0];
             $alias = $segments[1] ?? Str::snake($relationName) . '_count';
 
@@ -555,11 +559,9 @@ class Builder
     /**
      * Build a count subquery for the given relationship.
      *
-     * This method delegates to the relationship's toCountQuery() method, which allows
-     * each relationship type to build its own count query. This ensures:
-     * 1. Global scopes (like SoftDeletingScope) are applied
-     * 2. Relationship constraints are preserved
-     * 3. Each relationship type controls its own count logic
+     * The relationship builds its own count query (so each relationship type controls its
+     * correlation, and the related table can be aliased when it is also this query's table),
+     * applies the constraints to it, and applies the related mapper's global scopes.
      *
      * @param  \CodeSleeve\Holloway\Relationships\Relationship  $relationship
      * @param  \Closure|null                                      $constraints
@@ -567,27 +569,11 @@ class Builder
      */
     protected function buildCountSubquery($relationship, ?Closure $constraints)
     {
-        // Build the base count query through the relationship's toCountQuery() method
-        // This ensures global scopes and relationship constraints are properly applied
-        $countQuery = $relationship->toCountQuery(
+        return $relationship->toCountQuery(
             $this->mapper->getTable(),
-            $this->mapper->getKeyName()
+            $this->mapper->getKeyName(),
+            $constraints
         );
-
-        // If the user provided additional constraints, apply them
-        if ($constraints) {
-            // We need to apply constraints through a Holloway Builder to support
-            // advanced query methods, then convert back to base QueryBuilder
-            $relatedMapper = Holloway::instance()->getMapper($relationship->getEntityName());
-            $builder = new Builder($countQuery);
-            $builder->setMapper($relatedMapper);
-            
-            $constraints($builder);
-            
-            $countQuery = $builder->getQuery();
-        }
-
-        return $countQuery;
     }
 
     /**
@@ -742,6 +728,28 @@ class Builder
             'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
+    }
+
+    /**
+     * Give this query's table an alias, for a subquery over the same table as its parent query.
+     *
+     * The scopes are handed a clone of the mapper that reports the alias as its table, so the
+     * columns they qualify (such as the soft deleting scope's) use the alias, just as Eloquent
+     * sets the alias as its model's table.
+     *
+     * @param  string  $alias
+     * @return $this
+     */
+    public function aliasTable(string $alias) : self
+    {
+        $table = $this->mapper->getTable();
+
+        $this->mapper = clone $this->mapper;
+        $this->mapper->setTable($alias);
+
+        $this->query->from($table . ' as ' . $alias);
+
+        return $this;
     }
 
     /**

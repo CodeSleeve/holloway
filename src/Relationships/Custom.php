@@ -121,31 +121,39 @@ class Custom implements Relationship
      * Build a count subquery for Custom relationships.
      * Custom relationships must provide a count closure in their constructor to support withCount().
      *
-     * @param  string  $parentTable
-     * @param  string  $parentKey
+     * The constraints (if any) are handed a query builder around the count query that the
+     * closure returns. Custom relationships build that query themselves, so the closure is
+     * responsible for any global scopes.
+     *
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
      * @return \Illuminate\Database\Query\Builder
      * @throws \BadMethodCallException
      */
-    public function toCountQuery(string $parentTable, string $parentKey) : QueryBuilder
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
     {
         if (!$this->count) {
             throw new BadMethodCallException(
                 "Custom relationship [{$this->name}] does not support withCount(). " .
-                "To add count support, provide a count closure as the 7th parameter to the Custom relationship constructor. " .
+                "To add count support, provide a count closure when defining it (the \$count argument of Mapper::custom()). " .
                 "The closure should accept (QueryBuilder \$query, string \$parentTable, string \$parentKey) and return a QueryBuilder with count logic."
             );
         }
 
-        $query = ($this->query)();
-
-        // Convert to base query builder if needed
-        if ($query instanceof \CodeSleeve\Holloway\Builder) {
-            $query = $query->applyScopes()->toBase();
-        } else {
-            $query = $query->toBase();
-        }
+        $builder = ($this->query)();
 
         // Let the count closure configure the query
-        return ($this->count)($query, $parentTable, $parentKey);
+        $query = ($this->count)($builder->toBase(), $parentTable, $parentKey);
+
+        if ($constraints) {
+            $builder->setQuery($query);
+
+            $builder->callScope($constraints);
+
+            $query = $builder->getQuery();
+        }
+
+        return $query;
     }
 }
