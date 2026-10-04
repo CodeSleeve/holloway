@@ -120,6 +120,15 @@ class MigrateFixtureTables extends Migration
                 $table->primary(['pup_id', 'pup_food_id']);
             });
         }
+
+        if (!Schema::hasTable('stamped_notes')) {
+            Schema::create('stamped_notes', function (Blueprint $table) {
+                $table->increments('id');
+                $table->string('name');
+                $table->string('date_created')->nullable();
+                $table->string('date_modified')->nullable();
+            });
+        }
     }
 
     /**
@@ -129,6 +138,7 @@ class MigrateFixtureTables extends Migration
      */
     public static function down()
     {
+        Schema::dropIfExists('stamped_notes');
         Schema::dropIfExists('companies');
         Schema::dropIfExists('pup_foods');
         Schema::dropIfExists('users');

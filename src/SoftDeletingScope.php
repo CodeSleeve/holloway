@@ -32,10 +32,10 @@ class SoftDeletingScope implements Scope
         }
 
         $builder->onDelete(function (Builder $builder) {
-            $column = $this->getDeletedAtColumn($builder);
-
-            return $builder->update([
-                $column => Carbon::now()
+            // Updating through the base query applies the global scopes (so rows that are already
+            // soft deleted are left alone) and returns the number of rows affected.
+            return $builder->toBase()->update([
+                $this->getDeletedAtColumn($builder) => Carbon::now()
             ]);
         });
     }
@@ -50,7 +50,7 @@ class SoftDeletingScope implements Scope
             return $builder->getMapper()->getQualifiedDeletedAtColumn();
         }
 
-        return $builder->getMapper()->getDeletedAtColumn();
+        return $builder->getMapper()->getDeletedAtColumnName();
     }
 
     /**
@@ -61,7 +61,7 @@ class SoftDeletingScope implements Scope
         $builder->macro('restore', function (Builder $builder) {
             $builder->withTrashed();
 
-            return $builder->update([$builder->getMapper()->getDeletedAtColumn() => null]);
+            return $builder->toBase()->update([$this->getDeletedAtColumn($builder) => null]);
         });
     }
 
