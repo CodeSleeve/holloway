@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway;
 
 use BadMethodCallException;
+use InvalidArgumentException;
 use Closure;
 use CodeSleeve\Holloway\Relationships\Tree;
 use Illuminate\Contracts\Pagination\{Paginator as PaginatorContract, LengthAwarePaginator as LengthAwarePaginatorContract};
@@ -10,9 +11,74 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
-use Illuminate\Support\Collection;
+use Illuminate\Support\{Collection, Str};
 use Illuminate\Database\Concerns\BuildsQueries;
 
+/**
+ * @template TEntity = mixed
+ * @template TMapper of Mapper = Mapper
+ *
+ * QueryBuilder pass-through methods that return $this via __call.
+ * Annotated here so PHPStan preserves Builder<TEntity> through chains
+ * like ->orderBy()->where()->get().
+ *
+ * @method Builder<TEntity, TMapper> select(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> selectRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> distinct(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> join(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> rightJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> crossJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> joinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> leftJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> rightJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereDate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereDate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereYear(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereMonth(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereDay(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereTime(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereColumn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereColumn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> groupByRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> having(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orHaving(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> havingRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orHavingRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> havingBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderByRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> reorder(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> take(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> limit(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> skip(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> offset(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPage(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPageBeforeId(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPageAfterId(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> union(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> unionAll(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> lock(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> lockForUpdate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> sharedLock(mixed ...$parameters)
+ */
 class Builder
 {
     use BuildsQueries;
@@ -24,6 +90,8 @@ class Builder
 
     /**
      * The mapper for this builder.
+     *
+     * @var Mapper<TEntity>|null
      */
     protected ?Mapper $mapper = null;
 
@@ -42,12 +110,7 @@ class Builder
      */
     protected array $localMacros = [];
 
-    /**
-     * A replacement for the typical delete function.
-     *
-     * @var \Closure
-     */
-    protected $onDelete;
+    protected ?\Closure $onDelete = null;
 
     /**
      * The methods that should be returned from query builder.
@@ -147,7 +210,7 @@ class Builder
     }
 
     /**
-     * @return Mapper
+     * @return Mapper<TEntity>
      */
     public function getMapper() : Mapper
     {
@@ -155,8 +218,8 @@ class Builder
     }
 
     /**
-     *  @param  Mapper $mapper
-     *  @return Builder
+     *  @param  Mapper<TEntity>  $mapper
+     *  @return $this
      */
     public function setMapper(Mapper $mapper) : Builder
     {
@@ -169,7 +232,7 @@ class Builder
 
     /**
      * @param  mixed  $id
-     * @return mixed
+     * @return ($id is array ? Collection<int, TEntity> : TEntity|null)
      */
     public function find($id)
     {
@@ -183,7 +246,7 @@ class Builder
     /**
      * @param  mixed $id
      * @throws ModelNotFoundException
-     * @return mixed
+     * @return TEntity
      */
     public function findOrFail($id)
     {
@@ -198,7 +261,7 @@ class Builder
 
     /**
      * @throws ModelNotFoundException
-     * @return mixed
+     * @return TEntity
      */
     public function firstOrFail()
     {
@@ -213,7 +276,7 @@ class Builder
 
     /**
      * @param  array  $ids
-     * @return \Illuminate\Support\Collection
+     * @return Collection<int, TEntity>
      */
     public function findMany($ids) : Collection
     {
@@ -227,7 +290,7 @@ class Builder
     /**
      * Execute the query and get the first result.
      *
-     * @return mixed|null
+     * @return TEntity|null
      */
     public function first()
     {
@@ -238,7 +301,7 @@ class Builder
      * Add a where clause on the primary key to the query.
      *
      * @param  mixed  $id
-     * @return Builder
+     * @return $this
      */
     public function whereKey($id) : Builder
     {
@@ -254,13 +317,13 @@ class Builder
     /**
      * Add a basic where clause to the query.
      *
-     * @param  string|\Closure  $column
-     * @param  string  $operator
+     * @param  mixed   $column
+     * @param  mixed   $operator
      * @param  mixed   $value
      * @param  string  $boolean
-     * @return Builder
+     * @return $this
      */
-    public function where($column, string $operator = null, $value = null, string $boolean = 'and') : self
+    public function where($column, $operator = null, $value = null, string $boolean = 'and') : self
     {
         if ($column instanceof Closure) {
             $query = $this->mapper->newQueryWithoutScopes();
@@ -278,18 +341,20 @@ class Builder
     /**
      * Add an "or where" clause to the query.
      *
-     * @param  string|\Closure  $column
-     * @param  string           $operator
+     * @param  mixed            $column
+     * @param  mixed            $operator
      * @param  mixed            $value
-     * @return Builder
+     * @return $this
      */
-    public function orWhere($column, string $operator = null, $value = null) : self
+    public function orWhere($column, $operator = null, $value = null) : self
     {
         return $this->where($column, $operator, $value, 'or');
     }
 
     /**
      * Execute the query as a "select" statement.
+     *
+     * @return Collection<int, TEntity>
      */
     public function get() : Collection
     {
@@ -329,7 +394,7 @@ class Builder
     /**
      * Apply any global scopes to the Holloway builder instance and return it.
      *
-     * @return Builder
+     * @return static
      */
     public function applyScopes() : Builder
     {
@@ -373,11 +438,15 @@ class Builder
     /**
      * Apply the given scope on the current builder instance.
      *
+     * The clauses that the scope adds are grouped in their own nested where, so an "or" in
+     * them can't escape the clauses that were already on the query. This is also how
+     * constraints are applied to a relationship's count subquery.
+     *
      * @param  callable $scope
      * @param  array $parameters
      * @return mixed
      */
-    protected function callScope(callable $scope, $parameters = [])
+    public function callScope(callable $scope, $parameters = [])
     {
         array_unshift($parameters, $this);
 
@@ -465,6 +534,8 @@ class Builder
      * Set the relations that should be eager loaded.
      * Here, all we're really doing is passing these through to this
      * query's tree so that they'll be loaded when we tell our tree to render.
+     *
+     * @return $this
      */
     public function with(mixed $relations) : self
     {
@@ -476,12 +547,101 @@ class Builder
 
     /**
      * Prevent the specified relations from being eager loaded.
+     *
+     * @return $this
      */
     public function without(mixed $relations) : self
     {
         $this->getTree()->removeLoads(is_string($relations) ? func_get_args() : $relations);
 
         return $this;
+    }
+
+    /**
+     * Add subselect queries to count the relations.
+     *
+     * @param  mixed  $relations
+     * @return $this
+     */
+    public function withCount(mixed $relations) : self
+    {
+        if (is_null($this->query->columns)) {
+            $this->query->select([$this->query->from . '.*']);
+        }
+
+        $relations = is_string($relations) ? func_get_args() : $relations;
+
+        foreach ($this->parseWithRelations($relations) as $name => $constraints) {
+            $segments = preg_split('/\s+as\s+/i', $name, 2);
+            $relationName = $segments[0];
+            $alias = $segments[1] ?? Str::snake($relationName) . '_count';
+
+            $this->addCountSelect($relationName, $alias, $constraints);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Parse the with relations into a normalized array.
+     *
+     * @param  array  $relations
+     * @return array
+     */
+    protected function parseWithRelations(array $relations) : array
+    {
+        $results = [];
+
+        foreach ($relations as $name => $constraints) {
+            if (is_numeric($name)) {
+                $name = $constraints;
+                $constraints = null;
+            }
+
+            $results[$name] = $constraints;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Add a count select subquery for the given relationship.
+     *
+     * @param  string         $relationName
+     * @param  string         $alias
+     * @param  \Closure|null  $constraints
+     * @return void
+     */
+    protected function addCountSelect(string $relationName, string $alias, ?Closure $constraints) : void
+    {
+        if (!$this->mapper->hasRelationship($relationName)) {
+            throw new InvalidArgumentException("Relationship [{$relationName}] not defined on mapper.");
+        }
+
+        $relationship = $this->mapper->getRelationship($relationName);
+        $subquery = $this->buildCountSubquery($relationship, $constraints);
+
+        $this->selectSub($subquery, $alias);
+    }
+
+    /**
+     * Build a count subquery for the given relationship.
+     *
+     * The relationship builds its own count query (so each relationship type controls its
+     * correlation, and the related table can be aliased when it is also this query's table),
+     * applies the constraints to it, and applies the related mapper's global scopes.
+     *
+     * @param  \CodeSleeve\Holloway\Relationships\Relationship  $relationship
+     * @param  \Closure|null                                      $constraints
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function buildCountSubquery($relationship, ?Closure $constraints)
+    {
+        return $relationship->toCountQuery(
+            $this->mapper->getTable(),
+            $this->mapper->getKeyName(),
+            $constraints
+        );
     }
 
     /**
@@ -599,7 +759,7 @@ class Builder
      * @param  array  $columns
      * @param  string  $pageName
      * @param  int|null  $page
-     * @return LengthAwarePaginatorContract
+     * @return \Illuminate\Pagination\LengthAwarePaginator<int, TEntity>
      *
      * @throws \InvalidArgumentException
      */
@@ -610,7 +770,7 @@ class Builder
         $perPage = $perPage ?: $this->mapper->getPerPage();
 
         $results = ($total = $this->toBase()->getCountForPagination($columns))
-                                    ? $this->forPage($page, $perPage)->get($columns)
+                                    ? $this->forPage($page, $perPage)->get()
                                     : $this->mapper->newCollection();
 
         return $this->paginator($results, $total, $perPage, $page, [
@@ -621,8 +781,10 @@ class Builder
 
     /**
      * Paginate the given query into a simple paginator.
+     *
+     * @return \Illuminate\Pagination\Paginator<int, TEntity>
      */
-    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract 
+    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
         $perPage = $perPage ?: $this->mapper->getPerPage();
@@ -632,10 +794,32 @@ class Builder
         // paginator instances for these results with the given page and per page.
         $this->skip(($page - 1) * $perPage)->take($perPage + 1);
 
-        return $this->simplePaginator($this->get($columns), $perPage, $page, [
+        return $this->simplePaginator($this->get(), $perPage, $page, [
             'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
+    }
+
+    /**
+     * Give this query's table an alias, for a subquery over the same table as its parent query.
+     *
+     * The scopes are handed a clone of the mapper that reports the alias as its table, so the
+     * columns they qualify (such as the soft deleting scope's) use the alias, just as Eloquent
+     * sets the alias as its model's table.
+     *
+     * @param  string  $alias
+     * @return $this
+     */
+    public function aliasTable(string $alias) : self
+    {
+        $table = $this->mapper->getTable();
+
+        $this->mapper = clone $this->mapper;
+        $this->mapper->setTable($alias);
+
+        $this->query->from($table . ' as ' . $alias);
+
+        return $this;
     }
 
     /**
@@ -648,6 +832,8 @@ class Builder
 
     /**
      * Set the underlying query builder instance.
+     *
+     * @return $this
      */
     public function setQuery(QueryBuilder $query) : self
     {
@@ -666,6 +852,8 @@ class Builder
 
     /**
      * Register a new global scope.
+     *
+     * @return $this
      */
     public function withGlobalScope(string $identifier, Scope|Closure $scope) : self
     {
@@ -680,6 +868,8 @@ class Builder
 
     /**
      * Remove a registered global scope.
+     *
+     * @return $this
      */
     public function withoutGlobalScope(Scope|string $scope) : self
     {   
@@ -696,6 +886,8 @@ class Builder
 
     /**
      * Remove all or passed registered global scopes.
+     *
+     * @return $this
      */
     public function withoutGlobalScopes(?array $scopes) : self
     {

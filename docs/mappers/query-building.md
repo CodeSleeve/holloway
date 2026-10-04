@@ -271,6 +271,39 @@ $users = $userMapper
     ->get();
 ```
 
+### Relationship Counting
+
+Use `withCount()` to count related records without loading them:
+
+```php
+// Count a single relationship (adds a posts_count column)
+$users = $userMapper->withCount('posts')->get();
+
+// Count multiple relationships
+$users = $userMapper->withCount(['posts', 'comments', 'likes'])->get();
+
+// With constraints
+$users = $userMapper->withCount([
+    'posts' => function($query) {
+        $query->where('published', true);
+    }
+])->get();
+
+// With aliases
+$users = $userMapper->withCount([
+    'posts as total_posts',
+    'posts as published_posts' => function($query) {
+        $query->where('published', true);
+    }
+])->get();
+```
+
+Counts work with HasOne, HasMany, BelongsTo and BelongsToMany relationships, including relationships to the same table (such as a category's children). The column is named after the relationship in snake_case with a `_count` suffix, or the alias given with `as`. Custom relationships support it only if you give them a count closure.
+
+**Where the count ends up.** The count is an extra column on the record that is handed to your mapper's `hydrate()`. It isn't a column of your table, so it's up to `hydrate()` where it goes on the entity, and `dehydrate()` must leave it out so that `store()` doesn't try to write it.
+
+**Constraints.** The closure receives the related mapper's query builder. Use unqualified column names, as above: for a relationship to the same table, the related table is aliased inside the count, so a column qualified with the table's own name would refer to the parent query. The related mapper's global scopes (such as soft deletes) are applied after your constraints, and can be removed with `withoutGlobalScope()`.
+
 ## Next Steps
 
 - **[Persistence Operations](./persistence.md)** - Learn entity storage and lifecycle management

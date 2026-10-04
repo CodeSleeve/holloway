@@ -14,6 +14,58 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Contracts\Events\Dispatcher as EventManagerInterface;
 use Illuminate\Database\{Connection, ConnectionResolverInterface as Resolver};
 
+/**
+ * @template TEntity = mixed
+ *
+ * Query methods forwarded to Builder<TEntity, static> via __call:
+ *
+ * @method ($id is array ? \Illuminate\Support\Collection<int, TEntity> : TEntity|null) find(mixed $id)
+ * @method TEntity findOrFail(mixed $id)
+ * @method TEntity|null first()
+ * @method TEntity firstOrFail()
+ * @method \Illuminate\Support\Collection<int, TEntity> findMany(array $ids)
+ * @method \Illuminate\Support\Collection<int, TEntity> get()
+ * @method \Illuminate\Pagination\LengthAwarePaginator<int, TEntity> paginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
+ * @method \Illuminate\Pagination\Paginator<int, TEntity> simplePaginate(int|null $perPage = null, array $columns = ['*'], string $pageName = 'page', int|null $page = null)
+ * @method Builder<TEntity, static> where(mixed $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method Builder<TEntity, static> orWhere(mixed $column, mixed $operator = null, mixed $value = null)
+ * @method Builder<TEntity, static> whereKey(mixed $id)
+ * @method Builder<TEntity, static> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity, static> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity, static> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, static> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, static> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity, static> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity, static> limit(mixed ...$parameters)
+ * @method Builder<TEntity, static> take(mixed ...$parameters)
+ * @method Builder<TEntity, static> skip(mixed ...$parameters)
+ * @method Builder<TEntity, static> offset(mixed ...$parameters)
+ * @method Builder<TEntity, static> forPage(mixed ...$parameters)
+ * @method Builder<TEntity, static> select(mixed ...$parameters)
+ * @method Builder<TEntity, static> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity, static> distinct(mixed ...$parameters)
+ * @method Builder<TEntity, static> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity, static> having(mixed ...$parameters)
+ * @method Builder<TEntity, static> join(mixed ...$parameters)
+ * @method Builder<TEntity, static> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity, static> rightJoin(mixed ...$parameters)
+ * @method Builder<TEntity, static> withCount(mixed $relations)
+ * @method Builder<TEntity, static> without(mixed $relations)
+ * @method Builder<TEntity, static> scopes(array $scopes)
+ * @method Builder<TEntity, static> applyScopes()
+ * @method Builder<TEntity, static> withGlobalScope(string $identifier, \CodeSleeve\Holloway\Scope|\Closure $scope)
+ * @method Builder<TEntity, static> withoutGlobalScope(\CodeSleeve\Holloway\Scope|string $scope)
+ * @method Builder<TEntity, static> withoutGlobalScopes(array|null $scopes)
+ * @method bool chunk(int $count, callable $callback)
+ * @method bool chunkById(int $count, callable $callback, string|null $column = null, string|null $alias = null)
+ * @method bool exists()
+ * @method int count(mixed $columns = '*')
+ * @method mixed min(mixed $column)
+ * @method mixed max(mixed $column)
+ * @method mixed avg(mixed $column)
+ * @method mixed sum(mixed $column)
+ * @method string toSql()
+ */
 abstract class Mapper
 {
     const CREATED_AT = 'created_at';
@@ -24,12 +76,13 @@ abstract class Mapper
      * Persistence events fired before an operation. A listener that returns false from one of these cancels it.
      */
     protected const HALTING_EVENTS = ['storing', 'creating', 'updating', 'removing', 'restoring'];
-    
+
     protected static ?Resolver $resolver = null;
     protected static ?EventManagerInterface $eventManager = null;
     protected Instantiator $instantiator;
     protected static Dispatcher $dispatcher;
     protected EntityCache $entityCache;
+
     protected string $entityClassName = '';
     protected string $connection = '';
     protected string $table = '';
@@ -62,8 +115,6 @@ abstract class Mapper
 
     /**
      * Return the name of the entity class for this map.
-     *
-     * @return string
      */
     abstract public function getEntityClassName() : string;
 
@@ -75,6 +126,7 @@ abstract class Mapper
     /**
      * Return the identifier (primary key) for a given entity.
      *
+     * @param  TEntity  $entity
      * @return mixed
      */
     abstract public function getIdentifier($entity);
@@ -82,8 +134,8 @@ abstract class Mapper
     /**
      * Set the identifier (primary key) for a given entity.
      *
-     * @param mixed $value
-     * @param mixed $entity
+     * @param  TEntity  $entity
+     * @param  mixed    $value
      * @return void
      */
     abstract public function setIdentifier($entity, $value) : void;
@@ -91,18 +143,20 @@ abstract class Mapper
     /**
      * @param  stdClass   $record
      * @param  Collection $relations
-     * @return mixed
+     * @return TEntity
      */
     abstract public function hydrate(stdClass $record, Collection $relations);
 
     /**
-     * @param  mixed $entity
+     * @param  TEntity  $entity
      * @return array
      */
     abstract public function dehydrate($entity) : array;
 
     /**
      * Instantiate a new entity instance.
+     *
+     * @return TEntity
      */
     public function instantiateEntity(array $attributes)
     {
@@ -163,6 +217,8 @@ abstract class Mapper
 
     /**
      * Begin querying a mapper with eager loading.
+     *
+     * @return Builder<TEntity, static>
      */
     public function with($relations) : Builder
     {
@@ -173,6 +229,8 @@ abstract class Mapper
 
     /**
      * Get all of the entities from the database.
+     *
+     * @return Collection<int, TEntity>
      */
     public function all() : Collection
     {
@@ -200,6 +258,8 @@ abstract class Mapper
      */
     public static function resolveConnection(?string $connection = null) : Connection
     {
+        // The resolver contract returns ConnectionInterface; in practice it always yields an Illuminate Connection.
+        /** @phpstan-ignore return.type */
         return static::$resolver->connection($connection);
     }
 
@@ -253,6 +313,8 @@ abstract class Mapper
 
     /**
      * More explicity way to start a new query builder for the mapper.
+     *
+     * @return Builder<TEntity, static>
      */
     public function query() : Builder
     {
@@ -261,6 +323,8 @@ abstract class Mapper
 
     /**
      * Get a new query builder for the mapper's table.
+     *
+     * @return Builder<TEntity, static>
      */
     public function newQuery() : Builder
     {
@@ -276,9 +340,9 @@ abstract class Mapper
     /**
      * Get a new query builder that doesn't have any global scopes.
      *
-     * @return Builder|static
+     * @return Builder<TEntity, static>
      */
-    public function newQueryWithoutScopes()
+    public function newQueryWithoutScopes() : Builder
     {
         $builder = $this->newHollowayBuilder($this->newBaseQueryBuilder());
 
@@ -290,6 +354,8 @@ abstract class Mapper
 
     /**
      * Get a new query instance without a given scope.
+     *
+     * @return Builder<TEntity, static>
      */
     public function newQueryWithoutScope(Scope|string $scope) : Builder
     {
@@ -300,10 +366,15 @@ abstract class Mapper
 
     /**
      * Create a new Holloway query builder for the mapper.
+     *
+     * @return Builder<TEntity, static>
      */
     public function newHollowayBuilder(QueryBuilder $query) : Builder
     {
-        return new Builder($query);
+        /** @var Builder<TEntity, static> $builder */
+        $builder = new Builder($query);
+
+        return $builder;
     }
 
     /**
@@ -322,8 +393,10 @@ abstract class Mapper
 
     /**
      * Make a new entity instance using a stdClass record from storage.
+     *
+     * @return TEntity
      */
-    public function makeEntity(stdClass $record) : mixed
+    public function makeEntity(stdClass $record)
     {
         $primaryKey = $this->primaryKey;
 
@@ -338,6 +411,8 @@ abstract class Mapper
 
     /**
      * Make a collection of new entity instances from a Collection of stdClass records.
+     *
+     * @return Collection<int, TEntity>
      */
     public function makeEntities(Collection $records) : Collection
     {
@@ -348,6 +423,9 @@ abstract class Mapper
 
     /**
      * Return a new collection of Entities.
+     *
+     * @param  TEntity[]  $entities
+     * @return Collection<int, TEntity>
      */
     public function newCollection(array $entities = []) : Collection
     {
@@ -356,6 +434,8 @@ abstract class Mapper
 
     /**
      * Persist a single entity or collection of entities to storage.
+     *
+     * @param  TEntity|iterable<TEntity>  $entity
      */
     public function store($entity) : bool
     {
@@ -368,6 +448,8 @@ abstract class Mapper
 
     /**
      * Remove a single entity or collection of entities from storage.
+     *
+     * @param  TEntity|iterable<TEntity>  $entity
      */
     public function remove($entity) : bool
     {
@@ -383,6 +465,8 @@ abstract class Mapper
      * when test factory's create() method is used to persist an entity.
      * You may override this at your convenience; By default, this method
      * simply proxies to the store() method.
+     *
+     * @param  TEntity|iterable<TEntity>  $entity
      */
     public function factoryInsert($entity) : bool
     {
@@ -391,6 +475,8 @@ abstract class Mapper
 
     /**
      * Persist a collection of entities into storage.
+     *
+     * @param  iterable<TEntity>  $entities
      */
     protected function storeEntities(iterable $entities) : bool
     {
@@ -414,6 +500,8 @@ abstract class Mapper
 
     /**
      * Persist a single entity into storage.
+     *
+     * @param  TEntity  $entity
      */
     protected function storeEntity($entity) : bool
     {
@@ -500,6 +588,8 @@ abstract class Mapper
 
     /**
      * Remove a single entity from storage.
+     *
+     * @param  TEntity  $entity
      */
     protected function removeEntity($entity) : bool
     {
@@ -529,6 +619,8 @@ abstract class Mapper
 
     /**
      * Remove a collection of entities from storage.
+     *
+     * @param  iterable<TEntity>  $entities
      */
     protected function removeEntities(iterable $entities) : bool
     {
@@ -618,6 +710,8 @@ abstract class Mapper
 
     /**
     * Fire a persistence event for the given entity.
+    *
+    * @param  TEntity  $entity
     */
     protected function firePersistenceEvent(string $eventName, $entity)
     {
@@ -716,8 +810,16 @@ abstract class Mapper
 
     /**
      * Define a new custom relationship
+     *
+     * @param  string           $name
+     * @param  callable         $load
+     * @param  callable         $for
+     * @param  string|callable  $mapOrEntityName
+     * @param  bool             $limitOne
+     * @param  callable|null    $count  Optional count query builder for withCount() support
+     * @return void
      */
-    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false) : void
+    public function custom(string $name, callable $load, callable $for, $mapOrEntityName, bool $limitOne = false, ?callable $count = null) : void
     {
         if (!$load instanceof Closure) {
             $load = Closure::fromCallable($load);
@@ -731,15 +833,19 @@ abstract class Mapper
             $mapOrEntityName = $mapOrEntityName = Closure::fromCallable($mapOrEntityName);
         }
 
-        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes());
+        if ($count && !$count instanceof Closure) {
+            $count = Closure::fromCallable($count);
+        }
+
+        $this->relationships[$name] = new Relationships\Custom($name, $load, $for, $mapOrEntityName, $limitOne, fn() => $this->newQueryWithoutScopes(), $count);
     }
 
     /**
      * Define a new customMany relationship
      */
-    public function customMany(string $name, callable $load, callable $for, $mapOrEntityName)
+    public function customMany(string $name, callable $load, callable $for, $mapOrEntityName) : void
     {
-        return $this->custom($name, $load, $for, $mapOrEntityName);
+        $this->custom($name, $load, $for, $mapOrEntityName);
     }
 
     /**
@@ -751,9 +857,9 @@ abstract class Mapper
      * @param  string|callable  $mapOrEntityName
      * @return void
      */
-    public function customOne(string $name, callable $load, callable $for, $mapOrEntityName)
+    public function customOne(string $name, callable $load, callable $for, $mapOrEntityName) : void
     {
-        return $this->custom($name, $load, $for, $mapOrEntityName, true);
+        $this->custom($name, $load, $for, $mapOrEntityName, true);
     }
 
 

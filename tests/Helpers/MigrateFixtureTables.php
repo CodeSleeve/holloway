@@ -120,6 +120,30 @@ class MigrateFixtureTables extends Migration
                 $table->primary(['pup_id', 'pup_food_id']);
             });
         }
+
+        if (!Schema::hasTable('categories')) {
+            Schema::create('categories', function (Blueprint $table) {
+                $table->increments('id');
+
+                $table->unsignedInteger('parent_id')->nullable();
+                $table->foreign('parent_id')->references('id')->on('categories');
+
+                $table->string('name');
+                $table->dateTime('deleted_at')->nullable();
+            });
+        }
+
+        if (!Schema::hasTable('categories_related')) {
+            Schema::create('categories_related', function (Blueprint $table) {
+                $table->unsignedInteger('category_id');
+                $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
+
+                $table->unsignedInteger('related_category_id');
+                $table->foreign('related_category_id')->references('id')->on('categories')->onDelete('cascade');
+
+                $table->primary(['category_id', 'related_category_id']);
+            });
+        }
     }
 
     /**
@@ -129,6 +153,8 @@ class MigrateFixtureTables extends Migration
      */
     public static function down()
     {
+        Schema::dropIfExists('categories_related');
+        Schema::dropIfExists('categories');
         Schema::dropIfExists('companies');
         Schema::dropIfExists('pup_foods');
         Schema::dropIfExists('users');

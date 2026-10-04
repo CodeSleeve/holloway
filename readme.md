@@ -47,6 +47,7 @@ Holloway is an ORM toolkit for Laravel that lets you create your own custom data
 - [Entity Caching](./docs/advanced/caching.md) - Performance optimization
 - [Soft Deletes](./docs/advanced/soft-deletes.md) - Soft deletion support
 - [Events & Hooks](./docs/advanced/events.md) - Lifecycle events
+- [Static Analysis](./docs/advanced/static-analysis.md) - PHPStan extension for typed mappers
 
 ## Contributing
 
