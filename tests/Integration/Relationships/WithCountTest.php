@@ -46,6 +46,51 @@ class WithCountTest extends TestCase
     }
 
     /** @test */
+    public function it_accepts_an_uppercase_AS_when_aliasing_a_count()
+    {
+        // given
+        $this->buildFixtures();
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $packs = $packMapper->withCount('pups AS total_pups')->orderBy('id')->get();
+
+        // then
+        $this->assertEquals(4, $packs[0]->total_pups);
+        $this->assertEquals(2, $packs[1]->total_pups);
+    }
+
+    /** @test */
+    public function it_applies_the_related_mappers_global_scopes_to_the_count_once()
+    {
+        // given: PackMapper is not soft deleting, but the PupMapper it counts is
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $sql = $packMapper->withCount('pups')->toSql();
+
+        // then: the only deleted_at predicate in the query is the count subquery's
+        $this->assertSame(1, substr_count($sql, 'deleted_at'));
+    }
+
+    /** @test */
+    public function an_or_constraint_stays_inside_the_correlation_of_the_count()
+    {
+        // given: Bennett Pack has Tobias, Adams Pack has Lucky
+        $this->buildFixtures();
+        $packMapper = Holloway::instance()->getMapper(Pack::class);
+
+        // when
+        $packs = $packMapper->withCount([
+            'pups' => fn($query) => $query->where('first_name', 'Tobias')->orWhere('first_name', 'Lucky'),
+        ])->orderBy('id')->get();
+
+        // then: each pack counts only its own matching pups
+        $this->assertEquals(1, $packs[0]->pups_count);
+        $this->assertEquals(1, $packs[1]->pups_count);
+    }
+
+    /** @test */
     public function it_counts_has_many_relationships_with_zero_results()
     {
         // given: A pack with no pups
