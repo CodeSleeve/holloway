@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Closure;
+use BadMethodCallException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use stdClass;
@@ -16,6 +17,7 @@ class Custom implements Relationship
     protected ?string $entityName = null;
     protected bool $shouldLimitToOne;
     protected Closure $query;
+    protected ?Closure $count = null;
     protected ?Collection $data;
 
     /**
@@ -24,9 +26,10 @@ class Custom implements Relationship
      * @param Closure      $for
      * @param mixed        $mapOrEntityName
      * @param bool         $shouldLimitToOne
-     * @param QueryBuilder $query
+     * @param Closure      $query
+     * @param Closure|null $count
      */
-    public function __construct(string $name, Closure $load, Closure $for, $mapOrEntityName, bool $shouldLimitToOne, Closure $query)
+    public function __construct(string $name, Closure $load, Closure $for, $mapOrEntityName, bool $shouldLimitToOne, Closure $query, ?Closure $count = null)
     {
         $this->name = $name;
         $this->load = $load;
@@ -42,6 +45,7 @@ class Custom implements Relationship
 
         $this->shouldLimitToOne = $shouldLimitToOne;
         $this->query = $query;
+        $this->count = $count;
     }
 
     /**
@@ -111,5 +115,45 @@ class Custom implements Relationship
     public function getName() : string
     {
         return $this->name;
+    }
+
+    /**
+     * Build a count subquery for Custom relationships.
+     * Custom relationships must provide a count closure in their constructor to support withCount().
+     *
+     * The constraints (if any) are handed a query builder around the count query that the
+     * closure returns. Custom relationships build that query themselves, so the closure is
+     * responsible for any global scopes.
+     *
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
+     * @return \Illuminate\Database\Query\Builder
+     * @throws \BadMethodCallException
+     */
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
+    {
+        if (!$this->count) {
+            throw new BadMethodCallException(
+                "Custom relationship [{$this->name}] does not support withCount(). " .
+                "To add count support, provide a count closure when defining it (the \$count argument of Mapper::custom()). " .
+                "The closure should accept (QueryBuilder \$query, string \$parentTable, string \$parentKey) and return a QueryBuilder with count logic."
+            );
+        }
+
+        $builder = ($this->query)();
+
+        // Let the count closure configure the query
+        $query = ($this->count)($builder->toBase(), $parentTable, $parentKey);
+
+        if ($constraints) {
+            $builder->setQuery($query);
+
+            $builder->callScope($constraints);
+
+            $query = $builder->getQuery();
+        }
+
+        return $query;
     }
 }

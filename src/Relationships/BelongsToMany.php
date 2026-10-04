@@ -5,6 +5,7 @@ namespace CodeSleeve\Holloway\Relationships;
 use Closure;
 use stdClass;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class BelongsToMany extends BaseRelationship
 {
@@ -120,5 +121,35 @@ class BelongsToMany extends BaseRelationship
     public function getPivotLocalKeyName() : string
     {
         return $this->pivotLocalKeyName;
+    }
+
+    /**
+     * Build a count subquery for BelongsToMany relationships.
+     *
+     * The parent column is the relationship's own local key (as in load()).
+     *
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
+    {
+        $query = $this->newCountQuery($parentTable);
+
+        $query->selectRaw('count(*)')
+            ->join(
+                $this->pivotTable,
+                $query->getMapper()->getTable() . '.' . $this->foreignKeyName,
+                '=',
+                $this->pivotTable . '.' . $this->pivotForeignKeyName
+            )
+            ->whereColumn(
+                $this->pivotTable . '.' . $this->pivotLocalKeyName,
+                '=',
+                $parentTable . '.' . $this->localKeyName
+            );
+
+        return $this->finishCountQuery($query, $constraints);
     }
 }

@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Closure;
 use stdClass;
 
@@ -54,5 +55,27 @@ class BelongsTo extends BaseRelationship
                 return $relatedRecord->{$this->localKeyName} == $record->{$this->foreignKeyName};
             })
             ->first();
+    }
+
+    /**
+     * Build a count subquery for BelongsTo relationships.
+     *
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
+    {
+        $query = $this->newCountQuery($parentTable);
+
+        $query->selectRaw('count(*)')
+            ->whereColumn(
+                $query->getMapper()->getTable() . '.' . $this->localKeyName,
+                '=',
+                $parentTable . '.' . $this->foreignKeyName
+            );
+
+        return $this->finishCountQuery($query, $constraints);
     }
 }
