@@ -53,26 +53,26 @@ $users = $userMapper
 Use `withCount()` to add count columns without loading the related entities:
 
 ```php
-// Single count
-$users = $userMapper->withCount(‘posts’)->get();
-echo $users->first()->posts_count;
+// Single count (adds a posts_count column)
+$users = $userMapper->withCount('posts')->get();
 
 // Multiple counts
-$users = $userMapper->withCount([‘posts’, ‘comments’])->get();
+$users = $userMapper->withCount(['posts', 'comments'])->get();
 
 // With constraints
 $users = $userMapper->withCount([
-    ‘posts’ => function($query) {
-        $query->where(‘published’, true);
+    'posts' => function($query) {
+        $query->where('published', true);
     }
 ])->get();
 
-// With aliases
-$users = $userMapper->withCount(‘posts as total_posts’)->get();
-echo $users->first()->total_posts;
+// With aliases (adds a total_posts column)
+$users = $userMapper->withCount('posts as total_posts')->get();
 ```
 
-**Supported relationships**: HasOne, HasMany, BelongsTo, BelongsToMany. Custom relationships need a count closure to support `withCount()`.
+The counts are extra columns on the record that `hydrate()` receives; see [Query Building](../mappers/query-building.md#relationship-counting).
+
+**Supported relationships**: HasOne, HasMany, BelongsTo, BelongsToMany (including relationships to the same table). Custom relationships need a count closure to support `withCount()`.
 
 ## Default eager loads
 
