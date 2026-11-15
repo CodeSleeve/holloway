@@ -53,8 +53,3 @@ parameters:
         # PHPStan reports it as unused when scanning src/ alone.
         - identifier: trait.unused
           path: src/SoftDeletes.php
-
-        # Tree.php uses a typed array that PHPStan narrows to {} in one branch; the
-        # array_key_exists check is still correct at runtime.
-        - identifier: function.impossibleType
-          path: src/Relationships/Tree.php
