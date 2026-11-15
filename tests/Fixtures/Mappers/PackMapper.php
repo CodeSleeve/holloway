@@ -26,7 +26,7 @@ class PackMapper extends Mapper
                 ->whereIn('packs.id', $packs->pluck('id'))
                 ->get();
         }, 
-        fn(stdClass $pack, stdClass $collar) => $pack->id = $collar->pack_id, 
+        fn(stdClass $pack, stdClass $collar) => $pack->id == $collar->pack_id,
         Collar::class);
     }
 
