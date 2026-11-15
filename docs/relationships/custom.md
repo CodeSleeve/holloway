@@ -21,12 +21,35 @@ Custom relationships allow you to define arbitrary loading logic using three key
 ```php
 $this->custom(
     'relationshipName',
-    $loadFunction,      // function($query, $parentEntities) 
-    $forFunction,       // function($parentEntity, $loadedRecord)
+    $loadFunction,      // function($query, $parentRecords, $constraints)
+    $forFunction,       // function($parentRecord, $loadedRecord)
     $mapFunction,       // function($record) OR EntityClass::class
     $limitOne = false   // true for single result, false for collection
 );
 ```
+
+The records passed to the load and for functions are the raw `stdClass` rows from the database. Entities aren't built until every relationship has been loaded.
+
+### Constraints
+
+When a custom relationship is loaded with constraints, `with(['collars' => fn($query) => $query->where('collars.color', 'blue')])`, they are passed to your load function as a third argument. You decide where they apply, since you wrote the query. Call the constraints on your query (a plain query builder, not a Holloway builder) before getting the results:
+
+```php
+$this->customMany('collars', function($query, $packs, $constraints) {
+    $query->from('collars')
+        ->select('collars.*', 'pups.pack_id')
+        ->join('pups', 'collars.pup_id', '=', 'pups.id')
+        ->whereIn('pups.pack_id', $packs->pluck('id'));
+
+    $constraints($query);
+
+    return $query->get();
+}, function($pack, $collar) {
+    return $pack->id == $collar->pack_id;
+}, Collar::class);
+```
+
+`$constraints` is always callable, an empty closure when none were given. A load function that doesn't take a third argument ignores any constraints it is given, so qualify column names in constraints (`collars.color`) when your query has joins.
 
 ## Custom Relationship Types
 

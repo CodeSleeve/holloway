@@ -13,6 +13,71 @@ use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
 use Illuminate\Support\Collection;
 use Illuminate\Database\Concerns\BuildsQueries;
 
+/**
+ * @template TEntity = mixed
+ * @template TMapper of Mapper = Mapper
+ *
+ * QueryBuilder pass-through methods that return $this via __call.
+ * Annotated here so PHPStan preserves Builder<TEntity> through chains
+ * like ->orderBy()->where()->get().
+ *
+ * @method Builder<TEntity, TMapper> select(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> selectRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> addSelect(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> distinct(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> join(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> leftJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> rightJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> crossJoin(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> joinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> leftJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> rightJoinWhere(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotIn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotNull(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereNotBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereDate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereDate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereYear(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereMonth(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereDay(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereTime(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> whereColumn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orWhereColumn(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> groupBy(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> groupByRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> having(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orHaving(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> havingRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orHavingRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> havingBetween(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderBy(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderByDesc(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> orderByRaw(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> reorder(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> take(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> limit(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> skip(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> offset(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPage(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPageBeforeId(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> forPageAfterId(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> union(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> unionAll(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> lock(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> lockForUpdate(mixed ...$parameters)
+ * @method Builder<TEntity, TMapper> sharedLock(mixed ...$parameters)
+ */
 class Builder
 {
     use BuildsQueries;
@@ -24,6 +89,8 @@ class Builder
 
     /**
      * The mapper for this builder.
+     *
+     * @var Mapper<TEntity>|null
      */
     protected ?Mapper $mapper = null;
 
@@ -42,12 +109,7 @@ class Builder
      */
     protected array $localMacros = [];
 
-    /**
-     * A replacement for the typical delete function.
-     *
-     * @var \Closure
-     */
-    protected $onDelete;
+    protected ?\Closure $onDelete = null;
 
     /**
      * The methods that should be returned from query builder.
@@ -56,6 +118,11 @@ class Builder
         'insert', 'insertGetId', 'getBindings', 'toSql',
         'exists', 'count', 'min', 'max', 'avg', 'sum', 'getConnection',
     ];
+
+    /**
+     * Whether this is the query that a relationship hands to its constraints.
+     */
+    protected bool $isRelationQuery = false;
 
     /**
      * Applied global scopes.
@@ -147,7 +214,7 @@ class Builder
     }
 
     /**
-     * @return Mapper
+     * @return Mapper<TEntity>
      */
     public function getMapper() : Mapper
     {
@@ -155,8 +222,8 @@ class Builder
     }
 
     /**
-     *  @param  Mapper $mapper
-     *  @return Builder
+     *  @param  Mapper<TEntity>  $mapper
+     *  @return $this
      */
     public function setMapper(Mapper $mapper) : Builder
     {
@@ -169,7 +236,7 @@ class Builder
 
     /**
      * @param  mixed  $id
-     * @return mixed
+     * @return ($id is array ? Collection<int, TEntity> : TEntity|null)
      */
     public function find($id)
     {
@@ -183,7 +250,7 @@ class Builder
     /**
      * @param  mixed $id
      * @throws ModelNotFoundException
-     * @return mixed
+     * @return TEntity
      */
     public function findOrFail($id)
     {
@@ -198,7 +265,7 @@ class Builder
 
     /**
      * @throws ModelNotFoundException
-     * @return mixed
+     * @return TEntity
      */
     public function firstOrFail()
     {
@@ -213,7 +280,7 @@ class Builder
 
     /**
      * @param  array  $ids
-     * @return \Illuminate\Support\Collection
+     * @return Collection<int, TEntity>
      */
     public function findMany($ids) : Collection
     {
@@ -227,7 +294,7 @@ class Builder
     /**
      * Execute the query and get the first result.
      *
-     * @return mixed|null
+     * @return TEntity|null
      */
     public function first()
     {
@@ -238,7 +305,7 @@ class Builder
      * Add a where clause on the primary key to the query.
      *
      * @param  mixed  $id
-     * @return Builder
+     * @return $this
      */
     public function whereKey($id) : Builder
     {
@@ -254,13 +321,13 @@ class Builder
     /**
      * Add a basic where clause to the query.
      *
-     * @param  string|\Closure  $column
-     * @param  string  $operator
+     * @param  mixed   $column
+     * @param  mixed   $operator
      * @param  mixed   $value
      * @param  string  $boolean
-     * @return Builder
+     * @return $this
      */
-    public function where($column, string $operator = null, $value = null, string $boolean = 'and') : self
+    public function where($column, $operator = null, $value = null, string $boolean = 'and') : self
     {
         if ($column instanceof Closure) {
             $query = $this->mapper->newQueryWithoutScopes();
@@ -278,18 +345,20 @@ class Builder
     /**
      * Add an "or where" clause to the query.
      *
-     * @param  string|\Closure  $column
-     * @param  string           $operator
+     * @param  mixed            $column
+     * @param  mixed            $operator
      * @param  mixed            $value
-     * @return Builder
+     * @return $this
      */
-    public function orWhere($column, string $operator = null, $value = null) : self
+    public function orWhere($column, $operator = null, $value = null) : self
     {
         return $this->where($column, $operator, $value, 'or');
     }
 
     /**
      * Execute the query as a "select" statement.
+     *
+     * @return Collection<int, TEntity>
      */
     public function get() : Collection
     {
@@ -329,7 +398,7 @@ class Builder
     /**
      * Apply any global scopes to the Holloway builder instance and return it.
      *
-     * @return Builder
+     * @return static
      */
     public function applyScopes() : Builder
     {
@@ -465,9 +534,13 @@ class Builder
      * Set the relations that should be eager loaded.
      * Here, all we're really doing is passing these through to this
      * query's tree so that they'll be loaded when we tell our tree to render.
+     *
+     * @return $this
      */
     public function with(mixed $relations) : self
     {
+        $this->guardAgainstRelationQuery(__FUNCTION__);
+
         $this->getTree()
             ->addLoads(is_string($relations) ? func_get_args() : $relations);
 
@@ -476,12 +549,49 @@ class Builder
 
     /**
      * Prevent the specified relations from being eager loaded.
+     *
+     * @return $this
      */
     public function without(mixed $relations) : self
     {
+        $this->guardAgainstRelationQuery(__FUNCTION__);
+
         $this->getTree()->removeLoads(is_string($relations) ? func_get_args() : $relations);
 
         return $this;
+    }
+
+    /**
+     * Prevent the default loads of the mapper being queried, and of the mappers it leads to, from being eager loaded.
+     */
+    public function withoutDefaultLoads() : self
+    {
+        $this->guardAgainstRelationQuery(__FUNCTION__);
+
+        $this->getTree()->withoutDefaultLoads();
+
+        return $this;
+    }
+
+    /**
+     * Mark this as the query that a relationship hands to its constraints. A relationship only reads
+     * records from it, the loads of a query are decided by the tree before any query runs.
+     */
+    public function forRelationLoad() : self
+    {
+        $this->isRelationQuery = true;
+
+        return $this;
+    }
+
+    /**
+     * Throw if this is the query that a relationship hands to its constraints, since changing its loads would do nothing.
+     */
+    protected function guardAgainstRelationQuery(string $method) : void
+    {
+        if ($this->isRelationQuery) {
+            throw new \BadMethodCallException("$method() can't be called in the constraints of a relationship, loads are decided before any query runs. Call it on the outer query instead (e.g. with('pups.collar')).");
+        }
     }
 
     /**
@@ -599,7 +709,7 @@ class Builder
      * @param  array  $columns
      * @param  string  $pageName
      * @param  int|null  $page
-     * @return LengthAwarePaginatorContract
+     * @return \Illuminate\Pagination\LengthAwarePaginator<int, TEntity>
      *
      * @throws \InvalidArgumentException
      */
@@ -610,7 +720,7 @@ class Builder
         $perPage = $perPage ?: $this->mapper->getPerPage();
 
         $results = ($total = $this->toBase()->getCountForPagination($columns))
-                                    ? $this->forPage($page, $perPage)->get($columns)
+                                    ? $this->forPage($page, $perPage)->get()
                                     : $this->mapper->newCollection();
 
         return $this->paginator($results, $total, $perPage, $page, [
@@ -621,8 +731,10 @@ class Builder
 
     /**
      * Paginate the given query into a simple paginator.
+     *
+     * @return \Illuminate\Pagination\Paginator<int, TEntity>
      */
-    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract 
+    public function simplePaginate(?int $perPage = null, array $columns = ['*'], string $pageName = 'page', ?int $page = null, ) : PaginatorContract
     {
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
         $perPage = $perPage ?: $this->mapper->getPerPage();
@@ -632,7 +744,7 @@ class Builder
         // paginator instances for these results with the given page and per page.
         $this->skip(($page - 1) * $perPage)->take($perPage + 1);
 
-        return $this->simplePaginator($this->get($columns), $perPage, $page, [
+        return $this->simplePaginator($this->get(), $perPage, $page, [
             'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
@@ -648,6 +760,8 @@ class Builder
 
     /**
      * Set the underlying query builder instance.
+     *
+     * @return $this
      */
     public function setQuery(QueryBuilder $query) : self
     {
@@ -666,6 +780,8 @@ class Builder
 
     /**
      * Register a new global scope.
+     *
+     * @return $this
      */
     public function withGlobalScope(string $identifier, Scope|Closure $scope) : self
     {
@@ -680,6 +796,8 @@ class Builder
 
     /**
      * Remove a registered global scope.
+     *
+     * @return $this
      */
     public function withoutGlobalScope(Scope|string $scope) : self
     {   
@@ -696,6 +814,8 @@ class Builder
 
     /**
      * Remove all or passed registered global scopes.
+     *
+     * @return $this
      */
     public function withoutGlobalScopes(?array $scopes) : self
     {

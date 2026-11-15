@@ -12,6 +12,8 @@ final class Tree
     protected array $loads = [];
     protected array $data = [];
     protected Mapper $rootMapper;
+    protected bool $withDefaultLoads = true;
+    protected array $defaultLoads = [];
 
     public function __construct(Mapper $rootMapper)
     {
@@ -24,6 +26,19 @@ final class Tree
         $loads = is_array($loads) ? $loads : func_get_args();
         $loads = $this->normalize($loads);
         $this->loads = [...$this->loads, ...$loads];
+        $this->defaultLoads = array_diff($this->defaultLoads, array_keys($loads));
+
+        return $this;
+    }
+
+    /**
+     * Add the default loads of the root mapper, these are loads that haven't been asked for.
+     */
+    public function addDefaultLoads(array $loads) : self
+    {
+        $loads = $this->normalize($loads);
+        $this->loads = [...$this->loads, ...$loads];
+        $this->defaultLoads = [...$this->defaultLoads, ...array_keys($loads)];
 
         return $this;
     }
@@ -32,6 +47,16 @@ final class Tree
     {
         $loads = is_array($loads) ? $loads : func_get_args();
         $this->loads = array_diff_key($this->loads, array_flip($loads));
+        $this->defaultLoads = array_diff($this->defaultLoads, $loads);
+
+        return $this;
+    }
+
+    public function withoutDefaultLoads() : self
+    {
+        $this->withDefaultLoads = false;
+        $this->loads = array_diff_key($this->loads, array_flip($this->defaultLoads));
+        $this->defaultLoads = [];
 
         return $this;
     }
@@ -210,12 +235,12 @@ final class Tree
      *     [
      *         'parentRelation' => [
      *             'name'         => 'parentRelation',
-     *             'constraints'  => function() {},
+     *             'constraints'  => null,
      *             'relationship' => <Relationship> $relationship,
      *             'children'     => [
      *                 'childRelation' => [
      *                     'name'         => 'childRelation',
-     *                     'constraints'  => function() {},
+     *                     'constraints'  => null,
      *                     'relationship' => <Relationship> $relationship,
      *                     'children'     => [
      *                         'firstGrandchildRelation' => [
@@ -247,52 +272,88 @@ final class Tree
      *     ]
      * </code>
      *
+     * Loads that share a parent are merged into the same node, whatever order they're given in. A new node also
+     * gets the default loads ($with) of the mapper it leads to, and a load that was asked for always wins over a
+     * default. A default is never added if it leads back to a mapper that's already on the path, so mappers whose
+     * defaults point at each other can't loop.
      */
     protected function buildTree()
     {
+        /** @var array<string, array> $tree */
         $tree = [];
 
         foreach ($this->loads as $name => $constraints) {
-            $stack = [[&$tree, $name, $this->rootMapper, $constraints]];
+            // 1. Start with the load itself. The mapper chain is the mappers on the path from the root down to
+            //    the node being built, and only the loads we add in step 8 are marked as default loads.
+            $stack = [[&$tree, $name, $this->rootMapper, $constraints, [$this->rootMapper], false]];
 
             while ($stack) {
                 $stackFrame = array_shift($stack);
-                [&$subTree, $name, $mapper, $constraints] = $stackFrame;
+                [&$subTree, $name, $mapper, $constraints, $mapperChain, $isDefaultLoad] = $stackFrame;
 
-                if (mb_strpos($name, '.') === false) {
-                    $nodeName = $name;
+                // 2. Split the load at its first dot. For 'pups.collar', 'pups' is the node to build here and
+                //    'collar' is the rest of the path to build beneath it.
+                [$nodeName, $remainingPath] = array_pad(explode('.', $name, 2), 2, null);
 
-                    $node = [
+                // 3. Find the relationship that this node loads, and the mapper it leads to (a custom relationship
+                //    doesn't always have one).
+                $isNewNode = !isset($subTree[$nodeName]);
+                $relationship = $isNewNode ? clone $mapper->getRelationship($nodeName) : $subTree[$nodeName]['relationship'];
+                $relatedMapper = $relationship->getEntityName() ? $this->holloway->getMapper($relationship->getEntityName()) : null;
+
+                // 4. Skip a default load if its node already has constraints (a load that was asked for always
+                //    wins, no matter what order the loads were given in) or if it leads back to a mapper that's
+                //    already in the chain (so mappers whose defaults point at each other don't loop).
+                if ($isDefaultLoad) {
+                    $hasConstraints = $remainingPath === null && isset($subTree[$nodeName]['constraints']);
+                    $leadsBack = $relatedMapper && in_array($relatedMapper, $mapperChain, true);
+
+                    if ($hasConstraints || $leadsBack) {
+                        continue;
+                    }
+                }
+
+                // 5. Build the node if we haven't seen it yet. Its constraints stay null until a load for the node
+                //    itself (or a default) gives it some, since a node we only pass through has none of its own.
+                if ($isNewNode) {
+                    $subTree[$nodeName] = [
                         'name'         => $nodeName,
-                        'constraints'  => $constraints,
-                        'relationship' => clone $mapper->getRelationship($nodeName),
+                        'constraints'  => null,
+                        'relationship' => $relationship,
                         'children'     => []
                     ];
+                }
 
-                    $subTree[$nodeName] = $node;
-                } else {
-                    $nodeName = explode('.', $name)[0];
+                // 6. The last segment of a load is the node it names, so it gets the load's constraints. Setting
+                //    them leaves any children the node already has alone.
+                if ($remainingPath === null) {
+                    $subTree[$nodeName]['constraints'] = $constraints;
+                }
 
-                    if (!array_key_exists($nodeName, $subTree)) {
-                        $node = [
-                            'name'         => $nodeName,
-                            'constraints'  => function() {},
-                            'relationship' => clone $mapper->getRelationship($nodeName),
-                            'children'     => []
-                        ];
+                // 7. If the load goes deeper and the relationship isn't a custom one (e.g customMany, etc) we'll
+                //    push the rest of the path onto the stack to be built beneath this node.
+                if ($remainingPath !== null && $relatedMapper) {
+                    $stack[] = [
+                        &$subTree[$nodeName]['children'],
+                        $remainingPath,
+                        $relatedMapper,
+                        $constraints,
+                        [...$mapperChain, $relatedMapper],
+                        $isDefaultLoad,
+                    ];
+                }
 
-                        $subTree[$nodeName] = $node;
-                    } else {
-                        $node = $subTree[$nodeName];
-                    }
-
-                    // If the relationship isn't a custom one (e.g customMany, etc) we'll push it onto the stack
-                    if ($node['relationship']->getEntityName()) {
+                // 8. Add the default loads of the mapper that a new node leads to beneath it, unless the query was
+                //    told not to. Custom relationships load their records with their own query, so they don't get any.
+                if ($this->withDefaultLoads && $isNewNode && $relatedMapper && !$relationship instanceof Custom) {
+                    foreach ($this->normalize($relatedMapper->getWith()) as $defaultName => $defaultConstraints) {
                         $stack[] = [
                             &$subTree[$nodeName]['children'],
-                            str_replace("$nodeName.", '', $name),
-                            $this->holloway->getMapper($node['relationship']->getEntityName()),
-                            $constraints,
+                            $defaultName,
+                            $relatedMapper,
+                            $defaultConstraints,
+                            [...$mapperChain, $relatedMapper],
+                            true,
                         ];
                     }
                 }

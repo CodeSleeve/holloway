@@ -8,9 +8,9 @@ use UnexpectedValueException;
 final class Holloway
 {
     /**
-     * @var self
+     * @var self|null
      */
-    private static $instance;
+    private static ?self $instance = null;
 
     /**
      * The registered entity mappers, keyed by entity class name.
@@ -40,7 +40,7 @@ final class Holloway
     }
 
     /**
-     * @param  mixed
+     * @param  mixed  $mapperClasses
      * @return void
      */
     public function register($mapperClasses)
@@ -81,7 +81,7 @@ final class Holloway
     }
 
     /**
-     * @param  string|object $entityName
+     * @param  string|object  $entityName
      * @throws UnexpectedValueException
      * @return Mapper
      */
@@ -91,11 +91,11 @@ final class Holloway
             $entityName = get_class($entityName);
         }
 
-        try {
-            return $this->mappers[$entityName];
-        } catch (Throwable $e) {
+        if (!array_key_exists($entityName, $this->mappers)) {
             throw new UnexpectedValueException("Unknown entity $entityName, are you sure you've registered a mapper for this entity?", 1);
         }
+
+        return $this->mappers[$entityName];
     }
 
     /**

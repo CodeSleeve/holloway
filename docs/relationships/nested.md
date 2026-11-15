@@ -50,8 +50,7 @@ class PostMapper extends Mapper
                     $query->select(['id', 'name', 'avatar']);
                 },
                 'comments.replies' => function($query) {
-                    $query->where('approved', true)
-                          ->limit(5);
+                    $query->where('approved', true);
                 },
                 'category.parent'
             ])
@@ -59,6 +58,8 @@ class PostMapper extends Mapper
     }
 }
 ```
+
+A `limit()` in a constraint applies to the whole load, not to each parent. The limit on `comments` works as intended here because only one post is loaded. A limit on `comments.replies` would cap the replies of all the comments together.
 
 ## Polymorphic Nested Relationships
 

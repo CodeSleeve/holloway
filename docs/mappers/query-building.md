@@ -262,7 +262,7 @@ $users = $userMapper
             $query->where('published', true);
         },
         'profile' => function($query) {
-            $query->select(['user_id', 'avatar', 'bio']);
+            $query->select(['id', 'user_id', 'avatar', 'bio']);
         },
         'roles' => function($query) {
             $query->where('active', true);
@@ -271,8 +271,11 @@ $users = $userMapper
     ->get();
 ```
 
+When you select columns, include the primary key and the key the relationship matches on (`user_id` here), and make sure your mapper's `hydrate()` copes with the columns you left out. See [Query Builder API](../references/query-builder-api.md#select).
+
 ## Next Steps
 
 - **[Persistence Operations](./persistence.md)** - Learn entity storage and lifecycle management
 - **[Scopes](./scopes.md)** - Master global and local scopes
 - **[Relationship Loading](../relationships/eager-loading.md)** - Optimize relationship queries
+- **[Query Builder API](../references/query-builder-api.md)** - What works, what differs and what throws

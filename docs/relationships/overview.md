@@ -101,6 +101,30 @@ foreach ($users as $user) {
 }
 ```
 
+### Default Loads
+
+A mapper can name the relationships that should always be loaded with it in its `$with` property. These are loaded whenever the mapper is queried, and also whenever it is reached through the relationship of another mapper:
+
+```php
+class PupMapper extends Mapper
+{
+    protected array $with = ['collar'];
+}
+
+// Loads the pups of each pack, and the collar of each of those pups (one query per relationship)
+$packs = $packMapper->with('pups')->get();
+```
+
+- Loads you ask for always win. A default only fills in what's missing, so constraints you place on `pups.collar` replace the ones on the default `collar` load, and nested loads are kept no matter what order the loads are given in.
+- Default loads aren't added beneath custom relationships, since those load their records with their own query.
+- A default load is never added if it leads back to a mapper that's already on the path, so mappers whose defaults point at each other (a pup that always loads its `collar`, and a collar that always loads its `pup`) stop at the point where they'd go back around. Loads you ask for are never cut off.
+- `without()` only removes loads that were asked for (or that the mapper being queried defaults to). To skip every default load for a single query, the mapper's own and those of the mappers it leads to, call `withoutDefaultLoads()`. Only the loads you ask for will load.
+
+```php
+// Loads the pups of each pack, but not the collar that PupMapper loads by default
+$packs = $packMapper->withoutDefaultLoads()->with('pups')->get();
+```
+
 ### Lazy Loading (Not Supported)
 
 Unlike Active Record patterns, Holloway doesn't support lazy loading. This is intentional:
