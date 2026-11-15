@@ -23,7 +23,7 @@ abstract class HasOneOrMany extends BaseRelationship
     {
         $constraints = $constraints ?: function() {};
 
-        $query = ($this->query)();
+        $query = ($this->query)()->forRelationLoad();
 
         $constraints($query);    // Allow for constraints to be applied to the Holloway\Builder $query
 

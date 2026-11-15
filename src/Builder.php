@@ -120,6 +120,11 @@ class Builder
     ];
 
     /**
+     * Whether this is the query that a relationship hands to its constraints.
+     */
+    protected bool $isRelationQuery = false;
+
+    /**
      * Applied global scopes.
      */
     protected array $scopes = [];
@@ -534,6 +539,8 @@ class Builder
      */
     public function with(mixed $relations) : self
     {
+        $this->guardAgainstRelationQuery(__FUNCTION__);
+
         $this->getTree()
             ->addLoads(is_string($relations) ? func_get_args() : $relations);
 
@@ -547,6 +554,8 @@ class Builder
      */
     public function without(mixed $relations) : self
     {
+        $this->guardAgainstRelationQuery(__FUNCTION__);
+
         $this->getTree()->removeLoads(is_string($relations) ? func_get_args() : $relations);
 
         return $this;
@@ -557,9 +566,32 @@ class Builder
      */
     public function withoutDefaultLoads() : self
     {
+        $this->guardAgainstRelationQuery(__FUNCTION__);
+
         $this->getTree()->withoutDefaultLoads();
 
         return $this;
+    }
+
+    /**
+     * Mark this as the query that a relationship hands to its constraints. A relationship only reads
+     * records from it, the loads of a query are decided by the tree before any query runs.
+     */
+    public function forRelationLoad() : self
+    {
+        $this->isRelationQuery = true;
+
+        return $this;
+    }
+
+    /**
+     * Throw if this is the query that a relationship hands to its constraints, since changing its loads would do nothing.
+     */
+    protected function guardAgainstRelationQuery(string $method) : void
+    {
+        if ($this->isRelationQuery) {
+            throw new \BadMethodCallException("$method() can't be called in the constraints of a relationship, loads are decided before any query runs. Call it on the outer query instead (e.g. with('pups.collar')).");
+        }
     }
 
     /**

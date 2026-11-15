@@ -63,7 +63,7 @@ class BelongsToMany extends BaseRelationship
              ->whereIn("{$this->pivotTable}.{$this->pivotLocalKeyName}", $records->pluck($this->localKeyName)->all())
              ->get();
 
-        $query = ($this->query)();
+        $query = ($this->query)()->forRelationLoad();
 
         $constraints($query);           // Allow for constraints to be applied to the Holloway\Builder $query
 

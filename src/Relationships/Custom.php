@@ -38,13 +38,18 @@ class Custom implements Relationship
     /**
      * Fetch and store the related records for this relationship.
      *
-     * @param  Collection $records
+     * The constraints (if any were given) are handed to the load closure as a third argument, since only
+     * it knows how the records are queried. A load closure that doesn't take a third argument ignores them.
+     *
+     * @param  Collection   $records
+     * @param  Closure|null $constraints
      */
-    public function load(Collection $records) : void
+    public function load(Collection $records, ?Closure $constraints = null) : void
     {
         $load = $this->load;
+        $constraints = $constraints ?: function() {};
 
-        $this->data = $load(($this->query)()->toBase(), $records);  // Convert the query to a base query instance
+        $this->data = $load(($this->query)()->toBase(), $records, $constraints);  // Convert the query to a base query instance
     }
 
     /**
