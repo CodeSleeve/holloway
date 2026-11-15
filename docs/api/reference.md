@@ -210,7 +210,7 @@ class CodeSleeve\Holloway\Builder
 
 #### `get(): Collection`
 
-Execute the query and return hydrated entities.
+Execute the query and return hydrated entities. `get()` takes no arguments: a column list such as `get(['id', 'name'])` is ignored and every column is selected. To limit columns, call `select()` first; your `hydrate()` must then tolerate the missing columns, and the primary key must be included.
 
 ```php
 $posts = $postMapper->where('published', true)->get();

@@ -1,0 +1,11 @@
+# Runs the type-inference fixtures at level 8 so that argument types accepted by
+# Illuminate are not flagged by the forwarded @method signatures on Mapper/Builder.
+includes:
+    - ../../phpstan/extension.neon
+
+parameters:
+    level: 8
+    fileExtensions:
+        - inc
+    paths:
+        - data
