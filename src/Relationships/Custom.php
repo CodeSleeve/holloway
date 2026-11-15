@@ -3,7 +3,6 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Closure;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use stdClass;
 
@@ -12,20 +11,12 @@ class Custom implements Relationship
     protected string $name;
     protected Closure $load;
     protected Closure $for;
-    protected ?Closure $map;
+    protected ?Closure $map = null;
     protected ?string $entityName = null;
     protected bool $shouldLimitToOne;
     protected Closure $query;
-    protected ?Collection $data;
+    protected ?Collection $data = null;
 
-    /**
-     * @param string       $name
-     * @param Closure      $load
-     * @param Closure      $for
-     * @param mixed        $mapOrEntityName
-     * @param bool         $shouldLimitToOne
-     * @param QueryBuilder $query
-     */
     public function __construct(string $name, Closure $load, Closure $for, $mapOrEntityName, bool $shouldLimitToOne, Closure $query)
     {
         $this->name = $name;
