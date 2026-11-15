@@ -75,6 +75,8 @@ $posts = $postMapper
     ->get();
 ```
 
+A constraint closure can add where clauses, ordering and scope changes. It can't change what is loaded, so `with()`, `without()` and `withoutDefaultLoads()` throw inside one. Put nested loads on the outer query instead (see [Nested Constraints](#nested-constraints)). See [Query Builder API](../references/query-builder-api.md) for everything a constraint can and can't do.
+
 ## Nested Eager Loading
 
 Load relationships of relationships using dot notation:
@@ -107,17 +109,17 @@ $posts = $postMapper
 
 ### Nested Constraints
 
-Apply constraints at different nesting levels:
+Give each level its own entry, using dot notation for the nested ones. The constraints of an entry apply to the last relationship in its name:
 
 ```php
 $posts = $postMapper
     ->with([
         'comments' => function($query) {
-            $query->where('status', 'approved')
-                  ->with(['author' => function($authorQuery) {
-                      $authorQuery->where('is_verified', true);
-                  }]);
-        }
+            $query->where('status', 'approved');
+        },
+        'comments.author' => function($query) {
+            $query->where('is_verified', true);
+        },
     ])
     ->get();
 ```
@@ -158,8 +160,7 @@ class PostMapper extends Mapper
     {
         return $this->with(['comments' => function($query) {
             $query->where('likes_count', '>', 10)
-                  ->orderBy('likes_count', 'desc')
-                  ->limit(5);
+                  ->orderBy('likes_count', 'desc');
         }]);
     }
 
