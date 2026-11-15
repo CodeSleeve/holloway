@@ -5,10 +5,10 @@ namespace CodeSleeve\Holloway\Tests\Integration;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use CodeSleeve\Holloway\Builder;
 use CodeSleeve\Holloway\Holloway;
-use CodeSleeve\Holloway\Exceptions\CircularDefaultLoadsException;
 use CodeSleeve\Holloway\Tests\Fixtures\Entities\{Pack, Pup, Collar};
-use CodeSleeve\Holloway\Tests\Fixtures\Mappers\{CollarWithCompanyMapper, PackWithPupsCollarMapper, PackWithPupsMapper};
-use CodeSleeve\Holloway\Tests\Fixtures\Mappers\{PupWithCollarCompanyMapper, PupWithCollarMapper, PupWithOrangeCollarMapper, PupWithPackMapper};
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\{CollarWithCompanyMapper, CollarWithPupMapper, PackWithPupsCollarMapper};
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\{PackWithPupsMapper, PupWithCollarCompanyMapper, PupWithCollarMapper};
+use CodeSleeve\Holloway\Tests\Fixtures\Mappers\{PupWithLittermatesMapper, PupWithOrangeCollarMapper, PupWithPackMapper};
 use CodeSleeve\Holloway\Tests\Helpers\CanBuildTestFixtures;
 
 class DefaultLoadsTest extends TestCase
@@ -31,19 +31,18 @@ class DefaultLoadsTest extends TestCase
     }
 
     /** @test */
-    public function it_loads_default_loads_through_each_relationship_that_leads_to_them()
+    public function it_loads_the_default_loads_of_a_related_mapper_through_a_belongs_to_relationship()
     {
         // given
         $this->buildFixtures();
-        $this->register(PupWithCollarMapper::class, PackWithPupsMapper::class);
+        $this->register(PupWithPackMapper::class);
 
         // when
-        $pup = Holloway::instance()->getMapper(Pup::class)->with('pack')->find(1);
+        $collar = Holloway::instance()->getMapper(Collar::class)->with('pup')->find(1);
 
         // then
-        $this->assertInstanceOf(Pack::class, $pup->pack);
-        $this->assertCount(4, $pup->pack->pups);
-        $pup->pack->pups->each(fn($pup) => $this->assertInstanceOf(Collar::class, $pup->collar));
+        $this->assertInstanceOf(Pup::class, $collar->pup);
+        $this->assertInstanceOf(Pack::class, $collar->pup->pack);
     }
 
     /** @test */
@@ -178,35 +177,55 @@ class DefaultLoadsTest extends TestCase
     }
 
     /** @test */
-    public function it_throws_when_default_loads_lead_back_around_to_themselves()
-    {
-        // given
-        $this->register(PackWithPupsMapper::class, PupWithPackMapper::class);
-
-        // then
-        $this->expectException(CircularDefaultLoadsException::class);
-        $this->expectExceptionMessageMatches('/PupWithPackMapper -> .*PackWithPupsMapper -> .*PupWithPackMapper\.$/');
-
-        // when
-        $this->treeFor($this->query());
-    }
-
-    /** @test */
-    public function it_throws_before_querying_when_the_default_loads_of_the_mapper_being_queried_lead_back_around()
+    public function it_loads_the_default_loads_of_the_mapper_being_queried_when_the_default_loads_of_two_mappers_lead_to_each_other()
     {
         // given
         $this->buildFixtures();
         $this->register(PackWithPupsMapper::class, PupWithPackMapper::class);
 
-        // then
-        $this->expectException(CircularDefaultLoadsException::class);
-
         // when
-        Holloway::instance()->getMapper(Pup::class)->find(1);
+        $pack = Holloway::instance()->getMapper(Pack::class)->find(1);
+        $tree = $this->treeFor($this->query());
+
+        // then
+        $this->assertCount(4, $pack->pups);
+        $this->assertSame(['pups'], array_keys($tree));
+        $this->assertSame([], $tree['pups']['children']);
     }
 
     /** @test */
-    public function it_does_not_throw_when_a_path_that_was_asked_for_comes_back_around_to_a_mapper()
+    public function it_does_not_add_a_default_load_that_leads_back_to_the_mapper_being_queried()
+    {
+        // given
+        $this->buildFixtures();
+        $this->register(PupWithCollarMapper::class, CollarWithPupMapper::class);
+
+        // when
+        $pup = Holloway::instance()->getMapper(Pup::class)->find(1);
+        $tree = $this->treeFor(Holloway::instance()->getMapper(Pup::class)->newQuery());
+
+        // then
+        $this->assertInstanceOf(Collar::class, $pup->collar);
+        $this->assertSame(['collar'], array_keys($tree));
+        $this->assertSame([], $tree['collar']['children']);
+    }
+
+    /** @test */
+    public function it_loads_a_default_load_that_leads_back_to_its_own_mapper_one_level_deep()
+    {
+        // given
+        $this->register(PupWithLittermatesMapper::class);
+
+        // when
+        $tree = $this->treeFor(Holloway::instance()->getMapper(Pup::class)->newQuery());
+
+        // then
+        $this->assertSame(['littermates'], array_keys($tree));
+        $this->assertSame([], $tree['littermates']['children']);
+    }
+
+    /** @test */
+    public function it_never_cuts_off_a_path_that_was_asked_for_but_does_not_add_default_loads_that_lead_back_around()
     {
         // given
         $this->register(PupWithPackMapper::class);
@@ -217,7 +236,7 @@ class DefaultLoadsTest extends TestCase
         // then
         $this->assertSame(['pack'], array_keys($tree['pups']['children']));
         $this->assertSame(['pups'], array_keys($tree['pups']['children']['pack']['children']));
-        $this->assertSame(['pack'], array_keys($tree['pups']['children']['pack']['children']['pups']['children']));
+        $this->assertSame([], $tree['pups']['children']['pack']['children']['pups']['children']);
     }
 
     /**

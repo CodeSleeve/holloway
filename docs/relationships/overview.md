@@ -117,7 +117,7 @@ $packs = $packMapper->with('pups')->get();
 
 - Loads you ask for always win. A default only fills in what's missing, so constraints you place on `pups.collar` replace the ones on the default `collar` load, and nested loads are kept no matter what order the loads are given in.
 - Default loads aren't added beneath custom relationships, since those load their records with their own query.
-- Default loads that lead back around to themselves (a pack that always loads its `pups`, and a pup that always loads its `pack`) throw a `CircularDefaultLoadsException` that names the mappers involved.
+- A default load is never added if it leads back to a mapper that's already on the path, so mappers whose defaults point at each other (a pup that always loads its `collar`, and a collar that always loads its `pup`) stop at the point where they'd go back around. Loads you ask for are never cut off.
 - `without()` only removes loads that were asked for (or that the mapper being queried defaults to). It can't remove the default loads of a related mapper.
 
 ### Lazy Loading (Not Supported)

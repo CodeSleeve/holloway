@@ -5,7 +5,6 @@ namespace CodeSleeve\Holloway\Relationships;
 use Illuminate\Support\Collection;
 use CodeSleeve\Holloway\Mapper;
 use CodeSleeve\Holloway\Holloway;
-use CodeSleeve\Holloway\Exceptions\CircularDefaultLoadsException;
 
 final class Tree
 {
@@ -249,7 +248,9 @@ final class Tree
      * </code>
      *
      * Loads that share a parent are merged into the same node, whatever order they're given in. A new node also
-     * gets the default loads ($with) of the mapper it leads to, but a load that was asked for always wins.
+     * gets the default loads ($with) of the mapper it leads to, and a load that was asked for always wins over a
+     * default. A default is never added if it leads back to a mapper that's already on the path, so mappers whose
+     * defaults point at each other can't loop.
      */
     protected function buildTree()
     {
@@ -257,72 +258,77 @@ final class Tree
         $tree = [];
 
         foreach ($this->loads as $name => $constraints) {
-            // 1. Start with the load itself. Only the default loads we add in step 7 carry a mapper chain (a load
-            //    that was asked for has none), so the chain is what tells the two apart.
-            $stack = [[&$tree, $name, $this->rootMapper, $constraints, null]];
+            // 1. Start with the load itself. The mapper chain is the mappers on the path from the root down to
+            //    the node being built, and only the loads we add in step 8 are marked as default loads.
+            $stack = [[&$tree, $name, $this->rootMapper, $constraints, [$this->rootMapper], false]];
 
             while ($stack) {
                 $stackFrame = array_shift($stack);
-                [&$subTree, $name, $mapper, $constraints, $mapperChain] = $stackFrame;
+                [&$subTree, $name, $mapper, $constraints, $mapperChain, $isDefaultLoad] = $stackFrame;
 
                 // 2. Split the load at its first dot. For 'pups.collar', 'pups' is the node to build here and
                 //    'collar' is the rest of the path to build beneath it.
                 [$nodeName, $remainingPath] = array_pad(explode('.', $name, 2), 2, null);
-                $isDefaultLoad = $mapperChain !== null;
 
-                // 3. A default load never takes the place of a node that already has constraints, so that a load
-                //    that was asked for always wins no matter what order the loads were given in.
-                if ($isDefaultLoad && $remainingPath === null && isset($subTree[$nodeName]['constraints'])) {
-                    continue;
+                // 3. Find the relationship that this node loads, and the mapper it leads to (a custom relationship
+                //    doesn't always have one).
+                $isNewNode = !isset($subTree[$nodeName]);
+                $relationship = $isNewNode ? clone $mapper->getRelationship($nodeName) : $subTree[$nodeName]['relationship'];
+                $relatedMapper = $relationship->getEntityName() ? $this->holloway->getMapper($relationship->getEntityName()) : null;
+
+                // 4. Skip a default load if its node already has constraints (a load that was asked for always
+                //    wins, no matter what order the loads were given in) or if it leads back to a mapper that's
+                //    already in the chain (so mappers whose defaults point at each other don't loop).
+                if ($isDefaultLoad) {
+                    $hasConstraints = $remainingPath === null && isset($subTree[$nodeName]['constraints']);
+                    $leadsBack = $relatedMapper && in_array($relatedMapper, $mapperChain, true);
+
+                    if ($hasConstraints || $leadsBack) {
+                        continue;
+                    }
                 }
 
-                // 4. Build the node if we haven't seen it yet. Its constraints stay null until a load for the node
+                // 5. Build the node if we haven't seen it yet. Its constraints stay null until a load for the node
                 //    itself (or a default) gives it some, since a node we only pass through has none of its own.
-                $isNewNode = !isset($subTree[$nodeName]);
-
                 if ($isNewNode) {
                     $subTree[$nodeName] = [
                         'name'         => $nodeName,
                         'constraints'  => null,
-                        'relationship' => clone $mapper->getRelationship($nodeName),
+                        'relationship' => $relationship,
                         'children'     => []
                     ];
                 }
 
-                // 5. The last segment of a load is the node it names, so it gets the load's constraints. Setting
+                // 6. The last segment of a load is the node it names, so it gets the load's constraints. Setting
                 //    them leaves any children the node already has alone.
                 if ($remainingPath === null) {
                     $subTree[$nodeName]['constraints'] = $constraints;
                 }
 
-                $relationship = $subTree[$nodeName]['relationship'];
-
-                // 6. If the load goes deeper and the relationship isn't a custom one (e.g customMany, etc) we'll
+                // 7. If the load goes deeper and the relationship isn't a custom one (e.g customMany, etc) we'll
                 //    push the rest of the path onto the stack to be built beneath this node.
-                if ($remainingPath !== null && $relationship->getEntityName()) {
+                if ($remainingPath !== null && $relatedMapper) {
                     $stack[] = [
                         &$subTree[$nodeName]['children'],
                         $remainingPath,
-                        $this->holloway->getMapper($relationship->getEntityName()),
+                        $relatedMapper,
                         $constraints,
-                        $mapperChain,
+                        [...$mapperChain, $relatedMapper],
+                        $isDefaultLoad,
                     ];
                 }
 
-                // 7. Add the default loads of the mapper that a new node leads to beneath it. Adding that mapper to
-                //    the chain first lets us throw if its defaults lead back around to it instead of never stopping.
-                //    Custom relationships load their records with their own query, so they don't get any.
-                if ($isNewNode && !$relationship instanceof Custom) {
-                    $relatedMapper = $this->holloway->getMapper($relationship->getEntityName());
-                    $mapperChain = $this->extendMapperChain($mapperChain, $relatedMapper);
-
+                // 8. Add the default loads of the mapper that a new node leads to beneath it. Custom relationships
+                //    load their records with their own query, so they don't get any.
+                if ($isNewNode && $relatedMapper && !$relationship instanceof Custom) {
                     foreach ($this->normalize($relatedMapper->getWith()) as $defaultName => $defaultConstraints) {
                         $stack[] = [
                             &$subTree[$nodeName]['children'],
                             $defaultName,
                             $relatedMapper,
                             $defaultConstraints,
-                            $mapperChain,
+                            [...$mapperChain, $relatedMapper],
+                            true,
                         ];
                     }
                 }
@@ -330,25 +336,5 @@ final class Tree
         }
 
         return $tree;
-    }
-
-    /**
-     * Add a mapper to the chain of mappers whose defaults led to a load, throwing if it's already in the chain.
-     *
-     * @param  array|null $mapperChain
-     * @param  Mapper     $mapper
-     * @return array
-     */
-    protected function extendMapperChain(?array $mapperChain, Mapper $mapper) : array
-    {
-        $mapperChain = $mapperChain ?? [];
-
-        if (in_array($mapper, $mapperChain, true)) {
-            $mapperNames = array_map(fn($mapper) => get_class($mapper), [...$mapperChain, $mapper]);
-
-            throw new CircularDefaultLoadsException('The default loads of these mappers lead back to themselves: ' . implode(' -> ', $mapperNames) . '.');
-        }
-
-        return [...$mapperChain, $mapper];
     }
 }
