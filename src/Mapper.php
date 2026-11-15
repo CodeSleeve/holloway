@@ -348,7 +348,9 @@ abstract class Mapper
         // Once we have the query builders, we will set the mapper instances so the
         // builder can easily access any information it may need from the mapper
         // while it is constructing and executing various queries against it.
-        return $builder->setMapper($this)->with($this->with);
+        $builder->setMapper($this)->getTree()->addDefaultLoads($this->with);
+
+        return $builder;
     }
 
     /**

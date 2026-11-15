@@ -12,6 +12,8 @@ final class Tree
     protected array $loads = [];
     protected array $data = [];
     protected Mapper $rootMapper;
+    protected bool $withDefaultLoads = true;
+    protected array $defaultLoads = [];
 
     public function __construct(Mapper $rootMapper)
     {
@@ -24,6 +26,19 @@ final class Tree
         $loads = is_array($loads) ? $loads : func_get_args();
         $loads = $this->normalize($loads);
         $this->loads = [...$this->loads, ...$loads];
+        $this->defaultLoads = array_diff($this->defaultLoads, array_keys($loads));
+
+        return $this;
+    }
+
+    /**
+     * Add the default loads of the root mapper, these are loads that haven't been asked for.
+     */
+    public function addDefaultLoads(array $loads) : self
+    {
+        $loads = $this->normalize($loads);
+        $this->loads = [...$this->loads, ...$loads];
+        $this->defaultLoads = [...$this->defaultLoads, ...array_keys($loads)];
 
         return $this;
     }
@@ -32,6 +47,16 @@ final class Tree
     {
         $loads = is_array($loads) ? $loads : func_get_args();
         $this->loads = array_diff_key($this->loads, array_flip($loads));
+        $this->defaultLoads = array_diff($this->defaultLoads, $loads);
+
+        return $this;
+    }
+
+    public function withoutDefaultLoads() : self
+    {
+        $this->withDefaultLoads = false;
+        $this->loads = array_diff_key($this->loads, array_flip($this->defaultLoads));
+        $this->defaultLoads = [];
 
         return $this;
     }
@@ -318,9 +343,9 @@ final class Tree
                     ];
                 }
 
-                // 8. Add the default loads of the mapper that a new node leads to beneath it. Custom relationships
-                //    load their records with their own query, so they don't get any.
-                if ($isNewNode && $relatedMapper && !$relationship instanceof Custom) {
+                // 8. Add the default loads of the mapper that a new node leads to beneath it, unless the query was
+                //    told not to. Custom relationships load their records with their own query, so they don't get any.
+                if ($this->withDefaultLoads && $isNewNode && $relatedMapper && !$relationship instanceof Custom) {
                     foreach ($this->normalize($relatedMapper->getWith()) as $defaultName => $defaultConstraints) {
                         $stack[] = [
                             &$subTree[$nodeName]['children'],

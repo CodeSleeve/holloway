@@ -239,6 +239,80 @@ class DefaultLoadsTest extends TestCase
         $this->assertSame([], $tree['pups']['children']['pack']['children']['pups']['children']);
     }
 
+    /** @test */
+    public function it_skips_the_default_loads_of_related_mappers_when_told_to()
+    {
+        // given
+        $this->buildFixtures();
+        $this->register(PupWithCollarMapper::class);
+
+        // when
+        $pack = Holloway::instance()->getMapper(Pack::class)->withoutDefaultLoads()->with('pups')->find(1);
+
+        // then
+        $this->assertCount(4, $pack->pups);
+        $pack->pups->each(fn($pup) => $this->assertArrayNotHasKey('collar', $pup->toArray()));
+    }
+
+    /** @test */
+    public function it_still_loads_what_was_asked_for_when_the_default_loads_of_related_mappers_are_skipped()
+    {
+        // given
+        $this->register(PupWithCollarMapper::class, CollarWithCompanyMapper::class);
+
+        // when
+        $tree = $this->treeFor($this->query()->withoutDefaultLoads()->with('pups.collar'));
+
+        // then
+        $this->assertSame(['collar'], array_keys($tree['pups']['children']));
+        $this->assertSame([], $tree['pups']['children']['collar']['children']);
+    }
+
+    /** @test */
+    public function it_skips_the_default_loads_of_the_mapper_being_queried_too()
+    {
+        // given
+        $this->register(PackWithPupsMapper::class, PupWithCollarMapper::class);
+
+        // when
+        $query = $this->query()->withoutDefaultLoads();
+        $tree = $this->treeFor($query);
+
+        // then
+        $this->assertSame([], $tree);
+        $this->assertSame([], $query->getLoads());
+    }
+
+    /**
+     * @return array
+     */
+    public static function orderOfAskingForAnAlreadyDefaultLoad() : array
+    {
+        return [
+            'asked for before skipping the defaults' => [true],
+            'asked for after skipping the defaults'  => [false],
+        ];
+    }
+
+    /**
+     * @dataProvider orderOfAskingForAnAlreadyDefaultLoad
+     * @test
+     */
+    public function it_keeps_a_load_that_was_asked_for_even_when_the_mapper_being_queried_also_defaults_to_it(bool $askFirst)
+    {
+        // given
+        $this->register(PackWithPupsMapper::class, PupWithCollarMapper::class);
+        $query = $this->query();
+
+        // when
+        $askFirst ? $query->with('pups')->withoutDefaultLoads() : $query->withoutDefaultLoads()->with('pups');
+        $tree = $this->treeFor($query);
+
+        // then
+        $this->assertSame(['pups'], array_keys($tree));
+        $this->assertSame([], $tree['pups']['children']);
+    }
+
     /**
      * Register the fixture mappers along with any others, which replace the fixture mapper for the same entity.
      *

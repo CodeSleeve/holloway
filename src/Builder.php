@@ -553,6 +553,16 @@ class Builder
     }
 
     /**
+     * Prevent the default loads of the mapper being queried, and of the mappers it leads to, from being eager loaded.
+     */
+    public function withoutDefaultLoads() : self
+    {
+        $this->getTree()->withoutDefaultLoads();
+
+        return $this;
+    }
+
+    /**
      * Chunk the results of the query.
      */
     public function chunk(int $count, callable $callback) : bool
