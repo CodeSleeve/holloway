@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Closure;
 
 abstract class HasOneOrMany extends BaseRelationship
@@ -30,5 +31,30 @@ abstract class HasOneOrMany extends BaseRelationship
         $this->data = $query->whereIn("{$this->table}.{$this->foreignKeyName}", $records->pluck($this->localKeyName)->values()->all())
             ->toBase()
             ->get();
+    }
+
+    /**
+     * Build a count subquery for HasOne/HasMany relationships.
+     *
+     * The parent column is the relationship's own local key (as in load()), which is not
+     * necessarily the mapper's primary key ($parentKey).
+     *
+     * @param  string        $parentTable
+     * @param  string        $parentKey
+     * @param  Closure|null  $constraints
+     * @return \Illuminate\Database\Query\Builder
+     */
+    public function toCountQuery(string $parentTable, string $parentKey, ?Closure $constraints = null) : QueryBuilder
+    {
+        $query = $this->newCountQuery($parentTable);
+
+        $query->selectRaw('count(*)')
+            ->whereColumn(
+                $query->getMapper()->getTable() . '.' . $this->foreignKeyName,
+                '=',
+                $parentTable . '.' . $this->localKeyName
+            );
+
+        return $this->finishCountQuery($query, $constraints);
     }
 }

@@ -3,11 +3,18 @@
 namespace CodeSleeve\Holloway\Relationships;
 
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use CodeSleeve\Holloway\Builder;
 use Closure;
 use stdClass;
 
 abstract class BaseRelationship implements Relationship
 {
+    /**
+     * Used to give each self-referential count query a unique table alias.
+     */
+    protected static int $selfJoinCount = 0;
+
     protected string $name;
     protected string $table;
     protected string $foreignKeyName;
@@ -65,5 +72,46 @@ abstract class BaseRelationship implements Relationship
     public function getName() : string
     {
         return $this->name;
+    }
+
+    /**
+     * Get the related mapper's query builder for counting this relationship's related records.
+     *
+     * When the related table is also the parent table (a tree, or "friends" of the same kind),
+     * a count subquery that names the table twice can't tell its own rows from the parent
+     * row, so it would correlate the table with itself. As Eloquent does for self relations,
+     * the related table is given a unique alias.
+     *
+     * @param  string  $parentTable
+     * @return Builder
+     */
+    protected function newCountQuery(string $parentTable) : Builder
+    {
+        $query = ($this->query)();
+
+        if ($this->table === $parentTable) {
+            $query->aliasTable('holloway_reserved_' . static::$selfJoinCount++);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Apply the constraints to a count query, and the global scopes, and return the base query.
+     *
+     * The constraints are applied as a scope (as Eloquent does), so that an "or" in them stays
+     * inside the correlation instead of matching rows of other parents.
+     *
+     * @param  Builder       $query
+     * @param  Closure|null  $constraints
+     * @return QueryBuilder
+     */
+    protected function finishCountQuery(Builder $query, ?Closure $constraints) : QueryBuilder
+    {
+        if ($constraints) {
+            $query->callScope($constraints);
+        }
+
+        return $query->toBase();
     }
 }

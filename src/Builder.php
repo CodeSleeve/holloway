@@ -3,6 +3,7 @@
 namespace CodeSleeve\Holloway;
 
 use BadMethodCallException;
+use InvalidArgumentException;
 use Closure;
 use CodeSleeve\Holloway\Relationships\Tree;
 use Illuminate\Contracts\Pagination\{Paginator as PaginatorContract, LengthAwarePaginator as LengthAwarePaginatorContract};
@@ -10,7 +11,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\{Paginator, LengthAwarePaginator};
-use Illuminate\Support\Collection;
+use Illuminate\Support\{Collection, Str};
 use Illuminate\Database\Concerns\BuildsQueries;
 
 class Builder
@@ -373,11 +374,15 @@ class Builder
     /**
      * Apply the given scope on the current builder instance.
      *
+     * The clauses that the scope adds are grouped in their own nested where, so an "or" in
+     * them can't escape the clauses that were already on the query. This is also how
+     * constraints are applied to a relationship's count subquery.
+     *
      * @param  callable $scope
      * @param  array $parameters
      * @return mixed
      */
-    protected function callScope(callable $scope, $parameters = [])
+    public function callScope(callable $scope, $parameters = [])
     {
         array_unshift($parameters, $this);
 
@@ -482,6 +487,93 @@ class Builder
         $this->getTree()->removeLoads(is_string($relations) ? func_get_args() : $relations);
 
         return $this;
+    }
+
+    /**
+     * Add subselect queries to count the relations.
+     *
+     * @param  mixed  $relations
+     * @return self
+     */
+    public function withCount(mixed $relations) : self
+    {
+        if (is_null($this->query->columns)) {
+            $this->query->select([$this->query->from . '.*']);
+        }
+
+        $relations = is_string($relations) ? func_get_args() : $relations;
+
+        foreach ($this->parseWithRelations($relations) as $name => $constraints) {
+            $segments = preg_split('/\s+as\s+/i', $name, 2);
+            $relationName = $segments[0];
+            $alias = $segments[1] ?? Str::snake($relationName) . '_count';
+
+            $this->addCountSelect($relationName, $alias, $constraints);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Parse the with relations into a normalized array.
+     *
+     * @param  array  $relations
+     * @return array
+     */
+    protected function parseWithRelations(array $relations) : array
+    {
+        $results = [];
+
+        foreach ($relations as $name => $constraints) {
+            if (is_numeric($name)) {
+                $name = $constraints;
+                $constraints = null;
+            }
+
+            $results[$name] = $constraints;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Add a count select subquery for the given relationship.
+     *
+     * @param  string         $relationName
+     * @param  string         $alias
+     * @param  \Closure|null  $constraints
+     * @return void
+     */
+    protected function addCountSelect(string $relationName, string $alias, ?Closure $constraints) : void
+    {
+        if (!$this->mapper->hasRelationship($relationName)) {
+            throw new InvalidArgumentException("Relationship [{$relationName}] not defined on mapper.");
+        }
+
+        $relationship = $this->mapper->getRelationship($relationName);
+        $subquery = $this->buildCountSubquery($relationship, $constraints);
+
+        $this->selectSub($subquery, $alias);
+    }
+
+    /**
+     * Build a count subquery for the given relationship.
+     *
+     * The relationship builds its own count query (so each relationship type controls its
+     * correlation, and the related table can be aliased when it is also this query's table),
+     * applies the constraints to it, and applies the related mapper's global scopes.
+     *
+     * @param  \CodeSleeve\Holloway\Relationships\Relationship  $relationship
+     * @param  \Closure|null                                      $constraints
+     * @return \Illuminate\Database\Query\Builder
+     */
+    protected function buildCountSubquery($relationship, ?Closure $constraints)
+    {
+        return $relationship->toCountQuery(
+            $this->mapper->getTable(),
+            $this->mapper->getKeyName(),
+            $constraints
+        );
     }
 
     /**
@@ -636,6 +728,28 @@ class Builder
             'path' => Paginator::resolveCurrentPath(),
             'pageName' => $pageName,
         ]);
+    }
+
+    /**
+     * Give this query's table an alias, for a subquery over the same table as its parent query.
+     *
+     * The scopes are handed a clone of the mapper that reports the alias as its table, so the
+     * columns they qualify (such as the soft deleting scope's) use the alias, just as Eloquent
+     * sets the alias as its model's table.
+     *
+     * @param  string  $alias
+     * @return $this
+     */
+    public function aliasTable(string $alias) : self
+    {
+        $table = $this->mapper->getTable();
+
+        $this->mapper = clone $this->mapper;
+        $this->mapper->setTable($alias);
+
+        $this->query->from($table . ' as ' . $alias);
+
+        return $this;
     }
 
     /**
