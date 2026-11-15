@@ -438,7 +438,7 @@ abstract class Mapper
                     $keyName = $this->getKeyName();
 
                     if ($this->hasTimestamps === true) {
-                        $attributes = \Illuminate\Support\Arr::except($attributes, [self::UPDATED_AT, self::CREATED_AT]);
+                        $attributes = \Illuminate\Support\Arr::except($attributes, [static::UPDATED_AT, static::CREATED_AT]);
                         $now = $this->currentTime();
                         $attributes[static::UPDATED_AT] = $now->format($this->timestampFormat);
 
@@ -578,10 +578,8 @@ abstract class Mapper
         if (static::hasGlobalScope($scope)) {
             if (is_string($scope)) {
                 unset(static::$globalScopes[static::class][$scope]);
-            } elseif ($scope instanceof Scope) {
-                unset(static::$globalScopes[static::class][get_class($scope)]);
             } else {
-                throw new InvalidArgumentException('Global scope must be a string name or an instance of Scope.');
+                unset(static::$globalScopes[static::class][get_class($scope)]);
             }
         }
     }

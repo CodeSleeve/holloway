@@ -320,9 +320,7 @@ Return the list of scope identifiers that have been removed from this query.
 
 #### `delete(): mixed`
 
-Execute a delete against the query. When `SoftDeletingScope` is registered, the `onDelete` callback is used to set `deleted_at` instead.
-
-> **Note:** The builder-level soft-delete path currently has a bug (calls a nonexistent mapper method). Use mapper-level `remove()` for soft deletes.
+Execute a delete against the query and return the number of rows affected. When `SoftDeletingScope` is registered, the `onDelete` callback soft deletes the matching rows instead (setting `deleted_at`, and leaving rows that are already soft deleted alone).
 
 #### `forceDelete(): mixed`
 

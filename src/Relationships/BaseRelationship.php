@@ -14,7 +14,7 @@ abstract class BaseRelationship implements Relationship
     protected string $localKeyName;
     protected string $entityName;
     protected Closure $query;
-    protected ?Collection $data;
+    protected ?Collection $data = null;
 
     public function __construct(string $name, string $table, string $foreignKeyName, string $localKeyName, string $entityName, Closure $query)
     {

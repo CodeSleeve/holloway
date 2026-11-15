@@ -414,7 +414,11 @@ class MapperTest extends TestCase
         $pack = $mapper->with('collars')->get();
 
         // then
-        $pack->each(function($pack) {
+        $expectedCounts = [1 => 4, 2 => 2];
+
+        $pack->each(function($pack) use ($expectedCounts) {
+            $this->assertCount($expectedCounts[$pack->id], $pack->collars);
+
             $pack->collars->each(function($collar) {
                 $this->assertInstanceOf(Collar::class, $collar);
             });

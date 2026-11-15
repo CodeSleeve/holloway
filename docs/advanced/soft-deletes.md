@@ -1,6 +1,6 @@
 # Soft Deletes
 
-> **Note:** The timestamp for `deleted_at` is set using your mapper's `currentTime()` method. You can override this method to control how soft delete times are generated (e.g., for custom time zones or deterministic tests).
+> **Note:** The timestamp that `remove()` sets for `deleted_at` comes from your mapper's `currentTime()` method. You can override this method to control how soft delete times are generated (e.g., for custom time zones or deterministic tests).
 
 Holloway provides soft delete functionality that allows you to "delete" entities without removing them from the database. Soft-deleted records are automatically excluded from queries unless you explicitly opt in.
 
@@ -109,18 +109,16 @@ $postMapper->remove($post);
 
 ### Bulk Soft Deletion
 
-> **Note:** Bulk soft deletion via the builder (`->delete()`) is not currently reliable — an internal method name mismatch in `SoftDeletingScope` will cause a runtime error. Use mapper-level `remove()` in a loop for now:
+Call `delete()` on a query to soft delete every matching row in a single `UPDATE`. It returns the number of rows affected, and rows that are already soft deleted are left alone:
 
 ```php
-$posts = $postMapper
+$deleted = $postMapper
     ->where('status', 'draft')
     ->where('created_at', '<', now()->subMonths(6))
-    ->get();
-
-foreach ($posts as $post) {
-    $postMapper->remove($post);
-}
+    ->delete();
 ```
+
+> **Note:** Unlike `remove()`, a bulk delete doesn't load the entities or fire persistence events (`removing`, `removed`), and it stamps `deleted_at` with the current time (`Carbon::now()`) rather than your mapper's `currentTime()`. Use `remove()` in a loop if you need those.
 
 ## Querying Soft Deleted Entities
 
@@ -182,7 +180,14 @@ $postMapper->restore($posts);
 
 ### Via the Query Builder
 
-> **Note:** The builder `restore()` macro is not currently reliable due to the same internal method name mismatch as bulk deletion. Use mapper-level `restore()` instead (shown above).
+Call `restore()` on a query to restore every matching row in a single `UPDATE`. It returns the number of rows restored. Like a bulk delete, it doesn't load the entities or fire the `restoring` and `restored` events:
+
+```php
+$restored = $postMapper
+    ->onlyTrashed()
+    ->where('author_id', 5)
+    ->restore();
+```
 
 ## Permanent Deletion
 
